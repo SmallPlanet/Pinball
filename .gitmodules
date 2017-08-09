@@ -1,0 +1,6 @@
+[submodule "Laba"]
+	path = Laba
+	url = https://github.com/KittyMac/Laba
+[submodule "PlanetSwift"]
+	path = PlanetSwift
+	url = https://github.com/SmallPlanetSwift/PlanetSwift

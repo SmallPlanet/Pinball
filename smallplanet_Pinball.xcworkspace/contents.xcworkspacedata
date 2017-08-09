@@ -2,6 +2,15 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:Laba/iOS/Laba.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Laba/iOS/MKTween/MKTween.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:PlanetSwift/PlanetSwift.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:smallplanet_Pinball.xcodeproj">
    </FileRef>
 </Workspace>

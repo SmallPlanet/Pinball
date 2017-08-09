@@ -7,17 +7,46 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4618932B1F3B577A00AA4599 /* Localizations.swift */; };
+		4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; };
+		4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		461893311F3B57C500AA4599 /* MKTween.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 461893301F3B57C500AA4599 /* MKTween.framework */; };
+		461893321F3B57C500AA4599 /* MKTween.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 461893301F3B57C500AA4599 /* MKTween.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		461893341F3B57C500AA4599 /* PlanetSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 461893331F3B57C500AA4599 /* PlanetSwift.framework */; };
+		461893351F3B57C500AA4599 /* PlanetSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 461893331F3B57C500AA4599 /* PlanetSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		461893391F3B58C300AA4599 /* MainController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461893381F3B58C300AA4599 /* MainController.swift */; };
+		4618933B1F3B592800AA4599 /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 4618933A1F3B592800AA4599 /* Assets */; };
 		4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4632CB101F3B53BE00359AA3 /* AppDelegate.swift */; };
-		4632CB131F3B53BE00359AA3 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4632CB121F3B53BE00359AA3 /* ViewController.swift */; };
 		4632CB161F3B53BE00359AA3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB141F3B53BE00359AA3 /* Main.storyboard */; };
 		4632CB181F3B53BE00359AA3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB171F3B53BE00359AA3 /* Assets.xcassets */; };
 		4632CB1B1F3B53BE00359AA3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB191F3B53BE00359AA3 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		461893361F3B57C500AA4599 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				461893321F3B57C500AA4599 /* MKTween.framework in Embed Frameworks */,
+				4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */,
+				461893351F3B57C500AA4599 /* PlanetSwift.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		4618932B1F3B577A00AA4599 /* Localizations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizations.swift; sourceTree = "<group>"; };
+		4618932D1F3B57C500AA4599 /* Laba.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Laba.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		461893301F3B57C500AA4599 /* MKTween.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MKTween.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		461893331F3B57C500AA4599 /* PlanetSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = PlanetSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		461893381F3B58C300AA4599 /* MainController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainController.swift; sourceTree = "<group>"; };
+		4618933A1F3B592800AA4599 /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Assets; sourceTree = "<group>"; };
 		4632CB0D1F3B53BE00359AA3 /* smallplanet_Pinball.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = smallplanet_Pinball.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4632CB101F3B53BE00359AA3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		4632CB121F3B53BE00359AA3 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		4632CB151F3B53BE00359AA3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4632CB171F3B53BE00359AA3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4632CB1A1F3B53BE00359AA3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -29,15 +58,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				461893311F3B57C500AA4599 /* MKTween.framework in Frameworks */,
+				4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */,
+				461893341F3B57C500AA4599 /* PlanetSwift.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		461893371F3B58C300AA4599 /* main */ = {
+			isa = PBXGroup;
+			children = (
+				461893381F3B58C300AA4599 /* MainController.swift */,
+			);
+			path = main;
+			sourceTree = "<group>";
+		};
 		4632CB041F3B53BE00359AA3 = {
 			isa = PBXGroup;
 			children = (
+				461893331F3B57C500AA4599 /* PlanetSwift.framework */,
+				461893301F3B57C500AA4599 /* MKTween.framework */,
+				4618932D1F3B57C500AA4599 /* Laba.framework */,
+				4618933A1F3B592800AA4599 /* Assets */,
 				4632CB0F1F3B53BE00359AA3 /* smallplanet_Pinball */,
 				4632CB0E1F3B53BE00359AA3 /* Products */,
 			);
@@ -54,8 +98,9 @@
 		4632CB0F1F3B53BE00359AA3 /* smallplanet_Pinball */ = {
 			isa = PBXGroup;
 			children = (
+				461893371F3B58C300AA4599 /* main */,
+				4618932B1F3B577A00AA4599 /* Localizations.swift */,
 				4632CB101F3B53BE00359AA3 /* AppDelegate.swift */,
-				4632CB121F3B53BE00359AA3 /* ViewController.swift */,
 				4632CB141F3B53BE00359AA3 /* Main.storyboard */,
 				4632CB171F3B53BE00359AA3 /* Assets.xcassets */,
 				4632CB191F3B53BE00359AA3 /* LaunchScreen.storyboard */,
@@ -71,9 +116,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4632CB1F1F3B53BE00359AA3 /* Build configuration list for PBXNativeTarget "smallplanet_Pinball" */;
 			buildPhases = (
+				4618932A1F3B56AB00AA4599 /* Laurine */,
 				4632CB091F3B53BE00359AA3 /* Sources */,
 				4632CB0A1F3B53BE00359AA3 /* Frameworks */,
 				4632CB0B1F3B53BE00359AA3 /* Resources */,
+				461893361F3B57C500AA4599 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -125,6 +172,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4632CB1B1F3B53BE00359AA3 /* LaunchScreen.storyboard in Resources */,
+				4618933B1F3B592800AA4599 /* Assets in Resources */,
 				4632CB181F3B53BE00359AA3 /* Assets.xcassets in Resources */,
 				4632CB161F3B53BE00359AA3 /* Main.storyboard in Resources */,
 			);
@@ -132,13 +180,31 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		4618932A1F3B56AB00AA4599 /* Laurine */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = Laurine;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -x\n\n# Get base path to project\nBASE_PATH=\"$PROJECT_DIR/$PROJECT_NAME\"\n\n#--------- START OF YOUR CONFIGURATION (change Path_To_.. to fit)\n\n# Get path to Laurine Generator script\nLAURINE_PATH=\"$BASE_PATH/LaurineGenerator.swift\"\n\n# Get path to main localization file (usually english).\nSOURCE_PATH=\"$BASE_PATH/Localizations/en/Localizable.strings\"\n\n# Get path to output. If you use ObjC version of output, set implementation file (.m), as header will be generated automatically\nOUTPUT_PATH=\"$BASE_PATH/Localizations.swift\"\n\n#--------- END OF YOUR CONFIGURATION\n\n# Add permission to generator for script execution\nchmod 755 \"$LAURINE_PATH\"\n\n# Actually generate output. -- CUSTOMIZE -- parameters to your needs (see documentation).\n# Will only re-generate script if something changed\nif [ \"$OUTPUT_PATH\" -ot \"$SOURCE_PATH\" ]; then\n\"$LAURINE_PATH\" -i \"$SOURCE_PATH\" -o \"$OUTPUT_PATH\"\nfi";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		4632CB091F3B53BE00359AA3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4632CB131F3B53BE00359AA3 /* ViewController.swift in Sources */,
+				461893391F3B58C300AA4599 /* MainController.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
+				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -304,6 +370,7 @@
 				4632CB211F3B53BE00359AA3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
