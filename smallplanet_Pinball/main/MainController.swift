@@ -9,11 +9,15 @@
 import UIKit
 import PlanetSwift
 import Laba
+import SwiftSocket
 
 class MainController: PlanetViewController {
 
+    var client: TCPClient!
+    
     func sendButtonPress(left: Bool) {
-        print("Coming soon to a pinball machine near you...")
+        let result = client.send(string: left ? "LEFT" : "RIGHT")
+        print(result)
     }
     
     func leftButtonPress() {
@@ -26,6 +30,7 @@ class MainController: PlanetViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        client = TCPClient(address: "192.168.3.1", port: 8000)
         
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
@@ -34,7 +39,22 @@ class MainController: PlanetViewController {
         
         leftButton.button.addTarget(self, action: #selector(MainController.leftButtonPress), for: .touchDown)
         rightButton.button.addTarget(self, action: #selector(MainController.rightButtonPress), for: .touchDown)
-
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        switch client.connect(timeout: 3) {
+        case .success:
+            print("Connection successful 🎉")
+        case .failure(let error):
+            print("Connectioned failed 💩")
+            print(error)
+        }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        client.close()
     }
 
     fileprivate var titleLabel: View {

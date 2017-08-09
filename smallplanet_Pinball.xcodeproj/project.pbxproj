@@ -20,6 +20,8 @@
 		4632CB161F3B53BE00359AA3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB141F3B53BE00359AA3 /* Main.storyboard */; };
 		4632CB181F3B53BE00359AA3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB171F3B53BE00359AA3 /* Assets.xcassets */; };
 		4632CB1B1F3B53BE00359AA3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB191F3B53BE00359AA3 /* LaunchScreen.storyboard */; };
+		A9F59DDF1F3BA7A900BE23A5 /* SwiftSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9F59DDE1F3BA7A900BE23A5 /* SwiftSocket.framework */; };
+		A9F59DE01F3BA7A900BE23A5 /* SwiftSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9F59DDE1F3BA7A900BE23A5 /* SwiftSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +34,7 @@
 				461893321F3B57C500AA4599 /* MKTween.framework in Embed Frameworks */,
 				4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */,
 				461893351F3B57C500AA4599 /* PlanetSwift.framework in Embed Frameworks */,
+				A9F59DE01F3BA7A900BE23A5 /* SwiftSocket.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -51,6 +54,7 @@
 		4632CB171F3B53BE00359AA3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4632CB1A1F3B53BE00359AA3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4632CB1C1F3B53BE00359AA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A9F59DDE1F3BA7A900BE23A5 /* SwiftSocket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftSocket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +65,7 @@
 				461893311F3B57C500AA4599 /* MKTween.framework in Frameworks */,
 				4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */,
 				461893341F3B57C500AA4599 /* PlanetSwift.framework in Frameworks */,
+				A9F59DDF1F3BA7A900BE23A5 /* SwiftSocket.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 		4632CB041F3B53BE00359AA3 = {
 			isa = PBXGroup;
 			children = (
+				A9F59DDE1F3BA7A900BE23A5 /* SwiftSocket.framework */,
 				461893331F3B57C500AA4599 /* PlanetSwift.framework */,
 				461893301F3B57C500AA4599 /* MKTween.framework */,
 				4618932D1F3B57C500AA4599 /* Laba.framework */,
