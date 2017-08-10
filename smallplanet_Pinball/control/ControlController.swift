@@ -11,21 +11,41 @@ import PlanetSwift
 import Laba
 import SwiftSocket
 
+enum ButtonType {
+    case left(on: Bool)
+    case right(on: Bool)
+}
+
 class ControlController: PlanetViewController {
     
     var client: TCPClient!
     
-    func sendButtonPress(left: Bool) {
-        let result = client.send(string: left ? "LEFT" : "RIGHT")
-        print(result)
+    func sendPress(forButton type: ButtonType) {
+        let data: String
+        switch type {
+        case .left(let on):
+            data = "L" + (on ? "1" : "0")
+        case .right(let on):
+            data = "R" + (on ? "1" : "0")
+        }
+        let result = client.send(string: data)
+        print("\(data) -> \(result)")
     }
     
-    @objc func leftButtonPress() {
-        sendButtonPress(left: true)
+    func leftButtonStart() {
+        sendPress(forButton: .left(on: true))
     }
     
-    @objc func rightButtonPress() {
-        sendButtonPress(left: false)
+    func leftButtonEnd() {
+        sendPress(forButton: .left(on: false))
+    }
+    
+    func rightButtonStart() {
+        sendPress(forButton: .right(on: true))
+    }
+    
+    func rightButtonEnd() {
+        sendPress(forButton: .right(on: false))
     }
 
     override func viewDidLoad() {
@@ -38,8 +58,15 @@ class ControlController: PlanetViewController {
         mainBundlePath = "bundle://Assets/control/control.xml"
         loadView()
         
-        leftButton.button.addTarget(self, action: #selector(ControlController.leftButtonPress), for: .touchDown)
-        rightButton.button.addTarget(self, action: #selector(ControlController.rightButtonPress), for: .touchDown)
+        leftButton.button.addTarget(self, action: #selector(leftButtonStart), for: .touchDown)
+        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchUpInside)
+        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchDragExit)
+        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchCancel)
+        
+        rightButton.button.addTarget(self, action: #selector(rightButtonStart), for: .touchDown)
+        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchUpInside)
+        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchDragExit)
+        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchCancel)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -66,4 +93,3 @@ class ControlController: PlanetViewController {
     }
     
 }
-
