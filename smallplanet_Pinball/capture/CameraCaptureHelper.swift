@@ -37,7 +37,7 @@ class CameraCaptureHelper: NSObject
     
     fileprivate func initialiseCaptureSession()
     {
-        captureSession.sessionPreset = AVCaptureSession.Preset.high
+        captureSession.sessionPreset = AVCaptureSession.Preset.low
 
         guard let camera = (AVCaptureDevice.devices(for: AVMediaType.video) )
             .filter({ $0.position == cameraPosition })
@@ -123,16 +123,19 @@ extension CameraCaptureHelper: AVCaptureVideoDataOutputSampleBufferDelegate
         let hw = image.extent.width / 2
         let hh = image.extent.height / 2
         
+        // scale down to 50 pixels on min size
+        let scale = 50 / hw
+        
         var transform = CGAffineTransform.identity
         
-        transform = transform.translatedBy(x: hh, y: hw)
+        transform = transform.translatedBy(x: hh * scale, y: hw * scale)
         transform = transform.rotated(by: rotation.degreesToRadians)
+        transform = transform.scaledBy(x: scale, y: scale)
         transform = transform.translatedBy(x: -hw, y: -hh)
         
         let rotatedImage = image.transformed(by: transform)
         
-        self.delegate?.newCameraImage(self,
-                                      image: rotatedImage)
+        self.delegate?.newCameraImage(self, image: rotatedImage)
     }
 }
 

@@ -21,16 +21,34 @@ extension NSData {
 
 class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let ciContext = CIContext(options: [:])
+    
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     
     var isCapturing = false
+    var isConnectedToServer = false
     var serverSocket:TCPClient? = nil
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage)
     {
         
-        if isCapturing {
-            print("send small version of image to server")
+        if isConnectedToServer {
+            
+            // get the actual bytes out of the CIImage
+            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+                return
+            }
+            
+            
+            // send the size of the image data
+            var sizeAsInt = UInt32(jpegData.count)
+            let sizeAsData = Data(bytes: &sizeAsInt,
+                                count: MemoryLayout.size(ofValue: sizeAsInt))
+            
+            serverSocket?.send(data: sizeAsData)
+            serverSocket?.send(data: jpegData)
+            
+            print ("sent jpeg of size \(jpegData.count)")
         }
         //print("got image")
     }
@@ -98,6 +116,10 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
             switch serverSocket!.connect(timeout: 5) {
             case .success:
                 print("connected to capture server")
+                
+                isConnectedToServer = true
+                bonjour.stop()
+                
             case .failure(let error):
                 print(error)
             }
