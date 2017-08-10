@@ -32,19 +32,19 @@ class ControlController: PlanetViewController {
         print("\(data) -> \(result)")
     }
     
-    func leftButtonStart() {
+    @objc func leftButtonStart() {
         sendPress(forButton: .left(on: true))
     }
     
-    func leftButtonEnd() {
+    @objc func leftButtonEnd() {
         sendPress(forButton: .left(on: false))
     }
     
-    func rightButtonStart() {
+    @objc func rightButtonStart() {
         sendPress(forButton: .right(on: true))
     }
     
-    func rightButtonEnd() {
+    @objc func rightButtonEnd() {
         sendPress(forButton: .right(on: false))
     }
 
