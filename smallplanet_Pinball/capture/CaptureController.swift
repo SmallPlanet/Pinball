@@ -11,7 +11,20 @@ import PlanetSwift
 import Laba
 
 
-class CaptureController: PlanetViewController {
+class CaptureController: PlanetViewController, CameraCaptureHelperDelegate {
+    
+    var captureHelper = CameraCaptureHelper(cameraPosition: .back)
+    
+    var isCapturing = false
+    
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage)
+    {
+        
+        if isCapturing {
+            print("send small version of image to server")
+        }
+        print("got image")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,6 +33,8 @@ class CaptureController: PlanetViewController {
         
         mainBundlePath = "bundle://Assets/capture/capture.xml"
         loadView()
+        
+        captureHelper.delegate = self
     }
     
 }

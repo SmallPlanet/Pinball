@@ -39,6 +39,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Pinball needs your camera in order to see the game it is playing</string>
 	<key>PlanetSwift</key>
 	<dict>
 		<key>styleSheetPath</key>

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		4603BCCB1F3CC128007CAE19 /* SwiftSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */; };
 		4603BCCC1F3CC128007CAE19 /* SwiftSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4603BCCD1F3CC2D7007CAE19 /* CameraCaptureHelper.swift */; };
 		4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4618932B1F3B577A00AA4599 /* Localizations.swift */; };
 		4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; };
 		4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -46,6 +47,7 @@
 
 /* Begin PBXFileReference section */
 		4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftSocket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4603BCCD1F3CC2D7007CAE19 /* CameraCaptureHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureHelper.swift; sourceTree = "<group>"; };
 		4618932B1F3B577A00AA4599 /* Localizations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizations.swift; sourceTree = "<group>"; };
 		4618932D1F3B57C500AA4599 /* Laba.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Laba.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		461893301F3B57C500AA4599 /* MKTween.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MKTween.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -128,6 +130,7 @@
 			isa = PBXGroup;
 			children = (
 				46C402871F3CB54700C46E3C /* CaptureController.swift */,
+				4603BCCD1F3CC2D7007CAE19 /* CameraCaptureHelper.swift */,
 			);
 			path = capture;
 			sourceTree = "<group>";
@@ -239,6 +242,7 @@
 				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
+				4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,7 +372,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -381,7 +385,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};

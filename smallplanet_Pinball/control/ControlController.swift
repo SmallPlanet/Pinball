@@ -20,11 +20,11 @@ class ControlController: PlanetViewController {
         print(result)
     }
     
-    func leftButtonPress() {
+    @objc func leftButtonPress() {
         sendButtonPress(left: true)
     }
     
-    func rightButtonPress() {
+    @objc func rightButtonPress() {
         sendButtonPress(left: false)
     }
 
