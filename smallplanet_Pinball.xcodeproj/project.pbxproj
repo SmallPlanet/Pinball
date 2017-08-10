@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4603BCCB1F3CC128007CAE19 /* SwiftSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */; };
+		4603BCCC1F3CC128007CAE19 /* SwiftSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4618932B1F3B577A00AA4599 /* Localizations.swift */; };
 		4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; };
 		4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -35,6 +37,7 @@
 				461893321F3B57C500AA4599 /* MKTween.framework in Embed Frameworks */,
 				4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */,
 				461893351F3B57C500AA4599 /* PlanetSwift.framework in Embed Frameworks */,
+				4603BCCC1F3CC128007CAE19 /* SwiftSocket.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -42,6 +45,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftSocket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4618932B1F3B577A00AA4599 /* Localizations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizations.swift; sourceTree = "<group>"; };
 		4618932D1F3B57C500AA4599 /* Laba.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Laba.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		461893301F3B57C500AA4599 /* MKTween.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MKTween.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -67,6 +71,7 @@
 				461893311F3B57C500AA4599 /* MKTween.framework in Frameworks */,
 				4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */,
 				461893341F3B57C500AA4599 /* PlanetSwift.framework in Frameworks */,
+				4603BCCB1F3CC128007CAE19 /* SwiftSocket.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +89,7 @@
 		4632CB041F3B53BE00359AA3 = {
 			isa = PBXGroup;
 			children = (
+				4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */,
 				461893331F3B57C500AA4599 /* PlanetSwift.framework */,
 				461893301F3B57C500AA4599 /* MKTween.framework */,
 				4618932D1F3B57C500AA4599 /* Laba.framework */,
