@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scene id="root" xmlns="http://schema.smallplanet.com/PlanetUI">
     <Constraint firstItem="root" ruleSet="fillSuperview" />
-	
-	<Label id="titleLabel" text="Pinball" styleId="LabelBld" textAlignment="center"/>
-	<Constraint firstItem="titleLabel" ruleSet="fillSuperview" />
+    
+    <View id="background" backgroundColor="#EEEEEEFF" />
+    <Constraint firstItem="background" ruleSet="fillSuperview" />
+    
+    <Button id="controlModeButton" title="Control Mode" styleId="ButtonStd" />
+    <Constraint firstItem="controlModeButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="controlModeButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="controlModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="controlModeButton" firstAttribute="top" secondItem="root" secondAttribute="top" constant="100" />
+    
+    <Button id="captureModeButton" title="Capture Mode" styleId="ButtonStd" />
+    <Constraint firstItem="captureModeButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="captureModeButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="captureModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="captureModeButton" firstAttribute="top" secondItem="controlModeButton" secondAttribute="bottom" constant="20" />
+
 
 </Scene>

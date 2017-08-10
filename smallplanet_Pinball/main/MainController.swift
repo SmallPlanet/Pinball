@@ -16,15 +16,26 @@ class MainController: PlanetViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.title = "Pinball"
         
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
         
-        titleLabel.view.Animate("!<100!f")
+        captureModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(CaptureController(), animated: true)
+        }
+        
+        controlModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(ControlController(), animated: true)
+        }
     }
-
-    fileprivate var titleLabel: View {
-        return mainXmlView!.elementForId("titleLabel")!.asView!
+    
+    fileprivate var captureModeButton: Button {
+        return mainXmlView!.elementForId("captureModeButton")!.asButton!
+    }
+    
+    fileprivate var controlModeButton: Button {
+        return mainXmlView!.elementForId("controlModeButton")!.asButton!
     }
     
 }

@@ -20,6 +20,9 @@
 		4632CB161F3B53BE00359AA3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB141F3B53BE00359AA3 /* Main.storyboard */; };
 		4632CB181F3B53BE00359AA3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB171F3B53BE00359AA3 /* Assets.xcassets */; };
 		4632CB1B1F3B53BE00359AA3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB191F3B53BE00359AA3 /* LaunchScreen.storyboard */; };
+		46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */; };
+		46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402871F3CB54700C46E3C /* CaptureController.swift */; };
+		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -51,6 +54,9 @@
 		4632CB171F3B53BE00359AA3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4632CB1A1F3B53BE00359AA3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4632CB1C1F3B53BE00359AA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Closures.swift"; sourceTree = "<group>"; };
+		46C402871F3CB54700C46E3C /* CaptureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureController.swift; sourceTree = "<group>"; };
+		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,8 +104,11 @@
 		4632CB0F1F3B53BE00359AA3 /* smallplanet_Pinball */ = {
 			isa = PBXGroup;
 			children = (
+				46C402891F3CBB2500C46E3C /* control */,
+				46C402861F3CB54700C46E3C /* capture */,
 				461893371F3B58C300AA4599 /* main */,
 				4618932B1F3B577A00AA4599 /* Localizations.swift */,
+				46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */,
 				4632CB101F3B53BE00359AA3 /* AppDelegate.swift */,
 				4632CB141F3B53BE00359AA3 /* Main.storyboard */,
 				4632CB171F3B53BE00359AA3 /* Assets.xcassets */,
@@ -107,6 +116,22 @@
 				4632CB1C1F3B53BE00359AA3 /* Info.plist */,
 			);
 			path = smallplanet_Pinball;
+			sourceTree = "<group>";
+		};
+		46C402861F3CB54700C46E3C /* capture */ = {
+			isa = PBXGroup;
+			children = (
+				46C402871F3CB54700C46E3C /* CaptureController.swift */,
+			);
+			path = capture;
+			sourceTree = "<group>";
+		};
+		46C402891F3CBB2500C46E3C /* control */ = {
+			isa = PBXGroup;
+			children = (
+				46C4028A1F3CBB2500C46E3C /* ControlController.swift */,
+			);
+			path = control;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -202,7 +227,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */,
+				46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */,
 				461893391F3B58C300AA4599 /* MainController.swift in Sources */,
+				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 			);

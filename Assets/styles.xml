@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Object id="styles" xmlns="http://schema.smallplanet.com/PlanetUI">
 
+    <Button styleId="ButtonStd" backgroundColor="#AAAAAAFF" backgroundColorHighlighted="#888888FF" cornerRadius="5"/>
+
+
     <Label styleId="LabelStd" fontName="GillSans" fontSize="18" textColor="@config(Color.text)" />
     <Label styleId="LabelBld" fontName="GillSans-SemiBold" fontSize="18" textColor="@config(Color.text)" />
     <TextView styleID="StoryText" />

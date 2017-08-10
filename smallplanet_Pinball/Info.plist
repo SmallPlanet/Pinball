@@ -39,5 +39,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>PlanetSwift</key>
+	<dict>
+		<key>styleSheetPath</key>
+		<string>bundle://Assets/styles.xml</string>
+	</dict>
 </dict>
 </plist>
