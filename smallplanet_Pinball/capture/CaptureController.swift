@@ -90,7 +90,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     var leftButtonPressed:Byte = 0
     var rightButtonPressed:Byte = 0
     
-    func sendPress(forButton type: ButtonType) {
+    func sendPress(forButton type: PinballInterface.ButtonType) {
         let data: String
         switch type {
         case .left(let on):

@@ -26,6 +26,7 @@
 		46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */; };
 		46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402871F3CB54700C46E3C /* CaptureController.swift */; };
 		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
+		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -63,6 +64,7 @@
 		46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Closures.swift"; sourceTree = "<group>"; };
 		46C402871F3CB54700C46E3C /* CaptureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureController.swift; sourceTree = "<group>"; };
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
+		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,6 +118,7 @@
 				46C402861F3CB54700C46E3C /* capture */,
 				461893371F3B58C300AA4599 /* main */,
 				4618932B1F3B577A00AA4599 /* Localizations.swift */,
+				A9C946411F3E0AB200CEA23C /* PinballInterface.swift */,
 				46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */,
 				4632CB101F3B53BE00359AA3 /* AppDelegate.swift */,
 				4632CB141F3B53BE00359AA3 /* Main.storyboard */,
@@ -240,6 +243,7 @@
 				46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */,
 				461893391F3B58C300AA4599 /* MainController.swift in Sources */,
 				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
+				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 				4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */,
