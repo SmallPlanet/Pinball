@@ -44,6 +44,12 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
                                 count: MemoryLayout.size(ofValue: sizeAsInt))
             
             let result = serverSocket?.send(data: sizeAsData)
+            
+            var byteArray = [Byte]()
+            byteArray.append(leftButtonPressed)
+            byteArray.append(rightButtonPressed)
+            serverSocket?.send(data: byteArray)
+            
             serverSocket?.send(data: jpegData)
             
             DispatchQueue.main.async {
@@ -76,6 +82,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     // MARK: Hardware Controller
     var client: TCPClient!
     
+    var leftButtonPressed:Byte = 0
+    var rightButtonPressed:Byte = 0
+    
     func sendPress(forButton type: ButtonType) {
         let data: String
         switch type {
@@ -89,18 +98,22 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     }
     
     @objc func leftButtonStart() {
+        leftButtonPressed = 1
         sendPress(forButton: .left(on: true))
     }
     
     @objc func leftButtonEnd() {
+        leftButtonPressed = 0
         sendPress(forButton: .left(on: false))
     }
     
     @objc func rightButtonStart() {
+        rightButtonPressed = 1
         sendPress(forButton: .right(on: true))
     }
     
     @objc func rightButtonEnd() {
+        rightButtonPressed = 0
         sendPress(forButton: .right(on: false))
     } 
     override func viewWillAppear(_ animated: Bool) {

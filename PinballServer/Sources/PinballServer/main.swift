@@ -61,13 +61,19 @@ while true {
                         UInt32(jpegSizeAsBytes[1]) << 8 |
                         UInt32(jpegSizeAsBytes[0])
                     
+                    guard let buttonStatesAsBytes = client.read(2, timeout: 500) else {
+                        break
+                    }
+                    let leftButton:Byte = buttonStatesAsBytes[0]
+                    let rightButton:Byte = buttonStatesAsBytes[1]
+                    
                     guard let jpegData = client.read(Int(jpegSize), timeout: 500) else {
                         break
                     }
                     
                     do {
                         
-                        let outputFilePath = "\(outputFolderPath)/\(imageNumber).jpg"
+                        let outputFilePath = "\(outputFolderPath)/\(leftButton)_\(rightButton)_\(imageNumber).jpg"
                         
                         print("  saving image \(outputFilePath)")
                         
