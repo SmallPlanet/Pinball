@@ -42,8 +42,7 @@ class PinballInterface {
         case .success:
             print("Connection successful 🎉")
         case .failure(let error):
-            print("Connectioned failed 💩")
-            print(error)
+            print("Connectioned failed 💩 \(error)")
         }
     }
     
@@ -76,9 +75,19 @@ class PinballInterface {
         case .right(let on):
             data = "R" + (on ? "1" : "0")
             rightButtonPressed = on
-       }
-        let result = client.send(string: data)
-        print("\(data) -> \(result)")
+        }
+        
+        print("Sending: \(data)")
+        switch client.send(string: data) {
+        case .success:
+            if let response = client.read(1, timeout: 1) {
+                print("response: \(response)")
+            } else {
+                print("failure: no response from device")
+            }
+        case .failure(let error):
+            print("failure: \(error)")
+        }
     }
     
     init(address: String, port: Int32) {

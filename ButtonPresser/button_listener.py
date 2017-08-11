@@ -9,6 +9,7 @@ PORT = 8000 # Arbitrary non-privileged port
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print 'Socket created'
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1 )
 
 #Bind socket to local host and port
 try:
@@ -25,40 +26,42 @@ print 'Socket now listening'
 
 #Function for handling connections. This will be used to create threads
 def clientthread(conn):
-    #Sending message to connected client
-    conn.send('Welcome to the server. Type something and hit enter\n') #send only takes string
-
     #infinite loop so that function do not terminate and thread do not end.
     while True:
 
         #Receiving from client
         data = conn.recv(1024)
-        reply = 'OK...' + data
+
         if not data:
+	    reply = chr(1) # 1 = FAILURE
             break
 
-	gpioObject.setValue(1)
-        time.sleep(0.2)
-        gpioObject.setValue(0)
+        value = 1
+        if data.endswith("0"):
+            value = 0
 
+        if data.startswith("R"):
+            rightButton.setValue(value)
+        else:
+            leftButton.setValue(value)
+
+        reply = chr(0) # 0 == OKAY
         conn.sendall(reply)
 
     #came out of loop
     conn.close()
 
 
-gpioObject  = onionGpio.OnionGpio(11)
-
-status = gpioObject.setOutputDirection(0)
+leftButton  = onionGpio.OnionGpio(1)
+rightButton = onionGpio.OnionGpio(0)
+status = leftButton.setOutputDirection(0)
+status = rightButton.setOutputDirection(0)
 
 value = 0
 while True:
     conn, addr = s.accept()
     print 'Connected with ' + addr[0] + ':' + str(addr[1])
     start_new_thread(clientthread, (conn,))
-#    value = (value + 1) % 2
-#    status = gpioObject.setValue(value)
-#    time.sleep(1)
 
 s.close()
 
