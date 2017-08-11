@@ -46,8 +46,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             let result = serverSocket?.send(data: sizeAsData)
             
             var byteArray = [Byte]()
-            byteArray.append(leftButtonPressed)
-            byteArray.append(rightButtonPressed)
+            byteArray.append(pinball.leftButtonPressed ? 0 : 1)
+            byteArray.append(pinball.rightButtonPressed ? 0 : 1)
             _ = serverSocket?.send(data: byteArray)
             
             _ = serverSocket?.send(data: jpegData)
@@ -85,10 +85,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     }
     
     // MARK: Hardware Controller
-    var pinball: PinballInterface = PinballInterface(address: "192.168.7.99", port: 8000)
-
-    var leftButtonPressed:Byte = 0
-    var rightButtonPressed:Byte = 0
+    var pinball = PinballInterface(address: "192.168.7.99", port: 8000)
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)

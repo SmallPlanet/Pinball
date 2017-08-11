@@ -11,7 +11,7 @@ import PlanetSwift
 import Laba
 
 class ControlController: PlanetViewController, PinballPlayer {
-    var pinball: PinballInterface = PinballInterface(address: "192.168.7.99", port: 8000)
+    var pinball = PinballInterface(address: "192.168.7.99", port: 8000)
     
     override func viewDidLoad() {
         super.viewDidLoad()

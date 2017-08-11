@@ -34,6 +34,9 @@ class PinballInterface {
     
     var client: TCPClient
     
+    var leftButtonPressed = false
+    var rightButtonPressed = false
+    
     func connect() {
         switch client.connect(timeout: 3) {
         case .success:
@@ -69,9 +72,11 @@ class PinballInterface {
         switch type {
         case .left(let on):
             data = "L" + (on ? "1" : "0")
+            leftButtonPressed = on
         case .right(let on):
             data = "R" + (on ? "1" : "0")
-        }
+            rightButtonPressed = on
+       }
         let result = client.send(string: data)
         print("\(data) -> \(result)")
     }
