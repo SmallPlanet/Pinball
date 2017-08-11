@@ -46,8 +46,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             let result = serverSocket?.send(data: sizeAsData)
             
             var byteArray = [Byte]()
-            byteArray.append(pinball.leftButtonPressed ? 0 : 1)
-            byteArray.append(pinball.rightButtonPressed ? 0 : 1)
+            byteArray.append(pinball.leftButtonPressed ? 1 : 0)
+            byteArray.append(pinball.rightButtonPressed ? 1 : 0)
             _ = serverSocket?.send(data: byteArray)
             
             _ = serverSocket?.send(data: jpegData)
