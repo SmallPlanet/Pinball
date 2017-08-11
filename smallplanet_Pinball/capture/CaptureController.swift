@@ -76,8 +76,13 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
         captureHelper.delegate = self
         
         findCaptureServer()
+        
+        UIApplication.shared.isIdleTimerDisabled = true
     }
     
+    override func viewDidDisappear(_ animated: Bool) {
+        UIApplication.shared.isIdleTimerDisabled = false
+    }
     
     // MARK: Hardware Controller
     var client: TCPClient!
