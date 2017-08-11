@@ -32,26 +32,28 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage)
     {
-        
         if isConnectedToServer {
-            
             // get the actual bytes out of the CIImage
             guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
                 return
             }
-            
             
             // send the size of the image data
             var sizeAsInt = UInt32(jpegData.count)
             let sizeAsData = Data(bytes: &sizeAsInt,
                                 count: MemoryLayout.size(ofValue: sizeAsInt))
             
-            serverSocket?.send(data: sizeAsData)
+            let result = serverSocket?.send(data: sizeAsData)
             serverSocket?.send(data: jpegData)
             
             DispatchQueue.main.async {
+                self.preview.imageView.image = UIImage(data: jpegData)
                 self.imageNumber += 1
                 self.statusLabel.label.text = "Sending image \(self.imageNumber) (\(sizeAsInt) bytes)"
+                
+                if result!.isFailure {
+                    self.disconnectedFromServer()
+                }
             }
         }
         //print("got image")
@@ -126,7 +128,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     }
     
     
-    // MARK: Autodiscovery of cature server
+    // MARK: Autodiscovery of capture server
     var bonjour = NetServiceBrowser()
     var services = [NetService]()
     func findCaptureServer() {
@@ -187,9 +189,21 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
                 statusLabel.label.text = "Connected to capture server!"
                 
             case .failure(let error):
+                
+                disconnectedFromServer()
+                
                 print(error)
             }
         }
+    }
+    
+    func disconnectedFromServer() {
+        serverSocket = nil
+        imageNumber = 0
+        isConnectedToServer = false
+        findCaptureServer()
+        
+        statusLabel.label.text = "Connection lost, searching..."
     }
     
     func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
@@ -200,8 +214,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
 
     
     
-    fileprivate var preview: View {
-        return mainXmlView!.elementForId("preview")!.asView!
+    fileprivate var preview: ImageView {
+        return mainXmlView!.elementForId("preview")!.asImageView!
     }
     fileprivate var cameraLabel: Label {
         return mainXmlView!.elementForId("cameraLabel")!.asLabel!
