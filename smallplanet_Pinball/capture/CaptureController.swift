@@ -19,7 +19,7 @@ extension NSData {
     }
 }
 
-class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
+class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
     let ciContext = CIContext(options: [:])
     
@@ -48,9 +48,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
             var byteArray = [Byte]()
             byteArray.append(leftButtonPressed)
             byteArray.append(rightButtonPressed)
-            serverSocket?.send(data: byteArray)
+            _ = serverSocket?.send(data: byteArray)
             
-            serverSocket?.send(data: jpegData)
+            _ = serverSocket?.send(data: jpegData)
             
             DispatchQueue.main.async {
                 self.preview.imageView.image = UIImage(data: jpegData)
@@ -67,16 +67,16 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.title = "Capture Mode"
+        title = "Capture Mode"
         
         mainBundlePath = "bundle://Assets/capture/capture.xml"
         loadView()
         
         captureHelper.delegate = self
-        
         findCaptureServer()
-        
+
+        setupButtons()
+
         UIApplication.shared.isIdleTimerDisabled = true
     }
     
@@ -85,64 +85,14 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     }
     
     // MARK: Hardware Controller
-    var client: TCPClient!
-    
+    var pinball: PinballInterface = PinballInterface(address: "192.168.7.99", port: 8000)
+
     var leftButtonPressed:Byte = 0
     var rightButtonPressed:Byte = 0
-    
-    func sendPress(forButton type: PinballInterface.ButtonType) {
-        let data: String
-        switch type {
-        case .left(let on):
-            data = "L" + (on ? "1" : "0")
-        case .right(let on):
-            data = "R" + (on ? "1" : "0")
-        }
-        let result = client.send(string: data)
-        print("\(data) -> \(result)")
-    }
-    
-    @objc func leftButtonStart() {
-        leftButtonPressed = 1
-        sendPress(forButton: .left(on: true))
-    }
-    
-    @objc func leftButtonEnd() {
-        leftButtonPressed = 0
-        sendPress(forButton: .left(on: false))
-    }
-    
-    @objc func rightButtonStart() {
-        rightButtonPressed = 1
-        sendPress(forButton: .right(on: true))
-    }
-    
-    @objc func rightButtonEnd() {
-        rightButtonPressed = 0
-        sendPress(forButton: .right(on: false))
-    } 
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        leftButton.button.addTarget(self, action: #selector(leftButtonStart), for: .touchDown)
-        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchUpInside)
-        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchDragExit)
-        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchCancel)
-        
-        rightButton.button.addTarget(self, action: #selector(rightButtonStart), for: .touchDown)
-        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchUpInside)
-        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchDragExit)
-        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchCancel)
-        
-        client = TCPClient(address: "192.168.3.1", port: 8000)
-        
-        switch client.connect(timeout: 3) {
-        case .success:
-            print("Connection successful 🎉")
-        case .failure(let error):
-            print("Connectioned failed 💩")
-            print(error)
-        }
+        pinball.connect()
     }
     
     
@@ -229,8 +179,6 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
         services.remove(at: services.index(of: sender)!)
     }
 
-
-    
     
     fileprivate var preview: ImageView {
         return mainXmlView!.elementForId("preview")!.asImageView!
@@ -241,10 +189,10 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
-    fileprivate var leftButton: Button {
+    internal var leftButton: Button {
         return mainXmlView!.elementForId("leftButton")!.asButton!
     }
-    fileprivate var rightButton: Button {
+    internal var rightButton: Button {
         return mainXmlView!.elementForId("rightButton")!.asButton!
     }
     
