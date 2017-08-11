@@ -28,6 +28,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     var isCapturing = false
     var isConnectedToServer = false
     var serverSocket:TCPClient? = nil
+    var imageNumber = 0
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage)
     {
@@ -48,7 +49,10 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
             serverSocket?.send(data: sizeAsData)
             serverSocket?.send(data: jpegData)
             
-            print ("sent jpeg of size \(jpegData.count)")
+            DispatchQueue.main.async {
+                self.imageNumber += 1
+                self.statusLabel.label.text = "Sending image \(self.imageNumber) (\(sizeAsInt) bytes)"
+            }
         }
         //print("got image")
     }
@@ -67,12 +71,69 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     }
     
     
+    // MARK: Hardware Controller
+    var client: TCPClient!
+    
+    func sendPress(forButton type: ButtonType) {
+        let data: String
+        switch type {
+        case .left(let on):
+            data = "L" + (on ? "1" : "0")
+        case .right(let on):
+            data = "R" + (on ? "1" : "0")
+        }
+        let result = client.send(string: data)
+        print("\(data) -> \(result)")
+    }
+    
+    @objc func leftButtonStart() {
+        sendPress(forButton: .left(on: true))
+    }
+    
+    @objc func leftButtonEnd() {
+        sendPress(forButton: .left(on: false))
+    }
+    
+    @objc func rightButtonStart() {
+        sendPress(forButton: .right(on: true))
+    }
+    
+    @objc func rightButtonEnd() {
+        sendPress(forButton: .right(on: false))
+    } 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        leftButton.button.addTarget(self, action: #selector(leftButtonStart), for: .touchDown)
+        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchUpInside)
+        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchDragExit)
+        leftButton.button.addTarget(self, action: #selector(leftButtonEnd), for: .touchCancel)
+        
+        rightButton.button.addTarget(self, action: #selector(rightButtonStart), for: .touchDown)
+        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchUpInside)
+        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchDragExit)
+        rightButton.button.addTarget(self, action: #selector(rightButtonEnd), for: .touchCancel)
+        
+        client = TCPClient(address: "192.168.3.1", port: 8000)
+        
+        switch client.connect(timeout: 3) {
+        case .success:
+            print("Connection successful 🎉")
+        case .failure(let error):
+            print("Connectioned failed 💩")
+            print(error)
+        }
+    }
+    
+    
     // MARK: Autodiscovery of cature server
     var bonjour = NetServiceBrowser()
     var services = [NetService]()
     func findCaptureServer() {
         bonjour.delegate = self
         bonjour.searchForServices(ofType: "_pinball._tcp.", inDomain: "local.")
+        
+        statusLabel.label.text = "Searching for capture server..."
     }
     
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
@@ -80,6 +141,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
         services.append(service)
         service.delegate = self
         service.resolve(withTimeout: 15)
+        
+        statusLabel.label.text = "Capture server found!"
     }
     
     func netServiceDidResolveAddress(_ sender: NetService) {
@@ -117,8 +180,11 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
             case .success:
                 print("connected to capture server")
                 
+                imageNumber = 0
                 isConnectedToServer = true
                 bonjour.stop()
+                
+                statusLabel.label.text = "Connected to capture server!"
                 
             case .failure(let error):
                 print(error)
@@ -132,6 +198,23 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, NetS
     }
 
 
+    
+    
+    fileprivate var preview: View {
+        return mainXmlView!.elementForId("preview")!.asView!
+    }
+    fileprivate var cameraLabel: Label {
+        return mainXmlView!.elementForId("cameraLabel")!.asLabel!
+    }
+    fileprivate var statusLabel: Label {
+        return mainXmlView!.elementForId("statusLabel")!.asLabel!
+    }
+    fileprivate var leftButton: Button {
+        return mainXmlView!.elementForId("leftButton")!.asButton!
+    }
+    fileprivate var rightButton: Button {
+        return mainXmlView!.elementForId("rightButton")!.asButton!
+    }
     
 }
 
