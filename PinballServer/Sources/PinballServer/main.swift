@@ -29,8 +29,9 @@ bonjour.publish()
 
 print("server is listening on port \(bonjourPort)...")
 
-let server = TCPServer(address: "0.0.0.0", port: bonjourPort)
+
 while true {
+    let server = TCPServer(address: "0.0.0.0", port: bonjourPort)
     switch server.listen() {
     case .success:
         while true {
@@ -53,7 +54,7 @@ while true {
                 while(true) {
                     
                     // first we get the size of the jpeg data
-                    guard let jpegSizeAsBytes = client.read(4, timeout: 500) else {
+                    guard let jpegSizeAsBytes = client.read(4, timeout: 1) else {
                         break
                     }
                     let jpegSize = UInt32(jpegSizeAsBytes[3]) << 24 |
@@ -61,13 +62,13 @@ while true {
                         UInt32(jpegSizeAsBytes[1]) << 8 |
                         UInt32(jpegSizeAsBytes[0])
                     
-                    guard let buttonStatesAsBytes = client.read(2, timeout: 500) else {
+                    guard let buttonStatesAsBytes = client.read(2, timeout: 1) else {
                         break
                     }
                     let leftButton:Byte = buttonStatesAsBytes[0]
                     let rightButton:Byte = buttonStatesAsBytes[1]
                     
-                    guard let jpegData = client.read(Int(jpegSize), timeout: 500) else {
+                    guard let jpegData = client.read(Int(jpegSize), timeout: 1) else {
                         break
                     }
                     
@@ -85,6 +86,8 @@ while true {
                     imageNumber += 1
                 }
                 
+                print("client session completed.")
+                
                 
             } else {
                 print("accept error")
@@ -93,6 +96,8 @@ while true {
     case .failure(let error):
         print(error)
     }
+    
+    server.close()
 }
 
 
