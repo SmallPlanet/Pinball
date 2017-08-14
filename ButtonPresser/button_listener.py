@@ -3,6 +3,7 @@ import time
 import socket
 import sys
 from thread import *
+from OmegaExpansion import relayExp
 
 HOST = ''   # Symbolic name, meaning all available interfaces
 PORT = 8000 # Arbitrary non-privileged port
@@ -41,9 +42,11 @@ def clientthread(conn):
             value = 0
 
         if data.startswith("R"):
-            rightButton.setValue(value)
+            relayExp.setChannel(flipperRelays, 1, value)
+            # rightButton.setValue(value)
         else:
-            leftButton.setValue(value)
+            relayExp.setChannel(flipperRelays, 0, value)
+            # leftButton..setValue(value)
 
         reply = chr(0) # 0 == OKAY
         conn.sendall(reply)
@@ -57,6 +60,12 @@ rightButton = onionGpio.OnionGpio(0)
 status = leftButton.setOutputDirection(0)
 status = rightButton.setOutputDirection(0)
 
+# relays
+
+flipperRelays = 7
+relayExp.driverInit(flipperRelays)
+
+
 value = 0
 while True:
     conn, addr = s.accept()
@@ -64,4 +73,3 @@ while True:
     start_new_thread(clientthread, (conn,))
 
 s.close()
-
