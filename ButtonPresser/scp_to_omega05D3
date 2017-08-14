@@ -1,0 +1,4 @@
+#!/bin/sh
+
+scp button_listener.py root@omega-05D3.local:/root/button_listener.py
+
