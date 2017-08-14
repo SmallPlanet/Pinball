@@ -76,7 +76,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         findCaptureServer()
 
         setupButtons()
-
+        
+        beginRemoteControlServer()
+        
         UIApplication.shared.isIdleTimerDisabled = true
     }
     
@@ -90,6 +92,86 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
+    }
+    
+    
+    
+    // MARK: Remote control server
+    let bonjourPort:Int32 = 7759
+    var bonjourServer = NetService(domain: "local.", type: "_pinball_remote._tcp.", name: "Pinball Remote Control Server", port: 7759)
+    
+    func netServiceWillPublish(_ sender: NetService) {
+        print("netServiceWillPublish")
+    }
+    
+    func netServiceDidPublish(_ sender: NetService) {
+        print("netServiceDidPublish")
+    }
+    
+    func netService(_ sender: NetService, didNotPublish errorDict: [String : NSNumber]) {
+        print("didNotPublish: \(errorDict)")
+    }
+
+    func beginRemoteControlServer() {
+        print("advertising on bonjour...")
+        bonjourServer.delegate = self
+        bonjourServer.publish()
+        
+        DispatchQueue.global(qos: .background).async {
+            
+            while true {
+                let server = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
+                switch server.listen() {
+                case .success:
+                    while true {
+                        if let client = server.accept() {
+                            
+                            while(true) {
+                                guard let buttonStatesAsBytes = client.read(2, timeout: 500) else {
+                                    break
+                                }
+                                let leftButton:Byte = buttonStatesAsBytes[0]
+                                let rightButton:Byte = buttonStatesAsBytes[1]
+                                
+                                if self.pinball.leftButtonPressed == true && leftButton == 0 {
+                                    DispatchQueue.main.async {
+                                        self.leftButton.button.isHighlighted = false
+                                        self.pinball.leftButtonEnd()
+                                    }
+                                }
+                                if self.pinball.leftButtonPressed == false && leftButton == 1 {
+                                    DispatchQueue.main.async {
+                                        self.leftButton.button.isHighlighted = true
+                                        self.pinball.leftButtonStart()
+                                    }
+                                }
+                                
+                                if self.pinball.rightButtonPressed == true && rightButton == 0 {
+                                    DispatchQueue.main.async {
+                                        self.rightButton.button.isHighlighted = false
+                                        self.pinball.rightButtonEnd()
+                                    }
+                                }
+                                if self.pinball.rightButtonPressed == false && rightButton == 1 {
+                                    DispatchQueue.main.async {
+                                        self.rightButton.button.isHighlighted = true
+                                        self.pinball.rightButtonStart()
+                                    }
+                                }
+                            }
+                            
+                            print("client session completed.")
+                        } else {
+                            print("accept error")
+                        }
+                    }
+                case .failure(let error):
+                    print(error)
+                }
+                
+                server.close()
+            }
+        }
     }
     
     

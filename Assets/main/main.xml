@@ -16,5 +16,12 @@
     <Constraint firstItem="captureModeButton" firstAttribute="height" constant="40"/>
     <Constraint firstItem="captureModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
     <Constraint firstItem="captureModeButton" firstAttribute="top" secondItem="controlModeButton" secondAttribute="bottom" constant="20" />
+    
+    
+    <Button id="remoteModeButton" title="Remote Control Mode" styleId="ButtonStd" />
+    <Constraint firstItem="remoteModeButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="remoteModeButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="remoteModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="remoteModeButton" firstAttribute="top" secondItem="captureModeButton" secondAttribute="bottom" constant="20" />
 
 </Scene>

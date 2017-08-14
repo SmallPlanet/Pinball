@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scene id="root" xmlns="http://schema.smallplanet.com/PlanetUI">
+    <Constraint firstItem="root" ruleSet="fillSuperview" />
+	
+    <View id="background" backgroundColor="#EEEEEEFF" />
+    <Constraint firstItem="background" ruleSet="fillSuperview" />
+    
+    
+
+    <Button id="leftButton" title="left" styleId="ButtonStd" />
+    <Constraint firstItem="leftButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.45"/>
+    <Constraint firstItem="leftButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="5" />
+    <Constraint firstItem="leftButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.7"/>
+    <Constraint firstItem="leftButton" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="-5" />
+
+    <Button id="rightButton" title="right" styleId="ButtonStd"/>
+    <Constraint firstItem="rightButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.45"/>
+    <Constraint firstItem="rightButton" firstAttribute="right" secondItem="root" secondAttribute="right" constant="-5" />
+    <Constraint firstItem="rightButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.7"/>
+    <Constraint firstItem="rightButton" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="-5" />
+    
+    <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
+    <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
+    <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+    <Constraint firstItem="statusLabel" firstAttribute="bottom" secondItem="leftButton" secondAttribute="top" constant="-40" />
+    
+</Scene>

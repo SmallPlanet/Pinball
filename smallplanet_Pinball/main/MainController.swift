@@ -27,6 +27,10 @@ class MainController: PlanetViewController {
         controlModeButton.button.add(for: .touchUpInside) {
             self.navigationController?.pushViewController(ControlController(), animated: true)
         }
+        
+        remoteModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(RemoteController(), animated: true)
+        }
     }
     
     fileprivate var captureModeButton: Button {
@@ -34,6 +38,9 @@ class MainController: PlanetViewController {
     }
     fileprivate var controlModeButton: Button {
         return mainXmlView!.elementForId("controlModeButton")!.asButton!
+    }
+    fileprivate var remoteModeButton: Button {
+        return mainXmlView!.elementForId("remoteModeButton")!.asButton!
     }
 
 }
