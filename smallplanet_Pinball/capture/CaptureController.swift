@@ -30,6 +30,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var serverSocket:TCPClient? = nil
     var imageNumber = 0
     
+    var observers:[NSObjectProtocol] = [NSObjectProtocol]()
+    
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage)
     {
         if isConnectedToServer {
@@ -77,9 +79,38 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
 
         setupButtons()
         
-        beginRemoteControlServer()
-        
         UIApplication.shared.isIdleTimerDisabled = true
+        
+        
+        // sign up to listen to notifications from the remote control app...
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
+            if self.pinball.leftButtonPressed == true {
+                self.leftButton.button.isHighlighted = false
+                self.pinball.leftButtonEnd()
+            }
+        })
+        
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
+            if self.pinball.leftButtonPressed == false {
+                self.leftButton.button.isHighlighted = true
+                self.pinball.leftButtonStart()
+            }
+        })
+        
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
+            if self.pinball.rightButtonPressed == true {
+                self.rightButton.button.isHighlighted = false
+                self.pinball.rightButtonEnd()
+            }
+        })
+        
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
+            if self.pinball.rightButtonPressed == false {
+                self.rightButton.button.isHighlighted = true
+                self.pinball.rightButtonStart()
+            }
+        })
+        
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -90,8 +121,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         serverSocket?.close()
         serverSocket = nil
         
-        remoteControlServerRunning = false
-        remoteControlServer?.close()
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
     
     // MARK: Hardware Controller
@@ -100,92 +132,6 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
-    }
-    
-    
-    
-    // MARK: Remote control server
-    let bonjourPort:Int32 = 7759
-    var bonjourServer = NetService(domain: "local.", type: "_pinball_remote._tcp.", name: "Pinball Remote Control Server", port: 7759)
-    
-    func netServiceWillPublish(_ sender: NetService) {
-        print("netServiceWillPublish")
-    }
-    
-    func netServiceDidPublish(_ sender: NetService) {
-        print("netServiceDidPublish")
-    }
-    
-    func netService(_ sender: NetService, didNotPublish errorDict: [String : NSNumber]) {
-        print("didNotPublish: \(errorDict)")
-    }
-
-    
-    var remoteControlServer:TCPServer? = nil
-    var remoteControlServerRunning = false
-    
-    func beginRemoteControlServer() {
-        print("advertising on bonjour...")
-        bonjourServer.delegate = self
-        bonjourServer.publish()
-        
-        remoteControlServerRunning = true
-        
-        DispatchQueue.global(qos: .background).async {
-            
-            while self.remoteControlServerRunning {
-                self.remoteControlServer = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
-                switch self.remoteControlServer!.listen() {
-                case .success:
-                    while self.remoteControlServerRunning {
-                        if let client = self.remoteControlServer!.accept() {
-                            
-                            while(true) {
-                                guard let buttonStatesAsBytes = client.read(2, timeout: 500) else {
-                                    break
-                                }
-                                let leftButton:Byte = buttonStatesAsBytes[0]
-                                let rightButton:Byte = buttonStatesAsBytes[1]
-                                
-                                if self.pinball.leftButtonPressed == true && leftButton == 0 {
-                                    DispatchQueue.main.async {
-                                        self.leftButton.button.isHighlighted = false
-                                        self.pinball.leftButtonEnd()
-                                    }
-                                }
-                                if self.pinball.leftButtonPressed == false && leftButton == 1 {
-                                    DispatchQueue.main.async {
-                                        self.leftButton.button.isHighlighted = true
-                                        self.pinball.leftButtonStart()
-                                    }
-                                }
-                                
-                                if self.pinball.rightButtonPressed == true && rightButton == 0 {
-                                    DispatchQueue.main.async {
-                                        self.rightButton.button.isHighlighted = false
-                                        self.pinball.rightButtonEnd()
-                                    }
-                                }
-                                if self.pinball.rightButtonPressed == false && rightButton == 1 {
-                                    DispatchQueue.main.async {
-                                        self.rightButton.button.isHighlighted = true
-                                        self.pinball.rightButtonStart()
-                                    }
-                                }
-                            }
-                            
-                            print("client session completed.")
-                        } else {
-                            print("accept error")
-                        }
-                    }
-                case .failure(let error):
-                    print(error)
-                }
-                
-                self.remoteControlServer!.close()
-            }
-        }
     }
     
     
