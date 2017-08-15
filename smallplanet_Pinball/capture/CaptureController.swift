@@ -87,7 +87,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     }
     
     // MARK: Hardware Controller
-    var pinball = PinballInterface(address: "192.168.7.99", port: 8000)
+    var pinball = PinballInterface(address: "192.168.1.190", port: 8000)
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)

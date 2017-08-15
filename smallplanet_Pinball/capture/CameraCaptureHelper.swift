@@ -124,7 +124,7 @@ extension CameraCaptureHelper: AVCaptureVideoDataOutputSampleBufferDelegate
         let hh = image.extent.height / 2
         
         // scale down to 50 pixels on min size
-        let scale = 50 / hw
+        let scale = 200 / hw
         
         var transform = CGAffineTransform.identity
         

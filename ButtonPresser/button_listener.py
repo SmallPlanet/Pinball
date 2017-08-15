@@ -42,10 +42,10 @@ def clientthread(conn):
             value = 0
 
         if data.startswith("R"):
-            relayExp.setChannel(flipperRelays, 1, value)
+            relayExp.setChannel(relayBank1, 1, value)
             # rightButton.setValue(value)
         else:
-            relayExp.setChannel(flipperRelays, 0, value)
+            relayExp.setChannel(relayBank1, 0, value)
             # leftButton..setValue(value)
 
         reply = chr(0) # 0 == OKAY
@@ -62,8 +62,13 @@ status = rightButton.setOutputDirection(0)
 
 # relays
 
-flipperRelays = 7
-relayExp.driverInit(flipperRelays)
+relayBank1 = 7
+print("Init relay bank 1: ", relayExp.driverInit(relayBank1))
+print("Check relay bank 1: ", relayExp.checkInit(relayBank1))
+
+relayBank2 = 3
+print("Init relay bank 2: ", relayExp.driverInit(relayBank2))
+print("Check relay bank 2: ", relayExp.checkInit(relayBank2))
 
 
 value = 0
