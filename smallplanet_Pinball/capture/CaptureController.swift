@@ -59,7 +59,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                 self.imageNumber += 1
                 self.statusLabel.label.text = "Sending image \(self.imageNumber) (\(sizeAsInt) bytes)"
                 
-                if result!.isFailure {
+                if result != nil && result!.isFailure {
                     self.disconnectedFromServer()
                 }
             }

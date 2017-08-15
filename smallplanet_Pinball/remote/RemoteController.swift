@@ -18,6 +18,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
 
     var leftButtonPressed:Byte = 0
     var rightButtonPressed:Byte = 0
+    var captureModeEnabled:Byte = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,6 +53,17 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
             }
         }
         
+        captureButton.button.add(for: .touchUpInside) {
+            if self.isConnectedToServer {
+                if self.captureModeEnabled == 1 {
+                    self.captureModeEnabled = 0
+                } else {
+                    self.captureModeEnabled = 1
+                }
+                self.sendButtonStatesToServer()
+            }
+        }
+        
         UIApplication.shared.isIdleTimerDisabled = true
         
         findRemoteControlServer()
@@ -61,7 +73,14 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         var byteArray = [Byte]()
         byteArray.append(leftButtonPressed)
         byteArray.append(rightButtonPressed)
+        byteArray.append(captureModeEnabled)
         _ = serverSocket?.send(data: byteArray)
+        
+        if self.captureModeEnabled == 1 {
+            self.captureButton.button.setTitle("Capture Mode On", for:.normal)
+        }else {
+            self.captureButton.button.setTitle("Capture Mode Off", for:.normal)
+        }
     }
     
     
@@ -107,6 +126,9 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
                 
                 statusLabel.label.text = "Connected to remote control server!"
                 
+                // send initial button states to the server
+                self.sendButtonStatesToServer()
+                
             case .failure(let error):
                 
                 disconnectedFromServer()
@@ -137,6 +159,9 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     }
     internal var rightButton: Button {
         return mainXmlView!.elementForId("rightButton")!.asButton!
+    }
+    internal var captureButton: Button {
+        return mainXmlView!.elementForId("captureButton")!.asButton!
     }
     
 }

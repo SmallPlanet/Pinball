@@ -46,6 +46,17 @@ class MainController: PlanetViewController, NetServiceDelegate {
             })
         }
         
+        
+        // handle remote control notifications
+        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginCaptureMode.rawValue), object:nil, queue:nil) {_ in
+            self.navigationController?.popToRootViewController(animated: true)
+            self.navigationController?.pushViewController(CaptureController(), animated: true)
+        }
+        
+        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndCaptureMode.rawValue), object:nil, queue:nil) {_ in
+            self.navigationController?.popToRootViewController(animated: true)
+        }
+        
         beginRemoteControlServer()
     }
     
@@ -109,6 +120,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
             
             var leftButtonState:Byte = 0
             var rightButtonState:Byte = 0
+            var captureModeEnabledState:Byte = 0
             
             while true {
                 let remoteControlServer = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
@@ -118,11 +130,25 @@ class MainController: PlanetViewController, NetServiceDelegate {
                         if let client = remoteControlServer.accept() {
                             
                             while(true) {
-                                guard let buttonStatesAsBytes = client.read(2, timeout: 500) else {
+                                guard let buttonStatesAsBytes = client.read(3, timeout: 500) else {
                                     break
                                 }
                                 let leftButton:Byte = buttonStatesAsBytes[0]
                                 let rightButton:Byte = buttonStatesAsBytes[1]
+                                let captureModeEnabled:Byte = buttonStatesAsBytes[2]
+                                
+                                if captureModeEnabledState != captureModeEnabled {
+                                    if captureModeEnabled == 0 {
+                                        DispatchQueue.main.async {
+                                            NotificationCenter.default.post(name:Notification.Name(Notifications.EndCaptureMode.rawValue), object: nil, userInfo: nil)
+                                        }
+                                    } else if captureModeEnabled == 1 {
+                                        DispatchQueue.main.async {
+                                            NotificationCenter.default.post(name:Notification.Name(Notifications.BeginCaptureMode.rawValue), object: nil, userInfo: nil)
+                                        }
+                                    }
+                                    captureModeEnabledState = captureModeEnabled
+                                }
                                 
                                 if leftButtonState != leftButton {
                                     if leftButton == 0 {
