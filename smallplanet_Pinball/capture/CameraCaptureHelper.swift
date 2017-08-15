@@ -16,7 +16,7 @@ extension CGFloat {
     var radiansToDegrees: CGFloat { return self * 180 / .pi }
 }
 
-class CameraCaptureHelper: NSObject
+class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 {
     let captureSession = AVCaptureSession()
     let cameraPosition: AVCaptureDevice.Position
@@ -37,7 +37,7 @@ class CameraCaptureHelper: NSObject
     
     fileprivate func initialiseCaptureSession()
     {
-        captureSession.sessionPreset = AVCaptureSession.Preset.low
+        captureSession.sessionPreset = AVCaptureSession.Preset.high
 
         guard let camera = (AVCaptureDevice.devices(for: AVMediaType.video) )
             .filter({ $0.position == cameraPosition })
@@ -99,10 +99,14 @@ class CameraCaptureHelper: NSObject
         
         isLocked = false
     }
-}
 
-extension CameraCaptureHelper: AVCaptureVideoDataOutputSampleBufferDelegate
-{
+    
+    
+    
+    
+    var fpsCounter:Int = 0
+    var lastDate = Date()
+    
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
         var bufferCopy : CMSampleBuffer?
@@ -136,6 +140,17 @@ extension CameraCaptureHelper: AVCaptureVideoDataOutputSampleBufferDelegate
         let rotatedImage = image.transformed(by: transform)
         
         self.delegate?.newCameraImage(self, image: rotatedImage)
+        
+        fpsCounter += 1
+        
+        
+        // DEBUG code to let you print fps of camera capture
+        if abs(lastDate.timeIntervalSinceNow) > 1 {
+            //print("fps \(fpsCounter)")
+            fpsCounter = 0
+            lastDate = Date()
+        }
+        
     }
 }
 
