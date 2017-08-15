@@ -72,6 +72,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         captureSession.startRunning()
     }
     
+    func stop() {
+        captureSession.stopRunning()
+    }
+    
     func lockFocus() {
         guard let captureDevice = captureDevice else {
             return

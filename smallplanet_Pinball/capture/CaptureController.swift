@@ -84,6 +84,14 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
+        
+        captureHelper.stop()
+        
+        serverSocket?.close()
+        serverSocket = nil
+        
+        remoteControlServerRunning = false
+        remoteControlServer?.close()
     }
     
     // MARK: Hardware Controller
@@ -112,19 +120,25 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         print("didNotPublish: \(errorDict)")
     }
 
+    
+    var remoteControlServer:TCPServer? = nil
+    var remoteControlServerRunning = false
+    
     func beginRemoteControlServer() {
         print("advertising on bonjour...")
         bonjourServer.delegate = self
         bonjourServer.publish()
         
+        remoteControlServerRunning = true
+        
         DispatchQueue.global(qos: .background).async {
             
-            while true {
-                let server = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
-                switch server.listen() {
+            while self.remoteControlServerRunning {
+                self.remoteControlServer = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
+                switch self.remoteControlServer!.listen() {
                 case .success:
-                    while true {
-                        if let client = server.accept() {
+                    while self.remoteControlServerRunning {
+                        if let client = self.remoteControlServer!.accept() {
                             
                             while(true) {
                                 guard let buttonStatesAsBytes = client.read(2, timeout: 500) else {
@@ -169,7 +183,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                     print(error)
                 }
                 
-                server.close()
+                self.remoteControlServer!.close()
             }
         }
     }
