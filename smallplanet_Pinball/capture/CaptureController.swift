@@ -136,6 +136,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         serverSocket?.close()
         serverSocket = nil
         
+        pinball.disconnect()
+        
         for observer in observers {
             NotificationCenter.default.removeObserver(observer)
         }
