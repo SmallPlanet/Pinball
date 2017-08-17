@@ -23,7 +23,21 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var captureDevice : AVCaptureDevice? = nil
     
     var isLocked = false
-    var shouldProcessFrames = true
+    
+    var extraFramesToCapture:Int = 0
+    var _shouldProcessFrames:Bool = false
+    var shouldProcessFrames:Bool {
+        get {
+            return _shouldProcessFrames
+        }
+        set {
+            // if we're turning off capture frames when we are on, make sure we snag a few extra frames
+            if _shouldProcessFrames == true && newValue == false {
+                self.extraFramesToCapture = 60
+            }
+            _shouldProcessFrames = newValue
+        }
+    }
     
     weak var delegate: CameraCaptureHelperDelegate?
     
@@ -148,8 +162,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
-        if shouldProcessFrames == false {
+        if _shouldProcessFrames == false && extraFramesToCapture <= 0 {
             return
+        }
+        
+        extraFramesToCapture = extraFramesToCapture - 1
+        if extraFramesToCapture < 0 {
+            extraFramesToCapture = 0
         }
         
         let localFrameNumber = frameNumber

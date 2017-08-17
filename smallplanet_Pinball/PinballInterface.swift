@@ -14,19 +14,31 @@ protocol PinballPlayer {
     var leftButton: Button { get }
     var rightButton: Button { get }
     var pinball: PinballInterface { get }
-    func setupButtons()
+    func setupButtons(_ didChange:( ()->() )?)
 }
 
 extension PinballPlayer {
-    func setupButtons() {
+    func setupButtons(_ didChange:( ()->() )? = nil) {
         let startEvents: UIControlEvents = [.touchDown]
         let endEvents: UIControlEvents = [.touchUpInside, .touchDragExit, .touchCancel]
         
-        leftButton.button.addTarget(pinball, action: #selector(PinballInterface.leftButtonStart), for: startEvents)
-        leftButton.button.addTarget(pinball, action: #selector(PinballInterface.leftButtonEnd), for: endEvents)
+        leftButton.button.add(for: startEvents) {
+            self.pinball.leftButtonStart()
+            didChange?()
+        }
+        leftButton.button.add(for: endEvents) {
+            self.pinball.leftButtonEnd()
+            didChange?()
+        }
         
-        rightButton.button.addTarget(pinball, action: #selector(PinballInterface.rightButtonStart), for: startEvents)
-        rightButton.button.addTarget(pinball, action: #selector(PinballInterface.rightButtonEnd), for: endEvents)
+        rightButton.button.add(for: startEvents) {
+            self.pinball.rightButtonStart()
+            didChange?()
+        }
+        rightButton.button.add(for: endEvents) {
+            self.pinball.rightButtonEnd()
+            didChange?()
+        }
     }
 }
 

@@ -80,7 +80,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         captureHelper.delegate = self
         findCaptureServer()
 
-        setupButtons()
+        setupButtons(HandleShouldFrameCapture)
         
         UIApplication.shared.isIdleTimerDisabled = true
         
@@ -91,6 +91,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                 self.leftButton.button.isHighlighted = false
                 self.pinball.leftButtonEnd()
             }
+            self.HandleShouldFrameCapture()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
@@ -98,6 +99,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                 self.leftButton.button.isHighlighted = true
                 self.pinball.leftButtonStart()
             }
+            self.HandleShouldFrameCapture()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
@@ -105,6 +107,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                 self.rightButton.button.isHighlighted = false
                 self.pinball.rightButtonEnd()
             }
+            self.HandleShouldFrameCapture()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
@@ -112,8 +115,17 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                 self.rightButton.button.isHighlighted = true
                 self.pinball.rightButtonStart()
             }
+            self.HandleShouldFrameCapture()
         })
         
+    }
+    
+    func HandleShouldFrameCapture() {
+        if self.pinball.rightButtonPressed || self.pinball.leftButtonPressed {
+            captureHelper.shouldProcessFrames = true
+        } else {
+            captureHelper.shouldProcessFrames = false
+        }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
