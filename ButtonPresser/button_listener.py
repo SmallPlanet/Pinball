@@ -5,6 +5,20 @@ import sys
 from thread import *
 from OmegaExpansion import relayExp
 
+# relays
+
+relayBank1 = 6  # Left flippers
+relayBank2 = 7  # Right flippers
+
+print("Init relay bank 1: ", relayExp.driverInit(relayBank1))
+print("Check relay bank 1: ", relayExp.checkInit(relayBank1))
+
+print("Init relay bank 2: ", relayExp.driverInit(relayBank2))
+print("Check relay bank 2: ", relayExp.checkInit(relayBank2))
+
+
+# TCP socket
+
 HOST = ''   # Symbolic name, meaning all available interfaces
 PORT = 8000 # Arbitrary non-privileged port
 
@@ -42,33 +56,16 @@ def clientthread(conn):
             value = 0
 
         if data.startswith("R"):
-            relayExp.setChannel(relayBank1, 1, value)
-            # rightButton.setValue(value)
+            relayExp.setChannel(relayBank2, 1, value)
+            relayExp.setChannel(relayBank2, 0, value)
         else:
             relayExp.setChannel(relayBank1, 0, value)
-            # leftButton..setValue(value)
 
         reply = chr(0) # 0 == OKAY
         conn.sendall(reply)
 
     #came out of loop
     conn.close()
-
-
-leftButton  = onionGpio.OnionGpio(1)
-rightButton = onionGpio.OnionGpio(0)
-status = leftButton.setOutputDirection(0)
-status = rightButton.setOutputDirection(0)
-
-# relays
-
-relayBank1 = 7
-print("Init relay bank 1: ", relayExp.driverInit(relayBank1))
-print("Check relay bank 1: ", relayExp.checkInit(relayBank1))
-
-relayBank2 = 3
-print("Init relay bank 2: ", relayExp.driverInit(relayBank2))
-print("Check relay bank 2: ", relayExp.checkInit(relayBank2))
 
 
 value = 0
