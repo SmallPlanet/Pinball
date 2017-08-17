@@ -123,7 +123,9 @@ class MainController: PlanetViewController, NetServiceDelegate {
             var captureModeEnabledState:Byte = 0
             
             while true {
-                UIApplication.shared.isIdleTimerDisabled = false
+                DispatchQueue.main.async {
+                    UIApplication.shared.isIdleTimerDisabled = false
+                }
                 
                 let remoteControlServer = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
                 switch remoteControlServer.listen() {
@@ -134,7 +136,9 @@ class MainController: PlanetViewController, NetServiceDelegate {
                             while(true) {
                                 
                                 // note: while we're being used remotely, keep the device from sleeping
-                                UIApplication.shared.isIdleTimerDisabled = true
+                                DispatchQueue.main.async {
+                                    UIApplication.shared.isIdleTimerDisabled = true
+                                }
                                 
                                 guard let buttonStatesAsBytes = client.read(3, timeout: 500) else {
                                     break

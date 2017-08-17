@@ -37,7 +37,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     fileprivate func initialiseCaptureSession()
     {
-        captureSession.sessionPreset = AVCaptureSession.Preset.high
 
         guard let camera = (AVCaptureDevice.devices(for: AVMediaType.video) )
             .filter({ $0.position == cameraPosition })
@@ -47,6 +46,36 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         }
         
         captureDevice = camera
+        
+        var bestFormat:AVCaptureDevice.Format? = nil
+        var bestFrameRateRange:AVFrameRateRange? = nil
+        
+        for format in camera.formats {
+            for range in format.videoSupportedFrameRateRanges {
+                if bestFrameRateRange == nil || range.maxFrameRate > bestFrameRateRange!.maxFrameRate {
+                    bestFormat = format
+                    bestFrameRateRange = range
+                }
+            }
+        }
+        
+        if bestFormat == nil {
+            captureSession.sessionPreset = AVCaptureSession.Preset.high
+        } else {
+            
+            do {
+                try camera.lockForConfiguration()
+            
+                camera.activeFormat = bestFormat!
+                camera.activeVideoMinFrameDuration = bestFrameRateRange!.minFrameDuration
+                camera.activeVideoMaxFrameDuration = bestFrameRateRange!.minFrameDuration
+                camera.unlockForConfiguration()
+                
+                print("setting camera fps to \(bestFrameRateRange!.minFrameDuration.timescale)")
+            } catch {
+                captureSession.sessionPreset = AVCaptureSession.Preset.high
+            }
+        }
         
         do
         {
