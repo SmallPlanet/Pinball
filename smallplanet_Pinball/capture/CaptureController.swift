@@ -28,11 +28,11 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var isCapturing = false
     var isConnectedToServer = false
     var serverSocket:TCPClient? = nil
-    var imageNumber = 0
     
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
+    var lastVisibleFrameNumber:Int = 0
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {
         if isConnectedToServer {
             // get the actual bytes out of the CIImage
@@ -54,13 +54,16 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             _ = serverSocket?.send(data: jpegData)
             
-            DispatchQueue.main.async {
-                self.preview.imageView.image = UIImage(data: jpegData)
-                self.imageNumber += 1
-                self.statusLabel.label.text = "Sending image \(self.imageNumber) (\(sizeAsInt) bytes)"
-                
-                if result != nil && result!.isFailure {
-                    self.disconnectedFromServer()
+            if lastVisibleFrameNumber + 100 < frameNumber {
+                lastVisibleFrameNumber = frameNumber
+                DispatchQueue.main.async {
+                    
+                    self.preview.imageView.image = UIImage(data: jpegData)
+                    self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
+                    
+                    if result != nil && result!.isFailure {
+                        self.disconnectedFromServer()
+                    }
                 }
             }
         }
@@ -189,7 +192,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             case .success:
                 print("connected to capture server")
                 
-                imageNumber = 0
+                lastVisibleFrameNumber = 0
                 isConnectedToServer = true
                 bonjour.stop()
                 
@@ -205,8 +208,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     }
     
     func disconnectedFromServer() {
+        
+        lastVisibleFrameNumber = 0
         serverSocket = nil
-        imageNumber = 0
         isConnectedToServer = false
         findCaptureServer()
         
