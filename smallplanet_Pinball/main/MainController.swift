@@ -14,19 +14,18 @@ import SwiftSocket
 class MainController: PlanetViewController, NetServiceDelegate {
     
     public enum Notifications:String {
-        case LeftButtonDown = "LeftButtonDown"
-        case LeftButtonUp = "LeftButtonUp"
-        case RightButtonDown = "RightButtonDown"
-        case RightButtonUp = "RightButtonUp"
-        case BeginCaptureMode = "BeginCaptureMode"
-        case EndCaptureMode = "EndCaptureMode"
+        case LeftButtonDown
+        case LeftButtonUp
+        case RightButtonDown
+        case RightButtonUp
+        case BeginCaptureMode
+        case EndCaptureMode
     }
     
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.title = "Pinball"
+        title = "Pinball"
 
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
@@ -41,9 +40,9 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         remoteModeButton.button.add(for: .touchUpInside) {
             // note: if we are the remote control we probably don't want to be a remote control server...
-            self.stopRemoteControlServer({
+            self.stopRemoteControlServer{
                 self.navigationController?.pushViewController(RemoteController(), animated: true)
-            })
+            }
         }
         
         
@@ -58,6 +57,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
         }
         
         beginRemoteControlServer()
+        
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -133,7 +133,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
                     while true {
                         if let client = remoteControlServer.accept() {
                             
-                            while(true) {
+                            while true {
                                 
                                 // note: while we're being used remotely, keep the device from sleeping
                                 DispatchQueue.main.async {

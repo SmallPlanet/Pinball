@@ -121,7 +121,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     }
     
     func HandleShouldFrameCapture() {
-        if self.pinball.rightButtonPressed || self.pinball.leftButtonPressed {
+        if pinball.rightButtonPressed || pinball.leftButtonPressed {
             captureHelper.shouldProcessFrames = true
         } else {
             captureHelper.shouldProcessFrames = false
@@ -144,7 +144,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     }
     
     // MARK: Hardware Controller
-    var pinball = PinballInterface(address: "192.168.1.190", port: 8000)
+    var pinball = PinballInterface()
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
