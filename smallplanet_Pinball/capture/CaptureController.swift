@@ -176,48 +176,23 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         
         services.remove(at: services.index(of: sender)!)
         
-        var ipAddress:String? = nil
-        
-        if let addresses = sender.addresses, addresses.count > 0 {
-            for address in addresses {
-                let data = address as NSData
-                
-                let inetAddress: sockaddr_in = data.castToCPointer()
-                if inetAddress.sin_family == __uint8_t(AF_INET) {
-                    if let ip = String(cString: inet_ntoa(inetAddress.sin_addr), encoding: .ascii) {
-                        ipAddress = ip
-                    }
-                } else if inetAddress.sin_family == __uint8_t(AF_INET6) {
-                    let inetAddress6: sockaddr_in6 = data.castToCPointer()
-                    let ipStringBuffer = UnsafeMutablePointer<Int8>.allocate(capacity: Int(INET6_ADDRSTRLEN))
-                    var addr = inetAddress6.sin6_addr
-                    
-                    inet_ntop(Int32(inetAddress6.sin6_family), &addr, ipStringBuffer, __uint32_t(INET6_ADDRSTRLEN))
-                    
-                    ipStringBuffer.deallocate(capacity: Int(INET6_ADDRSTRLEN))
-                }
-            }
-        }
-        
-        if ipAddress != nil {
-            print("connecting to capture server at \(ipAddress!):\(sender.port)")
-            serverSocket = TCPClient(address: sender.hostName!, port: Int32(sender.port))
-            switch serverSocket!.connect(timeout: 5) {
-            case .success:
-                print("connected to capture server")
-                
-                lastVisibleFrameNumber = 0
-                isConnectedToServer = true
-                bonjour.stop()
-                
-                statusLabel.label.text = "Connected to capture server!"
-                
-            case .failure(let error):
-                
-                disconnectedFromServer()
-                
-                print(error)
-            }
+        print("connecting to capture server at \(sender.hostName!):\(sender.port)")
+        serverSocket = TCPClient(address: sender.hostName!, port: Int32(sender.port))
+        switch serverSocket!.connect(timeout: 5) {
+        case .success:
+            print("connected to capture server")
+            
+            lastVisibleFrameNumber = 0
+            isConnectedToServer = true
+            bonjour.stop()
+            
+            statusLabel.label.text = "Connected to capture server!"
+            
+        case .failure(let error):
+            
+            disconnectedFromServer()
+            
+            print(error)
         }
     }
     

@@ -74,7 +74,7 @@ while true {
                     
                     do {
                         
-                        let outputFilePath = "\(outputFolderPath)/\(leftButton)_\(rightButton)_\(imageNumber).jpg"
+                        let outputFilePath = "\(outputFolderPath)/\(leftButton)_\(rightButton)_\(imageNumber)_\(sessionUUID).jpg"
                         
                         print("  saving image \(outputFilePath)")
                         
