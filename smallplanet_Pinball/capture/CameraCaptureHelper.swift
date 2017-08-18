@@ -126,13 +126,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         guard let captureDevice = captureDevice else {
             return
         }
-        
+        /*
         try! captureDevice.lockForConfiguration()
         captureDevice.focusMode = .locked
         captureDevice.exposureMode = .locked
         captureDevice.whiteBalanceMode = .locked
         captureDevice.unlockForConfiguration()
-        
+        */
         isLocked = true
     }
     
@@ -141,12 +141,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             return
         }
         
+        /*
         try! captureDevice.lockForConfiguration()
         captureDevice.focusMode = .continuousAutoFocus
         captureDevice.exposureMode = .continuousAutoExposure
         captureDevice.whiteBalanceMode = .continuousAutoWhiteBalance
         captureDevice.unlockForConfiguration()
-        
+        */
         isLocked = false
     }
 
