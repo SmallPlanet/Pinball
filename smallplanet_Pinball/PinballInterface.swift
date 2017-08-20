@@ -141,9 +141,9 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     
     func netServiceDidResolveAddress(_ service: NetService) {
         services.remove(at: services.index(of: service)!)
-        let address = service.addressStrings.first ?? ""
-        print("did resolve service \(address) \(service.port)")
-        client = TCPClient(address: address, port: Int32(service.port))
+        //let address = service.addressStrings.first ?? ""
+        //print("did resolve service \(address) \(service.port)")
+        client = TCPClient(address: service.hostName!, port: Int32(service.port))
         _ = client?.connect(timeout: 5)
     }
     
