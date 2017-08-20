@@ -88,7 +88,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         // sign up to listen to notifications from the remote control app...
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
             if self.pinball.leftButtonPressed == true {
-                self.leftButton.button.isHighlighted = false
+                self.leftButton?.button.isHighlighted = false
                 self.pinball.leftButtonEnd()
             }
             self.HandleShouldFrameCapture()
@@ -96,7 +96,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
             if self.pinball.leftButtonPressed == false {
-                self.leftButton.button.isHighlighted = true
+                self.leftButton?.button.isHighlighted = true
                 self.pinball.leftButtonStart()
             }
             self.HandleShouldFrameCapture()
@@ -104,7 +104,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
             if self.pinball.rightButtonPressed == true {
-                self.rightButton.button.isHighlighted = false
+                self.rightButton?.button.isHighlighted = false
                 self.pinball.rightButtonEnd()
             }
             self.HandleShouldFrameCapture()
@@ -112,7 +112,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
             if self.pinball.rightButtonPressed == false {
-                self.rightButton.button.isHighlighted = true
+                self.rightButton?.button.isHighlighted = true
                 self.pinball.rightButtonStart()
             }
             self.HandleShouldFrameCapture()
@@ -221,10 +221,10 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
-    internal var leftButton: Button {
+    internal var leftButton: Button? {
         return mainXmlView!.elementForId("leftButton")!.asButton!
     }
-    internal var rightButton: Button {
+    internal var rightButton: Button? {
         return mainXmlView!.elementForId("rightButton")!.asButton!
     }
     

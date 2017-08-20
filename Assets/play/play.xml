@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scene id="root" xmlns="http://schema.smallplanet.com/PlanetUI">
+    <Constraint firstItem="root" ruleSet="fillSuperview" />
+	
+    <View id="background" backgroundColor="#EEEEEEFF" />
+    <Constraint firstItem="background" ruleSet="fillSuperview" />
+    
+    <ImageView id="preview" contentMode="scaleAspectFit" backgroundColor="#000000FF" cornerRadius="5" shadowRadius="4" shadowOffset="0,3" shadowColor="#000000FF" shadowOpacity="0.5" />
+    <Constraint firstItem="preview" firstAttribute="width" constant="260"/>
+    <Constraint firstItem="preview" firstAttribute="height" constant="260"/>
+    <Constraint firstItem="preview" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+    <Constraint firstItem="preview" firstAttribute="centerY" secondItem="root" secondAttribute="top" constant="240" />
+    
+    <Label id="cameraLabel" styleId="LabelStd" text="Camera Preview" textAlignment="center" />
+    <Constraint firstItem="cameraLabel" firstAttribute="width" constant="260"/>
+    <Constraint firstItem="cameraLabel" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="cameraLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+    <Constraint firstItem="cameraLabel" firstAttribute="bottom" secondItem="preview" secondAttribute="top" constant="3" />
+
+    <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
+    <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
+    <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+    <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="40" />
+
+</Scene>

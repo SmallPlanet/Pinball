@@ -11,8 +11,8 @@ import SwiftSocket
 import PlanetSwift
 
 protocol PinballPlayer {
-    var leftButton: Button { get }
-    var rightButton: Button { get }
+    var leftButton: Button? { get }
+    var rightButton: Button? { get }
     var pinball: PinballInterface { get }
     func setupButtons(_ didChange:( ()->() )?)
 }
@@ -22,20 +22,20 @@ extension PinballPlayer {
         let startEvents: UIControlEvents = [.touchDown]
         let endEvents: UIControlEvents = [.touchUpInside, .touchDragExit, .touchCancel]
         
-        leftButton.button.add(for: startEvents) {
+        leftButton?.button.add(for: startEvents) {
             self.pinball.leftButtonStart()
             didChange?()
         }
-        leftButton.button.add(for: endEvents) {
+        leftButton?.button.add(for: endEvents) {
             self.pinball.leftButtonEnd()
             didChange?()
         }
         
-        rightButton.button.add(for: startEvents) {
+        rightButton?.button.add(for: startEvents) {
             self.pinball.rightButtonStart()
             didChange?()
         }
-        rightButton.button.add(for: endEvents) {
+        rightButton?.button.add(for: endEvents) {
             self.pinball.rightButtonEnd()
             didChange?()
         }

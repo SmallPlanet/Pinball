@@ -38,6 +38,10 @@ class MainController: PlanetViewController, NetServiceDelegate {
             self.navigationController?.pushViewController(ControlController(), animated: true)
         }
         
+        playModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(PlayController(), animated: true)
+        }
+        
         remoteModeButton.button.add(for: .touchUpInside) {
             // note: if we are the remote control we probably don't want to be a remote control server...
             self.stopRemoteControlServer{
@@ -73,6 +77,10 @@ class MainController: PlanetViewController, NetServiceDelegate {
     fileprivate var remoteModeButton: Button {
         return mainXmlView!.elementForId("remoteModeButton")!.asButton!
     }
+    fileprivate var playModeButton: Button {
+        return mainXmlView!.elementForId("playModeButton")!.asButton!
+    }
+    
     
     
     

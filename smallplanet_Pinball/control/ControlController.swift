@@ -34,10 +34,10 @@ class ControlController: PlanetViewController, PinballPlayer {
         pinball.disconnect()
     }
     
-    internal var leftButton: Button {
+    internal var leftButton: Button? {
         return mainXmlView!.elementForId("leftButton")!.asButton!
     }
-    internal var rightButton: Button {
+    internal var rightButton: Button? {
         return mainXmlView!.elementForId("rightButton")!.asButton!
     }
     
