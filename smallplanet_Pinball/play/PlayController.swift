@@ -34,25 +34,33 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             
-            let left = results[0]
-            let right = results[1]
+            var left:VNClassificationObservation? = nil
+            var right:VNClassificationObservation? = nil
             
-            if left.confidence > 0.96 && self?.pinball.leftButtonPressed == false {
+            for result in results {
+                if result.identifier == "left" {
+                    left = result
+                } else if result.identifier == "right" {
+                    right = result
+                }
+            }
+            
+            if left!.confidence > 0.96 && self?.pinball.leftButtonPressed == false {
                 self?.pinball.leftButtonStart()
             }
-            if left.confidence <= 0.96 && self?.pinball.leftButtonPressed == true {
+            if left!.confidence <= 0.96 && self?.pinball.leftButtonPressed == true {
                 self?.pinball.leftButtonEnd()
             }
             
-            if right.confidence > 0.96 && self?.pinball.rightButtonPressed == false {
+            if right!.confidence > 0.96 && self?.pinball.rightButtonPressed == false {
                 self?.pinball.rightButtonStart()
             }
-            if right.confidence <= 0.96 && self?.pinball.rightButtonPressed == true {
+            if right!.confidence <= 0.96 && self?.pinball.rightButtonPressed == true {
                 self?.pinball.rightButtonEnd()
             }
                         
             DispatchQueue.main.async {
-                self?.statusLabel.label.text = "\(Int(left.confidence * 100))% \(left.identifier), \(Int(right.confidence * 100))% \(right.identifier)"
+                self?.statusLabel.label.text = "\(Int(left!.confidence * 100))% \(left!.identifier), \(Int(right!.confidence * 100))% \(right!.identifier)"
             }
         }
         
@@ -123,11 +131,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         }
                         
                         // TODO: compare returned accuracy to the accuracy recorded in the file's name
-                        let left = results[0]
-                        let right = results[1]
+                        var leftIsPressed:Int = 0
+                        var rightIsPressed:Int = 0
                         
-                        let leftIsPressed:Int = (left.confidence > 0.5 ? 1 : 0)
-                        let rightIsPressed:Int = (right.confidence > 0.5 ? 1 : 0)
+                        for result in results {
+                            if result.identifier == "left" {
+                                leftIsPressed = (result.confidence > 0.5 ? 1 : 0)
+                            } else if result.identifier == "right" {
+                                rightIsPressed = (result.confidence > 0.5 ? 1 : 0)
+                            }
+                        }
                         
                         numberOfProcessedFiles += 1
                         if (self?.currentValidationURL?.lastPathComponent.hasPrefix("\(leftIsPressed)_\(rightIsPressed)_"))! {
