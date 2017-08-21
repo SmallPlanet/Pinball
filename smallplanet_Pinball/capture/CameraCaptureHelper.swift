@@ -113,13 +113,17 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             captureSession.addOutput(videoOutput)
         }
         
-        frameNumber = 0
-        captureSession.startRunning()
+        start()
     }
     
     func stop() {
         frameNumber = 0
         captureSession.stopRunning()
+    }
+    
+    func start() {
+        frameNumber = 0
+        captureSession.startRunning()
     }
     
     func lockFocus() {

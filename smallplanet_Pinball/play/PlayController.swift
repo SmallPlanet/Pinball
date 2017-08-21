@@ -58,12 +58,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         // Run the Core ML GoogLeNetPlaces classifier on global dispatch queue
         let handler = VNImageRequestHandler(ciImage: image)
-        DispatchQueue.global(qos: .userInteractive).async {
-            do {
-                try handler.perform([request])
-            } catch {
-                print(error)
-            }
+        do {
+            try handler.perform([request])
+        } catch {
+            print(error)
         }
         
         if lastVisibleFrameNumber + 30 < frameNumber {
@@ -74,6 +72,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
 
+    
+    
+    var currentValidationURL:URL?
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Play Mode"
@@ -88,6 +89,83 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         // Load the ML model through its generated class
         model = try? VNCoreMLModel(for: nascar_9190_9288().model)
+        
+        
+        validateNascarButton.button.add(for: .touchUpInside) {
+            
+            // run through all of the images in bundle://Assets/play/validate_nascar/, run them through CoreML, calculate total
+            // validation accuracy.  I've read that the ordering of channels in the images (RGBA vs ARGB for example) might not
+            // match between how the model was trained and how it is fed in through CoreML. Is the accuracy does not match
+            // the keras validation accuracy that will confirm or deny the image is being processed correctly.
+            
+            self.captureHelper.stop()
+            
+            DispatchQueue.global(qos: .background).async {
+                do {
+                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar/")
+                    let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
+                    
+                    let allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
+                    
+                    
+                    guard let model = self.model else {
+                        return
+                    }
+                    
+                    var numberOfCorrectFiles:Float = 0
+                    var numberOfProcessedFiles:Float = 0
+                    var fileNumber:Int = 0
+                    let totalFiles:Int = allFiles.count
+                    
+                    let request = VNCoreMLRequest(model: model) { [weak self] request, error in
+                        guard let results = request.results as? [VNClassificationObservation] else {
+                            return
+                        }
+                        
+                        // TODO: compare returned accuracy to the accuracy recorded in the file's name
+                        let left = results[0]
+                        let right = results[1]
+                        
+                        let leftIsPressed:Int = (left.confidence > 0.5 ? 1 : 0)
+                        let rightIsPressed:Int = (right.confidence > 0.5 ? 1 : 0)
+                        
+                        numberOfProcessedFiles += 1
+                        if (self?.currentValidationURL?.lastPathComponent.hasPrefix("\(leftIsPressed)_\(rightIsPressed)_"))! {
+                            numberOfCorrectFiles += 1
+                        }else{
+                            print("wrong: \(self!.currentValidationURL!.lastPathComponent), guessed: \(leftIsPressed)_\(rightIsPressed)_")
+                        }
+                        
+                    }
+
+                    for file in allFiles {
+                        let ciImage = CIImage(contentsOf: file)!
+                        let handler = VNImageRequestHandler(ciImage: ciImage)
+                        
+                        DispatchQueue.main.async {
+                            self.preview.imageView.image = UIImage(ciImage: ciImage)
+                            fileNumber += 1
+                            self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
+                        }
+                        
+                        do {
+                            self.currentValidationURL = file
+                            try handler.perform([request])
+                        } catch {
+                            print(error)
+                        }
+                    }
+                    
+                    sleep(5000)
+
+                } catch let error as NSError {
+                    print(error.localizedDescription)
+                }
+                
+                self.captureHelper.start()
+            }
+            
+        }
     }
     
     func HandleShouldFrameCapture() {
@@ -122,7 +200,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
-    
+    fileprivate var validateNascarButton: Button {
+        return mainXmlView!.elementForId("validateNascarButton")!.asButton!
+    }
     
     internal var leftButton: Button? {
         return nil
