@@ -193,14 +193,14 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
             let image = CIImage(cvPixelBuffer: pixelBuffer)
             
-            let rotation:CGFloat = -90
+            let rotation:CGFloat = 90
             
             let hw = image.extent.width / 2
             let hh = image.extent.height / 2
             
             // scale down to 50 pixels on min size
-            let scaleW = 112.0 / image.extent.height
-            let scaleH = 200.0 / image.extent.height
+            let scaleW = 169.0 / image.extent.height
+            let scaleH = 300.0 / image.extent.width
             
             var transform = CGAffineTransform.identity
             
@@ -211,9 +211,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             let rotatedImage = image.transformed(by: transform)
             
-            //let croppedImage = rotatedImage.cropped(to: rotatedImage.extent.divided(atDistance: rotatedImage.extent.height/2, from: .maxYEdge).slice)
+            let croppedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
             
-            self.delegate?.newCameraImage(self, image: rotatedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+            self.delegate?.newCameraImage(self, image: croppedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
         }
  
         fpsCounter += 1

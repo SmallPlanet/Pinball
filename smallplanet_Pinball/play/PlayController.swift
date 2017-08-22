@@ -209,16 +209,17 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         autoreleasepool {
                             var ciImage = CIImage(contentsOf: file)!
                             
-                            //ciImage = ciImage.cropped(to: ciImage.extent.divided(atDistance: ciImage.extent.height/2, from: .maxYEdge).slice)
+                            ciImage = ciImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
                             
                             let handler = VNImageRequestHandler(ciImage: ciImage)
                             
                             DispatchQueue.main.async {
                                 
-                                guard let jpegData = self.ciContext.jpegRepresentation(of: ciImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+                                guard let tiffData = self.ciContext.tiffRepresentation(of: ciImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
                                     return
                                 }
-                                self.preview.imageView.image = UIImage(data:jpegData)
+                                
+                                self.preview.imageView.image = UIImage(data:tiffData)
                                 
                                 fileNumber += 1
                                 self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
