@@ -199,16 +199,19 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let hh = image.extent.height / 2
             
             // scale down to 50 pixels on min size
-            let scale = 150 / hw
+            let scaleW = 112.0 / image.extent.height
+            let scaleH = 200.0 / image.extent.height
             
             var transform = CGAffineTransform.identity
             
-            transform = transform.translatedBy(x: hh * scale, y: hw * scale)
+            transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
             transform = transform.rotated(by: rotation.degreesToRadians)
-            transform = transform.scaledBy(x: scale, y: scale)
+            transform = transform.scaledBy(x: scaleW, y: scaleH)
             transform = transform.translatedBy(x: -hw, y: -hh)
             
             let rotatedImage = image.transformed(by: transform)
+            
+            //let croppedImage = rotatedImage.cropped(to: rotatedImage.extent.divided(atDistance: rotatedImage.extent.height/2, from: .maxYEdge).slice)
             
             self.delegate?.newCameraImage(self, image: rotatedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
         }

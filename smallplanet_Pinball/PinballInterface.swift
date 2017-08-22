@@ -91,11 +91,6 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     }
     
     private func sendPress(forButton type: ButtonType) {
-        guard let client = client else {
-            print("Not yet connected")
-            return
-        }
-        
         let data: String
         switch type {
         case .left(let on):
@@ -104,6 +99,11 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         case .right(let on):
             data = "R" + (on ? "1" : "0")
             rightButtonPressed = on
+        }
+        
+        guard let client = client else {
+            print("Not yet connected")
+            return
         }
         
         print("Sending: \(data)")

@@ -21,11 +21,23 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var model:VNCoreMLModel? = nil
     var lastVisibleFrameNumber = 0
     
+    var ignoreLeftCounter:Int = 0
+    var ignoreRightCounter:Int = 0
+    
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {        
         // Create a Vision request with completion handler
         guard let model = model else {
             return
+        }
+        
+        ignoreLeftCounter -= ignoreLeftCounter
+        if ignoreLeftCounter < 0 {
+            ignoreLeftCounter = 0
+        }
+        ignoreRightCounter -= ignoreRightCounter
+        if ignoreRightCounter < 0 {
+            ignoreRightCounter = 0
         }
         
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
@@ -36,6 +48,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             var left:VNClassificationObservation? = nil
             var right:VNClassificationObservation? = nil
+            let left_threshold:Float = 0.5
+            let right_threshold:Float = 0.5
+            
             
             for result in results {
                 if result.identifier == "left" {
@@ -45,26 +60,61 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
             }
             
-            if left!.confidence > 0.96 && self?.pinball.leftButtonPressed == false {
+            // uncomment for full AI flip and unflip control
+            if left!.confidence > left_threshold && self?.pinball.leftButtonPressed == false {
                 self?.pinball.leftButtonStart()
             }
-            if left!.confidence <= 0.96 && self?.pinball.leftButtonPressed == true {
+            if left!.confidence <= left_threshold && self?.pinball.leftButtonPressed == true {
                 self?.pinball.leftButtonEnd()
             }
             
-            if right!.confidence > 0.96 && self?.pinball.rightButtonPressed == false {
+            if right!.confidence > right_threshold && self?.pinball.rightButtonPressed == false {
                 self?.pinball.rightButtonStart()
             }
-            if right!.confidence <= 0.96 && self?.pinball.rightButtonPressed == true {
+            if right!.confidence <= right_threshold && self?.pinball.rightButtonPressed == true {
                 self?.pinball.rightButtonEnd()
             }
-                        
+            
+            // uncomment for automatic unflipping of the flippers
+            /*
+             if left.confidence > left_threshold && self?.pinball.leftButtonPressed == false && self!.ignoreLeftCounter <= 0 {
+             self?.pinball.leftButtonStart()
+             
+             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
+             self?.pinball.leftButtonEnd()
+             self?.ignoreLeftCounter = 80
+             })
+             }
+             if left.confidence <= left_threshold && self?.pinball.leftButtonPressed == true {
+             //self?.pinball.leftButtonEnd()
+             }
+             
+             if right.confidence > right_threshold && self?.pinball.rightButtonPressed == false && self!.ignoreRightCounter <= 0 {
+             self?.pinball.rightButtonStart()
+             
+             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
+             self?.pinball.rightButtonEnd()
+             self?.ignoreRightCounter = 80
+             })
+             }
+             if right.confidence <= right_threshold && self?.pinball.rightButtonPressed == true {
+             //self?.pinball.rightButtonEnd()
+             }
+             */
+            
+            
+            
+            
+            let confidence = "\(Int(left!.confidence * 100))% \(left!.identifier), \(Int(right!.confidence * 100))% \(right!.identifier), \(fps) fps"
+            if left!.confidence > left_threshold || right!.confidence > right_threshold {
+                print(confidence)
+            }
             DispatchQueue.main.async {
-                self?.statusLabel.label.text = "\(Int(left!.confidence * 100))% \(left!.identifier), \(Int(right!.confidence * 100))% \(right!.identifier)"
+                self?.statusLabel.label.text = confidence
             }
         }
         
-        // Run the Core ML GoogLeNetPlaces classifier on global dispatch queue
+        // Run the Core ML classifier on global dispatch queue
         let handler = VNImageRequestHandler(ciImage: image)
         do {
             try handler.perform([request])
@@ -72,10 +122,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print(error)
         }
         
-        if lastVisibleFrameNumber + 30 < frameNumber {
+        if lastVisibleFrameNumber + 100 < frameNumber {
             lastVisibleFrameNumber = frameNumber
             DispatchQueue.main.async {
-                self.preview.imageView.image = UIImage(ciImage: image)
+                guard let jpegData = self.ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+                    return
+                }
+                self.preview.imageView.image = UIImage(data:jpegData)
             }
         }
     }
@@ -110,11 +163,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             DispatchQueue.global(qos: .background).async {
                 do {
-                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar/")
+                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar2/")
                     let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
                     
-                    let allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
+                    var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
                     
+                    allFiles.shuffle()
                     
                     guard let model = self.model else {
                         return
@@ -152,20 +206,31 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     }
 
                     for file in allFiles {
-                        let ciImage = CIImage(contentsOf: file)!
-                        let handler = VNImageRequestHandler(ciImage: ciImage)
-                        
-                        DispatchQueue.main.async {
-                            self.preview.imageView.image = UIImage(ciImage: ciImage)
-                            fileNumber += 1
-                            self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
-                        }
-                        
-                        do {
-                            self.currentValidationURL = file
-                            try handler.perform([request])
-                        } catch {
-                            print(error)
+                        autoreleasepool {
+                            var ciImage = CIImage(contentsOf: file)!
+                            
+                            //ciImage = ciImage.cropped(to: ciImage.extent.divided(atDistance: ciImage.extent.height/2, from: .maxYEdge).slice)
+                            
+                            let handler = VNImageRequestHandler(ciImage: ciImage)
+                            
+                            DispatchQueue.main.async {
+                                
+                                guard let jpegData = self.ciContext.jpegRepresentation(of: ciImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+                                    return
+                                }
+                                self.preview.imageView.image = UIImage(data:jpegData)
+                                
+                                fileNumber += 1
+                                self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
+                            }
+                            
+                            do {
+                                request.imageCropAndScaleOption = .scaleFill
+                                self.currentValidationURL = file
+                                try handler.perform([request])
+                            } catch {
+                                print(error)
+                            }
                         }
                     }
                     
@@ -227,3 +292,17 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
 }
 
+
+extension MutableCollection {
+    /// Shuffle the elements of `self` in-place.
+    mutating func shuffle() {
+        // empty and single-element collections don't shuffle
+        if count < 2 { return }
+        
+        for i in indices.dropLast() {
+            let diff = distance(from: i, to: endIndex)
+            let j = index(i, offsetBy: numericCast(arc4random_uniform(numericCast(diff))))
+            swapAt(i, j)
+        }
+    }
+}
