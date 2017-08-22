@@ -21,8 +21,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var model:VNCoreMLModel? = nil
     var lastVisibleFrameNumber = 0
     
-    var ignoreLeftCounter:Int = 0
-    var ignoreRightCounter:Int = 0
+    var leftFlipperCounter:Int = 0
+    var rightFlipperCounter:Int = 0
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {        
@@ -31,14 +31,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        ignoreLeftCounter -= ignoreLeftCounter
-        if ignoreLeftCounter < 0 {
-            ignoreLeftCounter = 0
-        }
-        ignoreRightCounter -= ignoreRightCounter
-        if ignoreRightCounter < 0 {
-            ignoreRightCounter = 0
-        }
+        leftFlipperCounter -= 1
+        rightFlipperCounter -= 1
         
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
             guard let results = request.results as? [VNClassificationObservation] else {
@@ -48,9 +42,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             var left:VNClassificationObservation? = nil
             var right:VNClassificationObservation? = nil
-            let left_threshold:Float = 0.5
-            let right_threshold:Float = 0.5
+            var left_threshold:Float = 0.99
+            var right_threshold:Float = 0.99
             
+            left_threshold += Float(self!.leftFlipperCounter) / 80.0
+            right_threshold += Float(self!.rightFlipperCounter) / 80.0
+            
+            left_threshold = max(left_threshold, 0.75)
+            right_threshold = max(right_threshold, 0.75)
             
             for result in results {
                 if result.identifier == "left" {
@@ -61,6 +60,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             // uncomment for full AI flip and unflip control
+            /*
             if left!.confidence > left_threshold && self?.pinball.leftButtonPressed == false {
                 self?.pinball.leftButtonStart()
             }
@@ -73,36 +73,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             if right!.confidence <= right_threshold && self?.pinball.rightButtonPressed == true {
                 self?.pinball.rightButtonEnd()
-            }
+            }*/
             
             // uncomment for automatic unflipping of the flippers
-            /*
-             if left.confidence > left_threshold && self?.pinball.leftButtonPressed == false && self!.ignoreLeftCounter <= 0 {
-             self?.pinball.leftButtonStart()
-             
-             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
-             self?.pinball.leftButtonEnd()
-             self?.ignoreLeftCounter = 80
-             })
-             }
-             if left.confidence <= left_threshold && self?.pinball.leftButtonPressed == true {
-             //self?.pinball.leftButtonEnd()
-             }
-             
-             if right.confidence > right_threshold && self?.pinball.rightButtonPressed == false && self!.ignoreRightCounter <= 0 {
-             self?.pinball.rightButtonStart()
-             
-             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
-             self?.pinball.rightButtonEnd()
-             self?.ignoreRightCounter = 80
-             })
-             }
-             if right.confidence <= right_threshold && self?.pinball.rightButtonPressed == true {
-             //self?.pinball.rightButtonEnd()
-             }
-             */
+            let flipDelay = 3
+            if left!.confidence > left_threshold && self!.leftFlipperCounter < -flipDelay {
+                self?.leftFlipperCounter = flipDelay
+                
+            }
+            if right!.confidence > right_threshold && self!.rightFlipperCounter < -flipDelay {
+                self?.rightFlipperCounter = flipDelay
+            }
             
             
+            if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
+                self?.pinball.leftButtonStart()
+            }
+            if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
+                self?.pinball.leftButtonEnd()
+            }
+            
+            if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
+                self?.pinball.rightButtonStart()
+            }
+            if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
+                self?.pinball.rightButtonEnd()
+            }
             
             
             let confidence = "\(Int(left!.confidence * 100))% \(left!.identifier), \(Int(right!.confidence * 100))% \(right!.identifier), \(fps) fps"

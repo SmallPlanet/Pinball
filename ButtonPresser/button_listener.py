@@ -56,10 +56,10 @@ def clientthread(conn):
             value = 0
 
         if data.startswith("R"):
-            relayExp.setChannel(relayBank2, 1, value)
-            relayExp.setChannel(relayBank2, 0, value)
-        else:
             relayExp.setChannel(relayBank1, 0, value)
+            #relayExp.setChannel(relayBank2, 0, value)
+        else:
+            relayExp.setChannel(relayBank1, 1, value)
 
         reply = chr(0) # 0 == OKAY
         conn.sendall(reply)
