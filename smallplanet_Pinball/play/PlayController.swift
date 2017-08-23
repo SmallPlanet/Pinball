@@ -24,8 +24,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
     
-    var leftFlipperWindow:[Float] = [0,0,0,0,0]
-    var rightFlipperWindow:[Float] = [0,0,0,0,0]
+    var leftFlipperWindow:[Float] = [0,0]
+    var rightFlipperWindow:[Float] = [0,0]
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {        
@@ -61,8 +61,18 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var leftFlipperShouldBePressed = false
             var rightFlipperShouldBePressed = false
             
-            var leftFlipperTotalConfidence:Float = left!.confidence
-            var rightFlipperTotalConfidence:Float = right!.confidence
+            var leftFlipperConfidence:Float = left!.confidence
+            var rightFlipperConfidence:Float = right!.confidence
+            
+            if self!.leftFlipperCounter > 0 {
+                leftFlipperConfidence = 0
+            }
+            if self!.rightFlipperCounter > 0 {
+                rightFlipperConfidence = 0
+            }
+            
+            var leftFlipperTotalConfidence:Float = leftFlipperConfidence
+            var rightFlipperTotalConfidence:Float = rightFlipperConfidence
             
             for i in 0...self!.leftFlipperWindow.count-2 {
                 self!.leftFlipperWindow[i] = self!.leftFlipperWindow[i+1]
@@ -72,21 +82,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 rightFlipperTotalConfidence += self!.rightFlipperWindow[i]
             }
             
-            self!.leftFlipperWindow[self!.leftFlipperWindow.count-1] = left!.confidence
-            self!.rightFlipperWindow[self!.rightFlipperWindow.count-1] = right!.confidence
+            self!.leftFlipperWindow[self!.leftFlipperWindow.count-1] = leftFlipperConfidence
+            self!.rightFlipperWindow[self!.rightFlipperWindow.count-1] = rightFlipperConfidence
             
-            leftFlipperShouldBePressed = leftFlipperTotalConfidence > Float(self!.leftFlipperWindow.count)/2.0 + 0.07
-            rightFlipperShouldBePressed = rightFlipperTotalConfidence > Float(self!.leftFlipperWindow.count)/2.0 + 0.07 
+            leftFlipperShouldBePressed = leftFlipperTotalConfidence > Float(self!.leftFlipperWindow.count) * 0.498
+            rightFlipperShouldBePressed = rightFlipperTotalConfidence > Float(self!.leftFlipperWindow.count) * 0.498
             
             print("\(leftFlipperTotalConfidence)  \(rightFlipperTotalConfidence)")
             
-            let flipDelay = 6
+            let flipDelay = 15
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
-                self?.leftFlipperCounter = flipDelay
+                self?.leftFlipperCounter = flipDelay/2
                 
             }
             if rightFlipperShouldBePressed && self!.rightFlipperCounter < -flipDelay {
-                self?.rightFlipperCounter = flipDelay
+                self?.rightFlipperCounter = flipDelay/2
             }
             
             
@@ -149,6 +159,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         // Load the ML model through its generated class
         model = try? VNCoreMLModel(for: nascar_9190_9288().model)
+        
+        
+        // load the overlay so we can manmually line up the flippers
+        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
+        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
+        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            return
+        }
+        overlay.imageView.image = UIImage(data:tiffData)
         
         
         validateNascarButton.button.add(for: .touchUpInside) {
@@ -271,6 +291,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     fileprivate var preview: ImageView {
         return mainXmlView!.elementForId("preview")!.asImageView!
+    }
+    fileprivate var overlay: ImageView {
+        return mainXmlView!.elementForId("overlay")!.asImageView!
     }
     fileprivate var cameraLabel: Label {
         return mainXmlView!.elementForId("cameraLabel")!.asLabel!
