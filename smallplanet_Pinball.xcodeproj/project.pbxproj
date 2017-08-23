@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4603BCCB1F3CC128007CAE19 /* SwiftSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */; };
-		4603BCCC1F3CC128007CAE19 /* SwiftSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4603BCCD1F3CC2D7007CAE19 /* CameraCaptureHelper.swift */; };
 		4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4618932B1F3B577A00AA4599 /* Localizations.swift */; };
 		4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4618932D1F3B57C500AA4599 /* Laba.framework */; };
@@ -30,6 +28,8 @@
 		46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402871F3CB54700C46E3C /* CaptureController.swift */; };
 		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
+		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
+		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,9 +40,9 @@
 			dstSubfolderSpec = 10;
 			files = (
 				461893321F3B57C500AA4599 /* MKTween.framework in Embed Frameworks */,
+				A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */,
 				4618932F1F3B57C500AA4599 /* Laba.framework in Embed Frameworks */,
 				461893351F3B57C500AA4599 /* PlanetSwift.framework in Embed Frameworks */,
-				4603BCCC1F3CC128007CAE19 /* SwiftSocket.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -50,7 +50,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftSocket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4603BCCD1F3CC2D7007CAE19 /* CameraCaptureHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureHelper.swift; sourceTree = "<group>"; };
 		4618932B1F3B577A00AA4599 /* Localizations.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Localizations.swift; sourceTree = "<group>"; };
 		4618932D1F3B57C500AA4599 /* Laba.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Laba.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -71,6 +70,7 @@
 		46C402871F3CB54700C46E3C /* CaptureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureController.swift; sourceTree = "<group>"; };
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
+		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,9 +79,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				461893311F3B57C500AA4599 /* MKTween.framework in Frameworks */,
+				A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */,
 				4618932E1F3B57C500AA4599 /* Laba.framework in Frameworks */,
 				461893341F3B57C500AA4599 /* PlanetSwift.framework in Frameworks */,
-				4603BCCB1F3CC128007CAE19 /* SwiftSocket.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -99,8 +99,8 @@
 		4632CB041F3B53BE00359AA3 = {
 			isa = PBXGroup;
 			children = (
+				A9EE3DBD1F4B78980086FDD3 /* Socket.framework */,
 				465F737A1F493915002CFF71 /* PinballModels */,
-				4603BCCA1F3CC128007CAE19 /* SwiftSocket.framework */,
 				461893331F3B57C500AA4599 /* PlanetSwift.framework */,
 				461893301F3B57C500AA4599 /* MKTween.framework */,
 				4618932D1F3B57C500AA4599 /* Laba.framework */,

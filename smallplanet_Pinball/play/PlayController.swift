@@ -9,7 +9,7 @@
 import UIKit
 import PlanetSwift
 import Laba
-import SwiftSocket
+import Socket
 import CoreML
 import Vision
 

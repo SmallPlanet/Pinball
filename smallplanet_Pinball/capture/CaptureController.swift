@@ -9,7 +9,7 @@
 import UIKit
 import PlanetSwift
 import Laba
-import SwiftSocket
+import Socket
 
 extension NSData {
     func castToCPointer<T>() -> T {
@@ -39,7 +39,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     
     var isCapturing = false
     var isConnectedToServer = false
-    var serverSocket:TCPClient? = nil
+    var serverSocket:Socket? = nil
     
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
     var lastVisibleFrameNumber:Int = 0
@@ -88,9 +88,11 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                     self.preview.imageView.image = UIImage(data: jpegData)
                     self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
                 }
+            } catch (let error) {
+                self.disconnectedFromServer()
+                print(error)
             }
         }
-        //print("got image")
     }
     
     func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte) {
@@ -220,9 +222,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         services.remove(at: services.index(of: sender)!)
         
         print("connecting to capture server at \(sender.hostName!):\(sender.port)")
-        serverSocket = TCPClient(address: sender.hostName!, port: Int32(sender.port))
-        switch serverSocket!.connect(timeout: 5) {
-        case .success:
+        serverSocket = try? Socket.create(family: .inet)
+        do {
+            try serverSocket!.connect(to: sender.hostName!, port: Int32(sender.port))
             print("connected to capture server")
             
             lastVisibleFrameNumber = 0
@@ -230,11 +232,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             bonjour.stop()
             
             statusLabel.label.text = "Connected to capture server!"
-            
-        case .failure(let error):
-            
+        } catch (let error) {
             disconnectedFromServer()
-            
             print(error)
         }
     }
@@ -247,6 +246,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             self.findCaptureServer()
             self.statusLabel.label.text = "Connection lost, searching..."
+			print("disconnected from server")
         }
     }
     

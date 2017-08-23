@@ -7,8 +7,10 @@
 //
 
 import Foundation
-import SwiftSocket
+import Socket
 import PlanetSwift
+
+typealias Byte = UInt8
 
 protocol PinballPlayer {
     var leftButton: Button? { get }
@@ -50,7 +52,9 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     }
     
     var connected = false
-    var client: TCPClient?
+    var client: Socket?
+    var hostname = ""
+    var port = Int32(0)
     
     var leftButtonPressed = false
     var rightButtonPressed = false
@@ -60,11 +64,12 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             print("Bonjour search not finished")
             return
         }
-        switch client.connect(timeout: 3) {
-        case .success:
+        print("PinballInterface connecting to \(hostname):\(port)")
+        do {
+            try client.connect(to: hostname, port: port, timeout: 500)
             connected = true
             print("Connection successful 🎉")
-        case .failure(let error):
+        } catch (let error) {
             connected = false
             print("Connectioned failed 💩 \(error)")
         }
@@ -107,14 +112,16 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         }
         
         print("Sending: \(data)")
-        switch client.send(string: data) {
-        case .success:
-            if let response = client.read(1, timeout: 1) {
-                print("response: \(response)")
-            } else {
-                print("failure: no response from device")
+        do {
+            try client.write(from: data)
+
+            var response = Data()
+            var bytesRead = 0
+            while bytesRead == 0 {
+                bytesRead = try client.read(into: &response)
             }
-        case .failure(let error):
+            
+        } catch (let error) {
             print("failure: \(error)")
         }
     }
@@ -141,10 +148,12 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     
     func netServiceDidResolveAddress(_ service: NetService) {
         services.remove(at: services.index(of: service)!)
-        //let address = service.addressStrings.first ?? ""
-        //print("did resolve service \(address) \(service.port)")
-        client = TCPClient(address: service.hostName!, port: Int32(service.port))
-        _ = client?.connect(timeout: 5)
+        client = try? Socket.create(family: .inet)
+        hostname = service.hostName!
+//        hostname = service.addressStrings.first ?? service.hostName!
+        port = Int32(service.port)
+        print("did resolve service \(hostname):\(port)")
+        connect()
     }
     
     func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {

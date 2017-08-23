@@ -1,0 +1,18 @@
+{
+  "autoPin": true,
+  "pins": [
+    {
+      "package": "CommandLine",
+      "reason": null,
+      "repositoryURL": "https://github.com/jatoben/CommandLine.git",
+      "version": "3.0.0-pre1"
+    },
+    {
+      "package": "Socket",
+      "reason": null,
+      "repositoryURL": "https://github.com/IBM-Swift/BlueSocket.git",
+      "version": "0.12.61"
+    }
+  ],
+  "version": 1
+}

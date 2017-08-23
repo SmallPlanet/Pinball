@@ -95,8 +95,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 try camera.lockForConfiguration()
                 
                 camera.activeFormat = bestFormat!
-                camera.activeVideoMinFrameDuration = bestFrameRateRange!.minFrameDuration
-                camera.activeVideoMaxFrameDuration = bestFrameRateRange!.minFrameDuration
+                var frameDuration = bestFrameRateRange!.minFrameDuration
+                frameDuration.value *= 2
+                camera.activeVideoMinFrameDuration = frameDuration
                 camera.unlockForConfiguration()
                 
                 print("setting camera fps to \(bestFrameRateRange!.minFrameDuration.timescale)")

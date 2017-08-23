@@ -9,12 +9,12 @@
 import UIKit
 import PlanetSwift
 import Laba
-import SwiftSocket
+import Socket
 
 class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServiceDelegate {
     
     var isConnectedToServer = false
-    var serverSocket:TCPClient? = nil
+    var serverSocket:Socket? = nil
 
     var leftButtonPressed:Byte = 0
     var rightButtonPressed:Byte = 0
@@ -74,7 +74,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         byteArray.append(leftButtonPressed)
         byteArray.append(rightButtonPressed)
         byteArray.append(captureModeEnabled)
-        _ = serverSocket?.send(data: byteArray)
+        _ = try! serverSocket?.write(from: Data(byteArray))
         
         if self.captureModeEnabled == 1 {
             self.captureButton.button.setTitle("Capture Mode On", for:.normal)
@@ -110,15 +110,17 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         
         // do not connect to myself, i know this is hacky
         let hostname = UIDevice.current.name.replacingOccurrences(of: "(", with: "").replacingOccurrences(of: ")", with: "").replacingOccurrences(of: " ", with: "-").replacingOccurrences(of: "'", with: "").appending(".local.")
+        print(hostname)
+        print("-----")
 
         if hostname != sender.hostName! {
             services.remove(at: services.index(of: sender)!)
             
             statusLabel.label.text = "Remote control server found!"
             
-            serverSocket = TCPClient(address: sender.hostName!, port: Int32(sender.port))
-            switch serverSocket!.connect(timeout: 5) {
-            case .success:
+            do {
+                serverSocket = try Socket.create()
+                try serverSocket?.connect(to: sender.hostName!, port: Int32(sender.port), timeout: 500)
                 print("connected to remote control server \(sender.hostName!)")
                 
                 isConnectedToServer = true
@@ -128,9 +130,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
                 
                 // send initial button states to the server
                 self.sendButtonStatesToServer()
-                
-            case .failure(let error):
-                
+            } catch (let error) {
                 disconnectedFromServer()
                 
                 print(error)
