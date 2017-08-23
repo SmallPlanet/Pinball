@@ -6,105 +6,76 @@
 	objectVersion = 46;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		"CommandLine::CommandLine::ProductTarget" /* CommandLine */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = OBJ_52 /* Build configuration list for PBXAggregateTarget "CommandLine" */;
-			buildPhases = (
-			);
-			dependencies = (
-				OBJ_55 /* PBXTargetDependency */,
-			);
-			name = CommandLine;
-			productName = CommandLine;
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
-		469882091F3CE7B20032B4DF /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469882031F3CE7A70032B4DF /* Result.swift */; };
-		4698820A1F3CE7B20032B4DF /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469882071F3CE7A70032B4DF /* Socket.swift */; };
-		4698820B1F3CE7B20032B4DF /* SwiftSocket.h in Sources */ = {isa = PBXBuildFile; fileRef = 469882061F3CE7A70032B4DF /* SwiftSocket.h */; };
-		4698820C1F3CE7B20032B4DF /* TCPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469882021F3CE7A70032B4DF /* TCPClient.swift */; };
-		4698820D1F3CE7B20032B4DF /* UDPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469882041F3CE7A70032B4DF /* UDPClient.swift */; };
-		4698820E1F3CE7B20032B4DF /* ytcpsocket.c in Sources */ = {isa = PBXBuildFile; fileRef = 469882081F3CE7A70032B4DF /* ytcpsocket.c */; };
-		4698820F1F3CE7B20032B4DF /* yudpsocket.c in Sources */ = {isa = PBXBuildFile; fileRef = 469882051F3CE7A70032B4DF /* yudpsocket.c */; };
-		OBJ_26 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
-		OBJ_32 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* Package.swift */; };
-		OBJ_38 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* main.swift */; };
-		OBJ_40 /* CommandLineKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "CommandLine::CommandLineKit::Product" /* CommandLineKit.framework */; };
-		OBJ_47 /* CommandLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* CommandLine.swift */; };
-		OBJ_48 /* Option.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* Option.swift */; };
-		OBJ_49 /* StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* StringExtensions.swift */; };
+		OBJ_30 /* CommandLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* CommandLine.swift */; };
+		OBJ_31 /* Option.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* Option.swift */; };
+		OBJ_32 /* StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* StringExtensions.swift */; };
+		OBJ_39 /* SocketProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* SocketProtocols.swift */; };
+		OBJ_40 /* SocketUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* SocketUtils.swift */; };
+		OBJ_41 /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* Socket.swift */; };
+		OBJ_48 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* main.swift */; };
+		OBJ_50 /* CommandLineKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = OBJ_22 /* CommandLineKit.framework */; };
+		OBJ_51 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* Socket.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		469881FF1F3CE74E0032B4DF /* PBXContainerItemProxy */ = {
+		A958AE731F4B69B100F653C5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = "CommandLine::CommandLineKit";
+			remoteGlobalIDString = OBJ_25;
 			remoteInfo = CommandLineKit;
 		};
-		469882001F3CE74E0032B4DF /* PBXContainerItemProxy */ = {
+		A958AE741F4B69B100F653C5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = "CommandLine::CommandLineKit";
-			remoteInfo = CommandLineKit;
+			remoteGlobalIDString = OBJ_34;
+			remoteInfo = Socket;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		469882021F3CE7A70032B4DF /* TCPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TCPClient.swift; path = ../../SwiftSocket/Sources/TCPClient.swift; sourceTree = "<group>"; };
-		469882031F3CE7A70032B4DF /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Result.swift; path = ../../SwiftSocket/Sources/Result.swift; sourceTree = "<group>"; };
-		469882041F3CE7A70032B4DF /* UDPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UDPClient.swift; path = ../../SwiftSocket/Sources/UDPClient.swift; sourceTree = "<group>"; };
-		469882051F3CE7A70032B4DF /* yudpsocket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = yudpsocket.c; path = ../../SwiftSocket/Sources/yudpsocket.c; sourceTree = "<group>"; };
-		469882061F3CE7A70032B4DF /* SwiftSocket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SwiftSocket.h; path = ../../SwiftSocket/Sources/SwiftSocket.h; sourceTree = "<group>"; };
-		469882071F3CE7A70032B4DF /* Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Socket.swift; path = ../../SwiftSocket/Sources/Socket.swift; sourceTree = "<group>"; };
-		469882081F3CE7A70032B4DF /* ytcpsocket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = ytcpsocket.c; path = ../../SwiftSocket/Sources/ytcpsocket.c; sourceTree = "<group>"; };
-		"CommandLine::CommandLineKit::Product" /* CommandLineKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CommandLineKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		OBJ_14 /* CommandLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandLine.swift; sourceTree = "<group>"; };
-		OBJ_15 /* Option.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Option.swift; sourceTree = "<group>"; };
-		OBJ_16 /* StringExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtensions.swift; sourceTree = "<group>"; };
-		OBJ_17 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/rjbowli/Development/smallplanet_Pinball/PinballServer/.build/checkouts/CommandLine.git--2975222262383774978/Package.swift"; sourceTree = "<group>"; };
+		OBJ_13 /* SocketProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketProtocols.swift; sourceTree = "<group>"; };
+		OBJ_14 /* SocketUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketUtils.swift; sourceTree = "<group>"; };
+		OBJ_15 /* Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Socket.swift; sourceTree = "<group>"; };
+		OBJ_18 /* CommandLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandLine.swift; sourceTree = "<group>"; };
+		OBJ_19 /* Option.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Option.swift; sourceTree = "<group>"; };
+		OBJ_20 /* StringExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtensions.swift; sourceTree = "<group>"; };
+		OBJ_22 /* CommandLineKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CommandLineKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		OBJ_23 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		OBJ_24 /* PinballServer */ = {isa = PBXFileReference; lastKnownFileType = text; path = PinballServer; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		OBJ_9 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		"PinballServer::PinballServer::Product" /* PinballServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = PinballServer; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		OBJ_39 /* Frameworks */ = {
+		OBJ_33 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_40 /* CommandLineKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_50 /* Frameworks */ = {
+		OBJ_42 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_49 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_50 /* CommandLineKit.framework in Frameworks */,
+				OBJ_51 /* Socket.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		469882011F3CE7910032B4DF /* SwiftSocket */ = {
-			isa = PBXGroup;
-			children = (
-				469882031F3CE7A70032B4DF /* Result.swift */,
-				469882071F3CE7A70032B4DF /* Socket.swift */,
-				469882061F3CE7A70032B4DF /* SwiftSocket.h */,
-				469882021F3CE7A70032B4DF /* TCPClient.swift */,
-				469882041F3CE7A70032B4DF /* UDPClient.swift */,
-				469882081F3CE7A70032B4DF /* ytcpsocket.c */,
-				469882051F3CE7A70032B4DF /* yudpsocket.c */,
-			);
-			path = SwiftSocket;
-			sourceTree = "<group>";
-		};
 		OBJ_10 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
@@ -115,36 +86,48 @@
 		OBJ_11 /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_12 /* CommandLine 3.0.0-pre1 */,
+				OBJ_12 /* Socket 0.12.61 */,
+				OBJ_16 /* CommandLine 3.0.0-pre1 */,
 			);
 			name = Dependencies;
 			sourceTree = "<group>";
 		};
-		OBJ_12 /* CommandLine 3.0.0-pre1 */ = {
+		OBJ_12 /* Socket 0.12.61 */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_13 /* CommandLineKit */,
-				OBJ_17 /* Package.swift */,
+				OBJ_13 /* SocketProtocols.swift */,
+				OBJ_14 /* SocketUtils.swift */,
+				OBJ_15 /* Socket.swift */,
+			);
+			name = "Socket 0.12.61";
+			path = ".build/checkouts/BlueSocket.git-3162807777605905816/Sources";
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_16 /* CommandLine 3.0.0-pre1 */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_17 /* CommandLineKit */,
 			);
 			name = "CommandLine 3.0.0-pre1";
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_13 /* CommandLineKit */ = {
+		OBJ_17 /* CommandLineKit */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_14 /* CommandLine.swift */,
-				OBJ_15 /* Option.swift */,
-				OBJ_16 /* StringExtensions.swift */,
+				OBJ_18 /* CommandLine.swift */,
+				OBJ_19 /* Option.swift */,
+				OBJ_20 /* StringExtensions.swift */,
 			);
 			name = CommandLineKit;
 			path = ".build/checkouts/CommandLine.git--2975222262383774978/CommandLineKit";
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_18 /* Products */ = {
+		OBJ_21 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				"PinballServer::PinballServer::Product" /* PinballServer */,
-				"CommandLine::CommandLineKit::Product" /* CommandLineKit.framework */,
+				OBJ_22 /* CommandLineKit.framework */,
+				OBJ_23 /* Socket.framework */,
+				OBJ_24 /* PinballServer */,
 			);
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
@@ -152,12 +135,11 @@
 		OBJ_5 /*  */ = {
 			isa = PBXGroup;
 			children = (
-				469882011F3CE7910032B4DF /* SwiftSocket */,
 				OBJ_6 /* Package.swift */,
 				OBJ_7 /* Sources */,
 				OBJ_10 /* Tests */,
 				OBJ_11 /* Dependencies */,
-				OBJ_18 /* Products */,
+				OBJ_21 /* Products */,
 			);
 			name = "";
 			sourceTree = "<group>";
@@ -182,12 +164,12 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		"CommandLine::CommandLineKit" /* CommandLineKit */ = {
+		OBJ_25 /* CommandLineKit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_43 /* Build configuration list for PBXNativeTarget "CommandLineKit" */;
+			buildConfigurationList = OBJ_26 /* Build configuration list for PBXNativeTarget "CommandLineKit" */;
 			buildPhases = (
-				OBJ_46 /* Sources */,
-				OBJ_50 /* Frameworks */,
+				OBJ_29 /* Sources */,
+				OBJ_33 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,53 +177,42 @@
 			);
 			name = CommandLineKit;
 			productName = CommandLineKit;
-			productReference = "CommandLine::CommandLineKit::Product" /* CommandLineKit.framework */;
+			productReference = OBJ_22 /* CommandLineKit.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		"CommandLine::SwiftPMPackageDescription" /* CommandLinePackageDescription */ = {
+		OBJ_34 /* Socket */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_28 /* Build configuration list for PBXNativeTarget "CommandLinePackageDescription" */;
+			buildConfigurationList = OBJ_35 /* Build configuration list for PBXNativeTarget "Socket" */;
 			buildPhases = (
-				OBJ_31 /* Sources */,
+				OBJ_38 /* Sources */,
+				OBJ_42 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = CommandLinePackageDescription;
-			productName = CommandLinePackageDescription;
+			name = Socket;
+			productName = Socket;
+			productReference = OBJ_23 /* Socket.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		"PinballServer::PinballServer" /* PinballServer */ = {
+		OBJ_43 /* PinballServer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_34 /* Build configuration list for PBXNativeTarget "PinballServer" */;
+			buildConfigurationList = OBJ_44 /* Build configuration list for PBXNativeTarget "PinballServer" */;
 			buildPhases = (
-				OBJ_37 /* Sources */,
-				OBJ_39 /* Frameworks */,
+				OBJ_47 /* Sources */,
+				OBJ_49 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				OBJ_41 /* PBXTargetDependency */,
+				OBJ_52 /* PBXTargetDependency */,
+				OBJ_53 /* PBXTargetDependency */,
 			);
 			name = PinballServer;
 			productName = PinballServer;
-			productReference = "PinballServer::PinballServer::Product" /* PinballServer */;
+			productReference = OBJ_24 /* PinballServer */;
 			productType = "com.apple.product-type.tool";
-		};
-		"PinballServer::SwiftPMPackageDescription" /* PinballServerPackageDescription */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_22 /* Build configuration list for PBXNativeTarget "PinballServerPackageDescription" */;
-			buildPhases = (
-				OBJ_25 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = PinballServerPackageDescription;
-			productName = PinballServerPackageDescription;
-			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -250,11 +221,6 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 9999;
-				TargetAttributes = {
-					"PinballServer::PinballServer" = {
-						LastSwiftMigration = 0900;
-					};
-				};
 			};
 			buildConfigurationList = OBJ_2 /* Build configuration list for PBXProject "PinballServer" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -264,103 +230,103 @@
 				en,
 			);
 			mainGroup = OBJ_5 /*  */;
-			productRefGroup = OBJ_18 /* Products */;
+			productRefGroup = OBJ_21 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				"PinballServer::SwiftPMPackageDescription" /* PinballServerPackageDescription */,
-				"CommandLine::SwiftPMPackageDescription" /* CommandLinePackageDescription */,
-				"PinballServer::PinballServer" /* PinballServer */,
-				"CommandLine::CommandLineKit" /* CommandLineKit */,
-				"CommandLine::CommandLine::ProductTarget" /* CommandLine */,
+				OBJ_25 /* CommandLineKit */,
+				OBJ_34 /* Socket */,
+				OBJ_43 /* PinballServer */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		OBJ_25 /* Sources */ = {
+		OBJ_29 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_26 /* Package.swift in Sources */,
+				OBJ_30 /* CommandLine.swift in Sources */,
+				OBJ_31 /* Option.swift in Sources */,
+				OBJ_32 /* StringExtensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_31 /* Sources */ = {
+		OBJ_38 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_32 /* Package.swift in Sources */,
+				OBJ_39 /* SocketProtocols.swift in Sources */,
+				OBJ_40 /* SocketUtils.swift in Sources */,
+				OBJ_41 /* Socket.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_37 /* Sources */ = {
+		OBJ_47 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				469882091F3CE7B20032B4DF /* Result.swift in Sources */,
-				4698820A1F3CE7B20032B4DF /* Socket.swift in Sources */,
-				4698820B1F3CE7B20032B4DF /* SwiftSocket.h in Sources */,
-				4698820C1F3CE7B20032B4DF /* TCPClient.swift in Sources */,
-				4698820D1F3CE7B20032B4DF /* UDPClient.swift in Sources */,
-				4698820E1F3CE7B20032B4DF /* ytcpsocket.c in Sources */,
-				4698820F1F3CE7B20032B4DF /* yudpsocket.c in Sources */,
-				OBJ_38 /* main.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_46 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_47 /* CommandLine.swift in Sources */,
-				OBJ_48 /* Option.swift in Sources */,
-				OBJ_49 /* StringExtensions.swift in Sources */,
+				OBJ_48 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		OBJ_41 /* PBXTargetDependency */ = {
+		OBJ_52 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = "CommandLine::CommandLineKit" /* CommandLineKit */;
-			targetProxy = 469881FF1F3CE74E0032B4DF /* PBXContainerItemProxy */;
+			target = OBJ_25 /* CommandLineKit */;
+			targetProxy = A958AE731F4B69B100F653C5 /* PBXContainerItemProxy */;
 		};
-		OBJ_55 /* PBXTargetDependency */ = {
+		OBJ_53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = "CommandLine::CommandLineKit" /* CommandLineKit */;
-			targetProxy = 469882001F3CE74E0032B4DF /* PBXContainerItemProxy */;
+			target = OBJ_34 /* Socket */;
+			targetProxy = A958AE741F4B69B100F653C5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		OBJ_23 /* Debug */ = {
+		OBJ_27 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = PinballServer.xcodeproj/CommandLineKit_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = CommandLineKit;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				TARGET_NAME = CommandLineKit;
 			};
 			name = Debug;
 		};
-		OBJ_24 /* Release */ = {
+		OBJ_28 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = PinballServer.xcodeproj/CommandLineKit_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = CommandLineKit;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				TARGET_NAME = CommandLineKit;
 			};
 			name = Release;
-		};
-		OBJ_29 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
 		};
 		OBJ_3 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -380,57 +346,50 @@
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SWIFT_PACKAGE;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 				USE_HEADERMAP = NO;
 			};
 			name = Debug;
 		};
-		OBJ_30 /* Release */ = {
+		OBJ_36 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
-		OBJ_35 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
+				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = PinballServer.xcodeproj/PinballServer_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				INFOPLIST_FILE = PinballServer.xcodeproj/Socket_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
-				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
-				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 3.0;
-				TARGET_NAME = PinballServer;
+				PRODUCT_BUNDLE_IDENTIFIER = Socket;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				TARGET_NAME = Socket;
 			};
 			name = Debug;
 		};
-		OBJ_36 /* Release */ = {
+		OBJ_37 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
+				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = PinballServer.xcodeproj/PinballServer_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				INFOPLIST_FILE = PinballServer.xcodeproj/Socket_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
-				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
-				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
-				SWIFT_VERSION = 3.0;
-				TARGET_NAME = PinballServer;
+				PRODUCT_BUNDLE_IDENTIFIER = Socket;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				TARGET_NAME = Socket;
 			};
 			name = Release;
 		};
@@ -450,63 +409,44 @@
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SWIFT_PACKAGE;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
 				USE_HEADERMAP = NO;
 			};
 			name = Release;
 		};
-		OBJ_44 /* Debug */ = {
+		OBJ_45 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = PinballServer.xcodeproj/CommandLineKit_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				INFOPLIST_FILE = PinballServer.xcodeproj/PinballServer_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
-				PRODUCT_BUNDLE_IDENTIFIER = CommandLineKit;
-				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 3.0;
-				TARGET_NAME = CommandLineKit;
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
+				TARGET_NAME = PinballServer;
 			};
 			name = Debug;
 		};
-		OBJ_45 /* Release */ = {
+		OBJ_46 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = PinballServer.xcodeproj/CommandLineKit_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				INFOPLIST_FILE = PinballServer.xcodeproj/PinballServer_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
-				PRODUCT_BUNDLE_IDENTIFIER = CommandLineKit;
-				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 3.0;
-				TARGET_NAME = CommandLineKit;
-			};
-			name = Release;
-		};
-		OBJ_53 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		OBJ_54 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
+				TARGET_NAME = PinballServer;
 			};
 			name = Release;
 		};
@@ -522,47 +462,29 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_22 /* Build configuration list for PBXNativeTarget "PinballServerPackageDescription" */ = {
+		OBJ_26 /* Build configuration list for PBXNativeTarget "CommandLineKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_23 /* Debug */,
-				OBJ_24 /* Release */,
+				OBJ_27 /* Debug */,
+				OBJ_28 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_28 /* Build configuration list for PBXNativeTarget "CommandLinePackageDescription" */ = {
+		OBJ_35 /* Build configuration list for PBXNativeTarget "Socket" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_29 /* Debug */,
-				OBJ_30 /* Release */,
+				OBJ_36 /* Debug */,
+				OBJ_37 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_34 /* Build configuration list for PBXNativeTarget "PinballServer" */ = {
+		OBJ_44 /* Build configuration list for PBXNativeTarget "PinballServer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_35 /* Debug */,
-				OBJ_36 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_43 /* Build configuration list for PBXNativeTarget "CommandLineKit" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_44 /* Debug */,
-				OBJ_45 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_52 /* Build configuration list for PBXAggregateTarget "CommandLine" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_53 /* Debug */,
-				OBJ_54 /* Release */,
+				OBJ_45 /* Debug */,
+				OBJ_46 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

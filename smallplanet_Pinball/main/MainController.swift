@@ -9,7 +9,7 @@
 import UIKit
 import PlanetSwift
 import Laba
-import SwiftSocket
+import Socket
 
 class MainController: PlanetViewController, NetServiceDelegate {
     
@@ -82,10 +82,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
     }
     
     
+    // MARK: - Remote control server
     
-    
-    
-    // MARK: Remote control server
     let bonjourPort:Int32 = 7759
     var bonjourServer = NetService(domain: "local.", type: "_pinball_remote._tcp.", name: UIDevice.current.name, port: 7759)
     
@@ -125,86 +123,110 @@ class MainController: PlanetViewController, NetServiceDelegate {
         bonjourServer.delegate = self
         
         DispatchQueue.global(qos: .background).async {
-            
-            var leftButtonState:Byte = 0
-            var rightButtonState:Byte = 0
-            var captureModeEnabledState:Byte = 0
-            
             while true {
                 DispatchQueue.main.async {
                     UIApplication.shared.isIdleTimerDisabled = false
                 }
                 
-                let remoteControlServer = TCPServer(address: "0.0.0.0", port: self.bonjourPort)
-                switch remoteControlServer.listen() {
-                case .success:
+                do {
+                    let remoteControlServer = try Socket.create(family: .inet)
+                    try remoteControlServer.listen(on: Int(self.bonjourPort))
                     while true {
-                        if let client = remoteControlServer.accept() {
-                            
-                            while true {
-                                
-                                // note: while we're being used remotely, keep the device from sleeping
-                                DispatchQueue.main.async {
-                                    UIApplication.shared.isIdleTimerDisabled = true
-                                }
-                                
-                                guard let buttonStatesAsBytes = client.read(3, timeout: 500) else {
-                                    break
-                                }
-                                let leftButton:Byte = buttonStatesAsBytes[0]
-                                let rightButton:Byte = buttonStatesAsBytes[1]
-                                let captureModeEnabled:Byte = buttonStatesAsBytes[2]
-                                
-                                if captureModeEnabledState != captureModeEnabled {
-                                    if captureModeEnabled == 0 {
-                                        DispatchQueue.main.async {
-                                            NotificationCenter.default.post(name:Notification.Name(Notifications.EndCaptureMode.rawValue), object: nil, userInfo: nil)
-                                        }
-                                    } else if captureModeEnabled == 1 {
-                                        DispatchQueue.main.async {
-                                            NotificationCenter.default.post(name:Notification.Name(Notifications.BeginCaptureMode.rawValue), object: nil, userInfo: nil)
-                                        }
-                                    }
-                                    captureModeEnabledState = captureModeEnabled
-                                }
-                                
-                                if leftButtonState != leftButton {
-                                    if leftButton == 0 {
-                                        DispatchQueue.main.async {
-                                            NotificationCenter.default.post(name:Notification.Name(Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
-                                        }
-                                    } else if leftButton == 1 {
-                                        DispatchQueue.main.async {
-                                            NotificationCenter.default.post(name:Notification.Name(Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
-                                        }
-                                    }
-                                    leftButtonState = leftButton
-                                }
-                                
-                                if rightButtonState != rightButton {
-                                    if rightButton == 0 {
-                                        DispatchQueue.main.async {
-                                            NotificationCenter.default.post(name:Notification.Name(Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
-                                        }
-                                    } else if rightButton == 1 {
-                                        DispatchQueue.main.async {
-                                            NotificationCenter.default.post(name:Notification.Name(Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
-                                        }
-                                    }
-                                    rightButtonState = rightButton
-                                }
-                            }
-                            
-                            print("client session completed.")
-                        } else {
-                            print("accept error")
-                        }
+                        let newSocket = try remoteControlServer.acceptClientConnection()
+                        self.addNewConnection(socket: newSocket)
                     }
-                case .failure(let error):
+                } catch (let error) {
                     print(error)
                 }
-                
-                remoteControlServer.close()
+            }
+        }
+    }
+    
+    let socketLockQueue = DispatchQueue(label: "com.ibm.serverSwift.socketLockQueue")
+    var connectedSockets = [Int32: Socket]()
+
+    func addNewConnection(socket: Socket) {
+        
+        var leftButtonState:Byte = 0
+        var rightButtonState:Byte = 0
+        var captureModeEnabledState:Byte = 0
+
+        // Add the new socket to the list of connected sockets...
+        socketLockQueue.sync { [unowned self, socket] in
+            self.connectedSockets[socket.socketfd] = socket
+        }
+        
+        // Get the global concurrent queue...
+        let queue = DispatchQueue.global(qos: .default)
+        
+        // Create the run loop work item and dispatch to the default priority global queue...
+        queue.async { [socket] in
+            var readData = Data(capacity: 4096)
+            var tmpData = Data(capacity: 4096)
+            
+            while true {
+                do {
+                    
+                    while readData.count < 3 {
+                        tmpData.removeAll(keepingCapacity: true)
+                        _ = try socket.read(into: &tmpData)
+                        readData.append(tmpData)
+                    }
+                    
+                    let leftButton:Byte = readData[0]
+                    let rightButton:Byte = readData[1]
+                    let captureModeEnabled:Byte = readData[2]
+
+                    readData.removeSubrange(0..<3)
+                    
+                    if captureModeEnabledState != captureModeEnabled {
+                        if captureModeEnabled == 0 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.EndCaptureMode.rawValue), object: nil, userInfo: nil)
+                            }
+                        } else if captureModeEnabled == 1 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.BeginCaptureMode.rawValue), object: nil, userInfo: nil)
+                            }
+                        }
+                        captureModeEnabledState = captureModeEnabled
+                    }
+                    
+                    if leftButtonState != leftButton {
+                        if leftButton == 0 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                            }
+                        } else if leftButton == 1 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
+                            }
+                        }
+                        leftButtonState = leftButton
+                    }
+                    
+                    if rightButtonState != rightButton {
+                        if rightButton == 0 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                            }
+                        } else if rightButton == 1 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
+                            }
+                        }
+                        rightButtonState = rightButton
+                    }
+                    
+                }
+                    
+                catch let error {
+                    guard let socketError = error as? Socket.Error else {
+                        print("Unexpected error by connection at \(socket.remoteHostname):\(socket.remotePort)...")
+                        return
+                    }
+                    print("Error reported by connection at \(socket.remoteHostname):\(socket.remotePort):\n \(socketError.description)")
+                }
             }
         }
     }

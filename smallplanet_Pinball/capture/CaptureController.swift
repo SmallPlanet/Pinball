@@ -9,7 +9,7 @@
 import UIKit
 import PlanetSwift
 import Laba
-import SwiftSocket
+import Socket
 
 extension NSData {
     func castToCPointer<T>() -> T {
@@ -27,7 +27,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     
     var isCapturing = false
     var isConnectedToServer = false
-    var serverSocket:TCPClient? = nil
+    var serverSocket:Socket? = nil
     
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
     var lastVisibleFrameNumber:Int = 0
@@ -45,29 +45,28 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             let sizeAsData = Data(bytes: &sizeAsInt,
                                 count: MemoryLayout.size(ofValue: sizeAsInt))
             
-            let result = serverSocket?.send(data: sizeAsData)
+            do {
+                _ = try serverSocket?.write(from: sizeAsData)
+                
+                var byteArray = [Byte]()
+                byteArray.append(pinball.leftButtonPressed ? 1 : 0)
+                byteArray.append(pinball.rightButtonPressed ? 1 : 0)
+                _ = try serverSocket?.write(from: Data(byteArray))
+                
+                _ = try serverSocket?.write(from: jpegData)
             
-            var byteArray = [Byte]()
-            byteArray.append(pinball.leftButtonPressed ? 1 : 0)
-            byteArray.append(pinball.rightButtonPressed ? 1 : 0)
-            _ = serverSocket?.send(data: byteArray)
-            
-            _ = serverSocket?.send(data: jpegData)
-            
-            if lastVisibleFrameNumber + 100 < frameNumber {
-                lastVisibleFrameNumber = frameNumber
-                DispatchQueue.main.async {
-                    
-                    self.preview.imageView.image = UIImage(data: jpegData)
-                    self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
-                    
-                    if result != nil && result!.isFailure {
-                        self.disconnectedFromServer()
+                if lastVisibleFrameNumber + 100 < frameNumber {
+                    lastVisibleFrameNumber = frameNumber
+                    DispatchQueue.main.async {
+                        self.preview.imageView.image = UIImage(data: jpegData)
+                        self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
                     }
                 }
+            } catch (let error) {
+                self.disconnectedFromServer()
+                print(error)
             }
         }
-        //print("got image")
     }
 
     override func viewDidLoad() {
@@ -177,9 +176,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         services.remove(at: services.index(of: sender)!)
         
         print("connecting to capture server at \(sender.hostName!):\(sender.port)")
-        serverSocket = TCPClient(address: sender.hostName!, port: Int32(sender.port))
-        switch serverSocket!.connect(timeout: 5) {
-        case .success:
+        serverSocket = try? Socket.create(family: .inet)
+        do {
+            try serverSocket!.connect(to: sender.hostName!, port: Int32(sender.port))
             print("connected to capture server")
             
             lastVisibleFrameNumber = 0
@@ -187,11 +186,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             bonjour.stop()
             
             statusLabel.label.text = "Connected to capture server!"
-            
-        case .failure(let error):
-            
+        } catch (let error) {
             disconnectedFromServer()
-            
             print(error)
         }
     }
@@ -204,6 +200,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         findCaptureServer()
         
         statusLabel.label.text = "Connection lost, searching..."
+        print("disconnected from server")
     }
     
     func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
