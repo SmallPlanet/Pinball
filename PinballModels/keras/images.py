@@ -9,11 +9,21 @@ IMG_SIZE = [169,120]
 
 K.set_image_data_format('channels_last')
 
+maskImg = img_to_array(load_img("mask.png", grayscale=True, target_size=[300,169]))
+maskImg = maskImg[180:300,0:169]
+
 def preprocess_img(img):
     # rescale to standard size
     #img = transform.resize(img, (IMG_SIZE[1], IMG_SIZE[0]), mode='constant')    
-    return img[180:300,0:169]
-    #return img
+    img = img[180:300,0:169]
+    
+    # mask out the lights...
+    for i in range(img.shape[0]):
+        for j in range(img[i].shape[0]):
+            if maskImg[i][j] < 128:
+                img[i][j] = 0
+        
+    return img
 
 def get_labels(img_path):
     filename = img_path.split('/')[-1]
