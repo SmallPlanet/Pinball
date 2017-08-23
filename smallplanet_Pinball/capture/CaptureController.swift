@@ -19,6 +19,18 @@ extension NSData {
     }
 }
 
+class SkippedFrame {
+    var jpegData:Data
+    var leftButton:Byte
+    var rightButton:Byte
+    
+    init(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte) {
+        self.jpegData = jpegData
+        self.leftButton = leftButton
+        self.rightButton = rightButton
+    }
+}
+
 class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
     let ciContext = CIContext(options: [:])
@@ -32,42 +44,73 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
     var lastVisibleFrameNumber:Int = 0
     
+    var storedFrames:[SkippedFrame] = []
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    {
+        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            return
+        }
+        
+        storedFrames.append(SkippedFrame(jpegData, (pinball.leftButtonPressed ? 1 : 0), (pinball.rightButtonPressed ? 1 : 0)))
+        
+        while storedFrames.count > 60 {
+            storedFrames.remove(at: 0)
+        }
+    }
+    
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {
         if isConnectedToServer {
+            
+            // send all stored frames
+            while storedFrames.count > 0 {
+                
+                sendCameraFrame(storedFrames[0].jpegData,
+                                storedFrames[0].leftButton,
+                                storedFrames[0].rightButton)
+                
+                storedFrames.remove(at: 0)
+            }
+            
+            
             // get the actual bytes out of the CIImage
             guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
                 return
             }
             
-            // send the size of the image data
-            var sizeAsInt = UInt32(jpegData.count)
-            let sizeAsData = Data(bytes: &sizeAsInt,
-                                count: MemoryLayout.size(ofValue: sizeAsInt))
-            
-            let result = serverSocket?.send(data: sizeAsData)
-            
-            var byteArray = [Byte]()
-            byteArray.append(pinball.leftButtonPressed ? 1 : 0)
-            byteArray.append(pinball.rightButtonPressed ? 1 : 0)
-            _ = serverSocket?.send(data: byteArray)
-            
-            _ = serverSocket?.send(data: jpegData)
+            sendCameraFrame(jpegData,
+                            (pinball.leftButtonPressed ? 1 : 0),
+                            (pinball.rightButtonPressed ? 1 : 0))
             
             if lastVisibleFrameNumber + 100 < frameNumber {
                 lastVisibleFrameNumber = frameNumber
                 DispatchQueue.main.async {
-                    
                     self.preview.imageView.image = UIImage(data: jpegData)
                     self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
-                    
-                    if result != nil && result!.isFailure {
-                        self.disconnectedFromServer()
-                    }
                 }
             }
         }
         //print("got image")
+    }
+    
+    func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte) {
+        // send the size of the image data
+        var sizeAsInt = UInt32(jpegData.count)
+        let sizeAsData = Data(bytes: &sizeAsInt,
+                              count: MemoryLayout.size(ofValue: sizeAsInt))
+        
+        let result = serverSocket?.send(data: sizeAsData)
+        
+        var byteArray = [Byte]()
+        byteArray.append(pinball.leftButtonPressed ? 1 : 0)
+        byteArray.append(pinball.rightButtonPressed ? 1 : 0)
+        _ = serverSocket?.send(data: byteArray)
+        
+        _ = serverSocket?.send(data: jpegData)
+        
+        if result != nil && result!.isFailure {
+            self.disconnectedFromServer()
+        }
     }
 
     override func viewDidLoad() {
@@ -197,13 +240,14 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     }
     
     func disconnectedFromServer() {
-        
-        lastVisibleFrameNumber = 0
-        serverSocket = nil
-        isConnectedToServer = false
-        findCaptureServer()
-        
-        statusLabel.label.text = "Connection lost, searching..."
+        DispatchQueue.main.async {
+            self.lastVisibleFrameNumber = 0
+            self.serverSocket = nil
+            self.isConnectedToServer = false
+            
+            self.findCaptureServer()
+            self.statusLabel.label.text = "Connection lost, searching..."
+        }
     }
     
     func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {

@@ -22,6 +22,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     let cameraPosition: AVCaptureDevice.Position
     var captureDevice : AVCaptureDevice? = nil
     
+    var maskImage:CIImage?
+    
     var isLocked = false
     
     var extraFramesToCapture:Int = 0
@@ -33,7 +35,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         set {
             // if we're turning off capture frames when we are on, make sure we snag a few extra frames
             if _shouldProcessFrames == true && newValue == false {
-                self.extraFramesToCapture = 60
+                self.extraFramesToCapture = 100
             }
             _shouldProcessFrames = newValue
         }
@@ -113,6 +115,11 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             captureSession.addOutput(videoOutput)
         }
         
+        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
+        maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
+        maskImage = maskImage!.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+
+        
         start()
     }
     
@@ -167,15 +174,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
-        if _shouldProcessFrames == false && extraFramesToCapture <= 0 {
-            return
-        }
-        
-        extraFramesToCapture = extraFramesToCapture - 1
-        if extraFramesToCapture < 0 {
-            extraFramesToCapture = 0
-        }
-        
         let localFrameNumber = frameNumber
         frameNumber = frameNumber + 1
         
@@ -213,7 +211,18 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             let croppedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
             
-            self.delegate?.newCameraImage(self, image: croppedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+            let maskedImage = self.maskImage!.composited(over: croppedImage)
+            
+            if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
+                self.delegate?.skippedCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+            } else {
+                self.extraFramesToCapture = self.extraFramesToCapture - 1
+                if self.extraFramesToCapture < 0 {
+                    self.extraFramesToCapture = 0
+                }
+                
+                self.delegate?.newCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+            }
         }
  
         fpsCounter += 1
@@ -230,5 +239,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
 protocol CameraCaptureHelperDelegate: class
 {
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
 }

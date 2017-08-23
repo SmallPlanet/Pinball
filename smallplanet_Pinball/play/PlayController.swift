@@ -13,6 +13,7 @@ import SwiftSocket
 import CoreML
 import Vision
 
+@available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer {
     
     let ciContext = CIContext(options: [:])
@@ -26,6 +27,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var leftFlipperWindow:[Float] = [0,0]
     var rightFlipperWindow:[Float] = [0,0]
+    
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    {
+        
+    }
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {        
@@ -170,6 +176,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
         overlay.imageView.image = UIImage(data:tiffData)
         
+        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
+        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
+        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
         
         validateNascarButton.button.add(for: .touchUpInside) {
             
@@ -229,6 +238,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                             var ciImage = CIImage(contentsOf: file)!
                             
                             ciImage = ciImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+                            
+                            ciImage = maskImage.composited(over: ciImage)
                             
                             let handler = VNImageRequestHandler(ciImage: ciImage)
                             

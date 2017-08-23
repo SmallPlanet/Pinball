@@ -39,7 +39,11 @@ class MainController: PlanetViewController, NetServiceDelegate {
         }
         
         playModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(PlayController(), animated: true)
+            if #available(iOS 11.0, *) {
+                self.navigationController?.pushViewController(PlayController(), animated: true)
+            } else {
+                
+            }
         }
         
         remoteModeButton.button.add(for: .touchUpInside) {
@@ -63,7 +67,11 @@ class MainController: PlanetViewController, NetServiceDelegate {
         beginRemoteControlServer()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
-            self.navigationController?.pushViewController(PlayController(), animated: true)
+            if #available(iOS 11.0, *) {
+                self.navigationController?.pushViewController(PlayController(), animated: true)
+            } else {
+                
+            }
         })
     }
     
