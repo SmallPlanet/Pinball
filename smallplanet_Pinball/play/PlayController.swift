@@ -24,6 +24,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
     
+    var leftFlipperWindow:[Int] = [0,0,0,0,0,0]
+    var rightFlipperWindow:[Int] = [0,0,0,0,0,0]
+    
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {        
         // Create a Vision request with completion handler
@@ -60,15 +63,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             
-            // TODO: now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
+            // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
             // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
             // (basically trying to handle small false positives)
+            var leftFlipperShouldBePressed = left!.confidence > left_threshold
+            var rightFlipperShouldBePressed = right!.confidence > right_threshold
+            
+            var leftFlipperCount:Int = ( leftFlipperShouldBePressed ? 1 : 0 )
+            var rightFlipperCount:Int = ( rightFlipperShouldBePressed ? 1 : 0 )
+            for i in 0...self!.leftFlipperWindow.count-2 {
+                self!.leftFlipperWindow[i] = self!.leftFlipperWindow[i+1]
+                self!.rightFlipperWindow[i] = self!.rightFlipperWindow[i+1]
+                leftFlipperCount += self!.leftFlipperWindow[i]
+                rightFlipperCount += self!.rightFlipperWindow[i]
+            }
+            
+            leftFlipperShouldBePressed = leftFlipperCount >= 4
+            rightFlipperShouldBePressed = rightFlipperCount >= 4
+            
+            
+            
             let flipDelay = 3
-            if left!.confidence > left_threshold && self!.leftFlipperCounter < -flipDelay {
+            if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay
                 
             }
-            if right!.confidence > right_threshold && self!.rightFlipperCounter < -flipDelay {
+            if rightFlipperShouldBePressed && self!.rightFlipperCounter < -flipDelay {
                 self?.rightFlipperCounter = flipDelay
             }
             
