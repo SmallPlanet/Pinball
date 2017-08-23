@@ -59,23 +59,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
             }
             
-            // uncomment for full AI flip and unflip control
-            /*
-            if left!.confidence > left_threshold && self?.pinball.leftButtonPressed == false {
-                self?.pinball.leftButtonStart()
-            }
-            if left!.confidence <= left_threshold && self?.pinball.leftButtonPressed == true {
-                self?.pinball.leftButtonEnd()
-            }
             
-            if right!.confidence > right_threshold && self?.pinball.rightButtonPressed == false {
-                self?.pinball.rightButtonStart()
-            }
-            if right!.confidence <= right_threshold && self?.pinball.rightButtonPressed == true {
-                self?.pinball.rightButtonEnd()
-            }*/
-            
-            // uncomment for automatic unflipping of the flippers
+            // TODO: now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
+            // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
+            // (basically trying to handle small false positives)
             let flipDelay = 3
             if left!.confidence > left_threshold && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay
@@ -103,7 +90,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             let confidence = "\(Int(left!.confidence * 100))% \(left!.identifier), \(Int(right!.confidence * 100))% \(right!.identifier), \(fps) fps"
             if left!.confidence > left_threshold || right!.confidence > right_threshold {
-                print(confidence)
+                //print(confidence)
             }
             DispatchQueue.main.async {
                 self?.statusLabel.label.text = confidence

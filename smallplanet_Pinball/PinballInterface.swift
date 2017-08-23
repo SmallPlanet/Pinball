@@ -102,7 +102,7 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         }
         
         guard let client = client else {
-            print("Not yet connected")
+            //print("Not yet connected")
             return
         }
         
