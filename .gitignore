@@ -3,6 +3,7 @@
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
 Assets/play/validate_nascar2/
+PinballModels/keras/__pycache__
 
 ## Build generated
 build/
