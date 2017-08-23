@@ -176,7 +176,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
         let localFrameNumber = frameNumber
-        frameNumber = frameNumber + 1
+        
+        if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
+            
+        } else {
+            frameNumber = frameNumber + 1
+        }
         
         serialQueue.async {
             var bufferCopy : CMSampleBuffer?

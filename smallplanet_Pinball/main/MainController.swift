@@ -66,13 +66,14 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         beginRemoteControlServer()
         
+        /*
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             if #available(iOS 11.0, *) {
                 self.navigationController?.pushViewController(PlayController(), animated: true)
             } else {
                 
             }
-        })
+        })*/
     }
     
     override func viewDidAppear(_ animated: Bool) {

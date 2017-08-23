@@ -88,9 +88,6 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                     self.preview.imageView.image = UIImage(data: jpegData)
                     self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
                 }
-            } catch (let error) {
-                self.disconnectedFromServer()
-                print(error)
             }
         }
     }
@@ -101,17 +98,18 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         let sizeAsData = Data(bytes: &sizeAsInt,
                               count: MemoryLayout.size(ofValue: sizeAsInt))
         
-        let result = serverSocket?.send(data: sizeAsData)
-        
-        var byteArray = [Byte]()
-        byteArray.append(pinball.leftButtonPressed ? 1 : 0)
-        byteArray.append(pinball.rightButtonPressed ? 1 : 0)
-        _ = serverSocket?.send(data: byteArray)
-        
-        _ = serverSocket?.send(data: jpegData)
-        
-        if result != nil && result!.isFailure {
+        do {
+            _ = try serverSocket?.write(from: sizeAsData)
+            
+            var byteArray = [Byte]()
+            byteArray.append(pinball.leftButtonPressed ? 1 : 0)
+            byteArray.append(pinball.rightButtonPressed ? 1 : 0)
+            _ = try serverSocket?.write(from: Data(byteArray))
+            
+            _ = try serverSocket?.write(from: jpegData)
+        } catch (let error) {
             self.disconnectedFromServer()
+            print(error)
         }
     }
 
