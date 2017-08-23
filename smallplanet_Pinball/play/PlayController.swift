@@ -24,8 +24,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
     
-    var leftFlipperWindow:[Int] = [0,0,0,0,0,0]
-    var rightFlipperWindow:[Int] = [0,0,0,0,0,0]
+    var leftFlipperWindow:[Float] = [0,0,0,0,0]
+    var rightFlipperWindow:[Float] = [0,0,0,0,0]
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
     {        
@@ -43,16 +43,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             
+            // find the results which match each flipper
             var left:VNClassificationObservation? = nil
             var right:VNClassificationObservation? = nil
-            var left_threshold:Float = 0.99
-            var right_threshold:Float = 0.99
-            
-            left_threshold += Float(self!.leftFlipperCounter) / 80.0
-            right_threshold += Float(self!.rightFlipperCounter) / 80.0
-            
-            left_threshold = max(left_threshold, 0.75)
-            right_threshold = max(right_threshold, 0.75)
             
             for result in results {
                 if result.identifier == "left" {
@@ -62,28 +55,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
             }
             
-            
             // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
             // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
             // (basically trying to handle small false positives)
-            var leftFlipperShouldBePressed = left!.confidence > left_threshold
-            var rightFlipperShouldBePressed = right!.confidence > right_threshold
+            var leftFlipperShouldBePressed = false
+            var rightFlipperShouldBePressed = false
             
-            var leftFlipperCount:Int = ( leftFlipperShouldBePressed ? 1 : 0 )
-            var rightFlipperCount:Int = ( rightFlipperShouldBePressed ? 1 : 0 )
+            var leftFlipperTotalConfidence:Float = left!.confidence
+            var rightFlipperTotalConfidence:Float = right!.confidence
+            
             for i in 0...self!.leftFlipperWindow.count-2 {
                 self!.leftFlipperWindow[i] = self!.leftFlipperWindow[i+1]
                 self!.rightFlipperWindow[i] = self!.rightFlipperWindow[i+1]
-                leftFlipperCount += self!.leftFlipperWindow[i]
-                rightFlipperCount += self!.rightFlipperWindow[i]
+                
+                leftFlipperTotalConfidence += self!.leftFlipperWindow[i]
+                rightFlipperTotalConfidence += self!.rightFlipperWindow[i]
             }
             
-            leftFlipperShouldBePressed = leftFlipperCount >= 4
-            rightFlipperShouldBePressed = rightFlipperCount >= 4
+            self!.leftFlipperWindow[self!.leftFlipperWindow.count-1] = left!.confidence
+            self!.rightFlipperWindow[self!.rightFlipperWindow.count-1] = right!.confidence
             
+            leftFlipperShouldBePressed = leftFlipperTotalConfidence > Float(self!.leftFlipperWindow.count)/2.0 + 0.07
+            rightFlipperShouldBePressed = rightFlipperTotalConfidence > Float(self!.leftFlipperWindow.count)/2.0 + 0.07 
             
+            print("\(leftFlipperTotalConfidence)  \(rightFlipperTotalConfidence)")
             
-            let flipDelay = 3
+            let flipDelay = 6
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay
                 
@@ -95,6 +92,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
                 self?.pinball.leftButtonStart()
+                print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
             }
             if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
                 self?.pinball.leftButtonEnd()
@@ -102,16 +100,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
                 self?.pinball.rightButtonStart()
+                print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
             }
             if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
                 self?.pinball.rightButtonEnd()
             }
             
             
-            let confidence = "\(Int(left!.confidence * 100))% \(left!.identifier), \(Int(right!.confidence * 100))% \(right!.identifier), \(fps) fps"
-            if left!.confidence > left_threshold || right!.confidence > right_threshold {
-                //print(confidence)
-            }
+            let confidence = "\(leftFlipperTotalConfidence)% \(left!.identifier), \(rightFlipperTotalConfidence)% \(right!.identifier), \(fps) fps"
             DispatchQueue.main.async {
                 self?.statusLabel.label.text = confidence
             }
