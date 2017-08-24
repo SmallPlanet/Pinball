@@ -91,10 +91,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             self!.leftFlipperWindow[self!.leftFlipperWindow.count-1] = leftFlipperConfidence
             self!.rightFlipperWindow[self!.rightFlipperWindow.count-1] = rightFlipperConfidence
             
-            leftFlipperShouldBePressed = leftFlipperTotalConfidence > Float(self!.leftFlipperWindow.count) * 0.498
-            rightFlipperShouldBePressed = rightFlipperTotalConfidence > Float(self!.leftFlipperWindow.count) * 0.498
+            leftFlipperShouldBePressed = leftFlipperTotalConfidence > 0.2
+            rightFlipperShouldBePressed = rightFlipperTotalConfidence > 0.2
             
-            print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence))")
+            //print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
             
             let flipDelay = 15
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
@@ -108,7 +108,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
                 self?.pinball.leftButtonStart()
-                print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+                print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
             }
             if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
                 self?.pinball.leftButtonEnd()
@@ -116,7 +116,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
                 self?.pinball.rightButtonStart()
-                print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+                print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
             }
             if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
                 self?.pinball.rightButtonEnd()
