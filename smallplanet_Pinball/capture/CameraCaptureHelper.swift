@@ -173,6 +173,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     let serialQueue = DispatchQueue(label: "frame_transformation_queue")
     
+    var motionBlurFrames:[CIImage] = []
+    
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
         let localFrameNumber = frameNumber
@@ -217,7 +219,27 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             let croppedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
             
-            let maskedImage = self.maskImage!.composited(over: croppedImage)
+            self.motionBlurFrames.append(croppedImage)
+            while self.motionBlurFrames.count > 5 {
+                self.motionBlurFrames.remove(at: 0)
+            }
+            
+            var lastBlurFrame = self.motionBlurFrames[0]
+            for i in 1..<self.motionBlurFrames.count {
+                // merge on our motion blur frames
+                guard let colorMatrix = CIFilter(name:"CIColorMatrix") else {
+                    return
+                }
+                let blurFactor:CGFloat = 0.8
+                
+                colorMatrix.setDefaults()
+                colorMatrix.setValue(self.motionBlurFrames[i], forKey: kCIInputImageKey)
+                colorMatrix.setValue(CIVector(x:0.0,y:0.0,z:0.0,w:blurFactor), forKey: "inputAVector")
+                
+                lastBlurFrame = self.motionBlurFrames[i].composited(over: lastBlurFrame)
+            }
+            
+            let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
             
             if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
                 self.delegate?.skippedCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
