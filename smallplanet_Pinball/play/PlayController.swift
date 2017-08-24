@@ -94,7 +94,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             leftFlipperShouldBePressed = leftFlipperTotalConfidence > Float(self!.leftFlipperWindow.count) * 0.498
             rightFlipperShouldBePressed = rightFlipperTotalConfidence > Float(self!.leftFlipperWindow.count) * 0.498
             
-            print("\(leftFlipperTotalConfidence)  \(rightFlipperTotalConfidence)")
+            print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence))")
             
             let flipDelay = 15
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
@@ -121,9 +121,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
                 self?.pinball.rightButtonEnd()
             }
-            
-            
-            let confidence = "\(leftFlipperTotalConfidence)% \(left!.identifier), \(rightFlipperTotalConfidence)% \(right!.identifier), \(fps) fps"
+
+            let confidence = "\(String(format:"%0.2f", leftFlipperTotalConfidence))% \(left!.identifier), \(String(format:"%0.2f", rightFlipperTotalConfidence))% \(right!.identifier), \(fps) fps"
             DispatchQueue.main.async {
                 self?.statusLabel.label.text = confidence
             }
@@ -235,21 +234,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
 
                     for file in allFiles {
                         autoreleasepool {
-                            var ciImage = CIImage(contentsOf: file)!
-                            
-                            ciImage = ciImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-                            
-                            ciImage = maskImage.composited(over: ciImage)
+                            let ciImage = CIImage(contentsOf: file)!
                             
                             let handler = VNImageRequestHandler(ciImage: ciImage)
                             
                             DispatchQueue.main.async {
                                 
-                                guard let tiffData = self.ciContext.tiffRepresentation(of: ciImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
-                                    return
-                                }
-                                
-                                self.preview.imageView.image = UIImage(data:tiffData)
+                                self.preview.imageView.image = UIImage(ciImage: ciImage)
                                 
                                 fileNumber += 1
                                 self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
