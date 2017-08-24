@@ -220,7 +220,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let croppedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
             
             self.motionBlurFrames.append(croppedImage)
-            while self.motionBlurFrames.count > 5 {
+            while self.motionBlurFrames.count > 2 {
                 self.motionBlurFrames.remove(at: 0)
             }
             
@@ -230,7 +230,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 guard let colorMatrix = CIFilter(name:"CIColorMatrix") else {
                     return
                 }
-                let blurFactor:CGFloat = 0.8
+                let blurFactor:CGFloat = 0.7
                 
                 colorMatrix.setDefaults()
                 colorMatrix.setValue(self.motionBlurFrames[i], forKey: kCIInputImageKey)

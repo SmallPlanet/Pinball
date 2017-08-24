@@ -106,7 +106,7 @@ class PinballServer {
 
             // create a GUID for this session and create a folder at the output path for it
             let sessionUUID = UUID().uuidString
-            let outputFolderPath = "\(outputPath.value!)/\(sessionUUID)"
+            let outputFolderPath = "\(outputPath.value!)/train"
             var imageNumber:Int = 0
 
             do {
