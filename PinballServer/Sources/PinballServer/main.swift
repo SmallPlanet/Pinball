@@ -112,7 +112,7 @@ class PinballServer {
             do {
                 try FileManager.default.createDirectory(atPath: outputFolderPath, withIntermediateDirectories: false, attributes: nil)
             } catch let error as NSError {
-                print(error.localizedDescription);
+                //print(error.localizedDescription);
             }
 
             print("client session \(sessionUUID) started...")
