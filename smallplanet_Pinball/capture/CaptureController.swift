@@ -102,8 +102,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             _ = try serverSocket?.write(from: sizeAsData)
             
             var byteArray = [Byte]()
-            byteArray.append(pinball.leftButtonPressed ? 1 : 0)
-            byteArray.append(pinball.rightButtonPressed ? 1 : 0)
+            byteArray.append(leftButton)
+            byteArray.append(rightButton)
             _ = try serverSocket?.write(from: Data(byteArray))
             
             _ = try serverSocket?.write(from: jpegData)
