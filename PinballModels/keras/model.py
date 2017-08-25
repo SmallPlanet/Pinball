@@ -40,11 +40,11 @@ def cnn_model():
     
     
     model = Sequential()
-    model.add(Conv2D(4, kernel_size=3, input_shape=(images.IMG_SIZE[1], images.IMG_SIZE[0], 1)))
+    model.add(Conv2D(1, kernel_size=3, input_shape=(images.IMG_SIZE[1], images.IMG_SIZE[0], 3)))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     
-    model.add(Conv2D(4, kernel_size=3))
+    model.add(Conv2D(1, kernel_size=3))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 

@@ -13,7 +13,7 @@ print("Loading evaluation images...")
 validate_imgs = []
 validate_labels = []
 
-images.load_images(validate_imgs, validate_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day2/validation/", 0)
+images.load_images(validate_imgs, validate_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/validation/", 0)
 
 x_test = np.array(validate_imgs)
 y_test = np.array(validate_labels)

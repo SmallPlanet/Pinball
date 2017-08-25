@@ -13,10 +13,10 @@ train_labels = []
 validate_imgs = []
 validate_labels = []
 
-images.load_images(train_imgs, train_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day2/train/", 0)
+images.load_images(train_imgs, train_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/train/", 140000)
 train_imgs = np.array(train_imgs, dtype='float32')
 
-images.load_images(validate_imgs, validate_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day2/validation/", 0)
+images.load_images(validate_imgs, validate_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/validation/", 0)
 validate_imgs = np.array(validate_imgs, dtype='float32')
 
 print("Generating the CNN model...")
