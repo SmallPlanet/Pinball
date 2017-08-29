@@ -4,6 +4,10 @@
 
 Assets/play/validate_nascar2/
 PinballModels/keras/__pycache__
+PinballModels/keras/coreml
+PinballModels/keras/model.mlmodel
+*.pyc
+*.h5
 
 ## Build generated
 build/

@@ -40,18 +40,18 @@ def cnn_model():
     
     
     model = Sequential()
-    model.add(Conv2D(1, kernel_size=3, input_shape=(images.IMG_SIZE[1], images.IMG_SIZE[0], 3)))
-    model.add(Activation('relu'))
+    model.add(Conv2D(2, kernel_size=3, input_shape=(images.IMG_SIZE[1], images.IMG_SIZE[0], images.IMG_SIZE[2])))
+    model.add(Activation('elu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     
-    model.add(Conv2D(1, kernel_size=3))
-    model.add(Activation('relu'))
+    model.add(Conv2D(2, kernel_size=3))
+    model.add(Activation('elu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
     model.add(Flatten())
-    model.add(Dense(128))
+    model.add(Dense(768))
     model.add(BatchNormalization())
-    model.add(Activation('relu'))
+    model.add(Activation('elu'))
     model.add(Dropout(0.5))
     model.add(Dense(images.NUM_CLASSES))
     model.add(Activation('sigmoid'))

@@ -1,0 +1,11 @@
+test1
+batch 512, epoch 15, train specific -> train augemented: prediction accuracy = 0.84?
+                                                       
+test2                                                  
+batch 512, epoch 15, train specific -> train augemented: prediction accuracy = 0.881268684789
+                                                       
+test3                                                  
+batch 512, epoch 15, train augemented -> train specific: prediction accuracy = 0.91793541745
+                                                       
+test4                                                  
+batch 512, epoch 15, grayscale, train augemented -> train specific, corrected step_size on CyclicLR: prediction accuracy = ???
