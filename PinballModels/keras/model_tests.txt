@@ -8,4 +8,18 @@ test3
 batch 512, epoch 15, train augemented -> train specific: prediction accuracy = 0.91793541745
                                                        
 test4                                                  
-batch 512, epoch 15, grayscale, train augemented -> train specific, corrected step_size on CyclicLR: prediction accuracy = ???
+batch 512, epoch 15, grayscale, train augemented -> train specific, corrected step_size on CyclicLR: prediction accuracy = 0.915064641945
+*** THIS DID AMAZING DURING LIVE TEST ***
+
+test5                                                  
+batch 512, epoch 50, color, train specific -> train augemented, corrected step_size on CyclicLR: prediction accuracy = 0.898968500663
+
+test6
+batch 512, epoch 50, color, train specific -> train augemented, corrected step_size on CyclicLR: prediction accuracy = ???
+
+
+
+Still need to handle these problems:
+
+1. If we're going to continue digitally masking the lights, then exact repositioning of the phone remains a critical concerns not solved by data augmentation
+2. We should try to train again without the light masks
