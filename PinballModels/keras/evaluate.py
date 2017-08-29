@@ -1,5 +1,5 @@
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint
-from skimage import io
+from __future__ import division
+from keras.callbacks import LearningRateScheduler, ModelCheckpoint, Callback
 import os
 import glob
 from keras.optimizers import SGD
@@ -7,13 +7,14 @@ import model
 import images
 import numpy as np
 
-
 # Load test dataset
+validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/validation/"
+
 print("Loading evaluation images...")
-validate_imgs = []
+validate_imgs = images.generate_image_array(validate_path)
 validate_labels = []
 
-images.load_images(validate_imgs, validate_labels, "/Users/rjbowli/Desktop/NASCAR_TRAINING/day2/validation/", 0)
+images.load_images(validate_imgs, validate_labels, validate_path, 0)
 
 x_test = np.array(validate_imgs)
 y_test = np.array(validate_labels)
