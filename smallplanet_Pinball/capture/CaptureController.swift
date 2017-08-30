@@ -45,9 +45,9 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var lastVisibleFrameNumber:Int = 0
     
     var storedFrames:[SkippedFrame] = []
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
     {
-        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
             return
         }
         
@@ -58,7 +58,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         }
     }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
     {
         if isConnectedToServer {
             
@@ -74,7 +74,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
                 return
             }
             

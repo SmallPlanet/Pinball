@@ -247,14 +247,14 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
             
             if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-                self.delegate?.skippedCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+                self.delegate?.skippedCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay)
             } else {
                 self.extraFramesToCapture = self.extraFramesToCapture - 1
                 if self.extraFramesToCapture < 0 {
                     self.extraFramesToCapture = 0
                 }
                 
-                self.delegate?.newCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+                self.delegate?.newCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay)
             }
         }
  
@@ -272,6 +272,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
 protocol CameraCaptureHelperDelegate: class
 {
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
 }
