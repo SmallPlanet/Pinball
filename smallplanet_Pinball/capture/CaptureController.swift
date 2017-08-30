@@ -45,20 +45,25 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var lastVisibleFrameNumber:Int = 0
     
     var storedFrames:[SkippedFrame] = []
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
     {
-        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
             return
         }
         
-        storedFrames.append(SkippedFrame(jpegData, (pinball.leftButtonPressed ? 1 : 0), (pinball.rightButtonPressed ? 1 : 0)))
+        storedFrames.append(SkippedFrame(jpegData, left, right))
         
         while storedFrames.count > 60 {
             storedFrames.remove(at: 0)
         }
     }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
+    {
+        
+    }
+    
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
     {
         if isConnectedToServer {
             
@@ -74,13 +79,11 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
                 return
             }
             
-            sendCameraFrame(jpegData,
-                            (pinball.leftButtonPressed ? 1 : 0),
-                            (pinball.rightButtonPressed ? 1 : 0))
+            sendCameraFrame(jpegData, left, right)
             
             if lastVisibleFrameNumber + 100 < frameNumber {
                 lastVisibleFrameNumber = frameNumber
@@ -161,6 +164,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             self.HandleShouldFrameCapture()
         })
         
+        captureHelper.pinball = pinball
     }
     
     func HandleShouldFrameCapture() {

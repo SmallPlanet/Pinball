@@ -63,13 +63,14 @@ validate_labels_as_np = np.array(validate_labels)
 
 
 batch_size = 512
-epochs = 15
+epochs = 50
 
            
 # if we have some pre-existing weights, load those first
 #if os.path.isfile("model.h5"):
 #    model.load_weights("model.h5")
 
+#(len(train_imgs) // batch_size * 4)
 # let's train the model on the images inputed
 clr = CyclicLR(base_lr=0.001, max_lr=0.006,
                         step_size=(len(train_imgs) // batch_size * 4), mode='exp_range',
