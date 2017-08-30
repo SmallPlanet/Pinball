@@ -30,15 +30,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperWindow:[Float] = [0,0]
     var rightFlipperWindow:[Float] = [0,0]
     
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
-    {
-        HandleCaptureServerSkippedCameraImnage(cameraCaptureHelper, image:image, frameNumber:frameNumber, fps:fps)
-    }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
-    {
-        HandleCaptureServerNewCameraImage(cameraCaptureHelper, image:image, frameNumber:frameNumber, fps:fps)
-        
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    {        
         // Create a Vision request with completion handler
         guard let model = model else {
             return
@@ -113,17 +107,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
                 self?.pinball.leftButtonStart()
                 print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
+                self?.HandleShouldFrameCapture()
             }
             if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
                 self?.pinball.leftButtonEnd()
+                self?.HandleShouldFrameCapture()
             }
             
             if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
                 self?.pinball.rightButtonStart()
                 print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
+                self?.HandleShouldFrameCapture()
             }
             if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
                 self?.pinball.rightButtonEnd()
+                self?.HandleShouldFrameCapture()
             }
 
             let confidence = "\(String(format:"%0.2f", leftFlipperTotalConfidence))% \(left!.identifier), \(String(format:"%0.2f", rightFlipperTotalConfidence))% \(right!.identifier), \(fps) fps"
@@ -165,8 +163,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             findCaptureServer()
         }
         
+        HandleShouldFrameCapture()
+        
         captureHelper.delegate = self
-        captureHelper.shouldProcessFrames = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         
@@ -308,7 +307,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var serverSocket:Socket? = nil
 
     var storedFrames:[SkippedFrame] = []
-    func HandleCaptureServerSkippedCameraImnage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int)
     {
         if playAndCapture == false {
             return
@@ -325,7 +324,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
     
-    func HandleCaptureServerNewCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int)
     {
         if playAndCapture == false {
             return
@@ -352,14 +351,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             sendCameraFrame(jpegData,
                             (pinball.leftButtonPressed ? 1 : 0),
                             (pinball.rightButtonPressed ? 1 : 0))
-            
-            if lastVisibleFrameNumber + 100 < frameNumber {
-                lastVisibleFrameNumber = frameNumber
-                DispatchQueue.main.async {
-                    self.preview.imageView.image = UIImage(data: jpegData)
-                    self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
-                }
-            }
         }
     }
     

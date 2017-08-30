@@ -165,7 +165,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
     
     
-    
+    var playFrameNumber = 0
     var frameNumber = 0
     var fpsCounter:Int = 0
     var fpsDisplay:Int = 0
@@ -178,6 +178,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
         let localFrameNumber = frameNumber
+        let localPlayFrameNumber = playFrameNumber
+        
+        playFrameNumber = playFrameNumber + 1
         
         if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
             
@@ -240,11 +243,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             }
             
             // only save blur frame every few frames
-            if localFrameNumber % 10 != 1 {
+            if localPlayFrameNumber % 10 != 1 {
                 self.motionBlurFrames.removeLast()
             }
             
             let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
+            
+            self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay)
             
             if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
                 self.delegate?.skippedCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay)
@@ -274,4 +279,6 @@ protocol CameraCaptureHelperDelegate: class
 {
     func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
 }

@@ -58,6 +58,11 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         }
     }
     
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    {
+        
+    }
+    
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
     {
         if isConnectedToServer {

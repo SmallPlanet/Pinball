@@ -106,11 +106,12 @@ class PinballServer {
 
             // create a GUID for this session and create a folder at the output path for it
             let sessionUUID = UUID().uuidString
-            let outputFolderPath = "\(outputPath.value!)/train"
+            let outputFolderPath = "\(outputPath.value!)/train/\(sessionUUID)"
             var imageNumber:Int = 0
 
+            
             do {
-                try FileManager.default.createDirectory(atPath: outputFolderPath, withIntermediateDirectories: false, attributes: nil)
+                try FileManager.default.createDirectory(atPath: outputFolderPath, withIntermediateDirectories: true, attributes: nil)
             } catch let error as NSError {
                 //print(error.localizedDescription);
             }
