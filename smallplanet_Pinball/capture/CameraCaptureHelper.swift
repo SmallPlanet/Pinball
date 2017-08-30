@@ -174,7 +174,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var lastDate = Date()
     
     let serialQueue = DispatchQueue(label: "frame_transformation_queue")
-    let playQueue = DispatchQueue(label: "frame_transformation_queue")
+    let playQueue = DispatchQueue(label: "handle_play_frames_queue")
     
     var motionBlurFrames:[CIImage] = []
     
