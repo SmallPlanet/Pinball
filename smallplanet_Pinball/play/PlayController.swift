@@ -31,7 +31,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var rightFlipperWindow:[Float] = [0,0]
     
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
     {        
         // Create a Vision request with completion handler
         guard let model = model else {
@@ -89,8 +89,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             self!.leftFlipperWindow[self!.leftFlipperWindow.count-1] = leftFlipperConfidence
             self!.rightFlipperWindow[self!.rightFlipperWindow.count-1] = rightFlipperConfidence
             
-            leftFlipperShouldBePressed = leftFlipperTotalConfidence > 0.2
-            rightFlipperShouldBePressed = rightFlipperTotalConfidence > 0.2
+            leftFlipperShouldBePressed = leftFlipperTotalConfidence > 0.4
+            rightFlipperShouldBePressed = rightFlipperTotalConfidence > 0.4
             
             //print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
             
@@ -276,6 +276,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
         }
+        
+        captureHelper.pinball = pinball
     }
     
     func HandleShouldFrameCapture() {
@@ -307,7 +309,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var serverSocket:Socket? = nil
 
     var storedFrames:[SkippedFrame] = []
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
     {
         if playAndCapture == false {
             return
@@ -317,14 +319,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        storedFrames.append(SkippedFrame(jpegData, (pinball.leftButtonPressed ? 1 : 0), (pinball.rightButtonPressed ? 1 : 0)))
+        storedFrames.append(SkippedFrame(jpegData, left, right))
         
         while storedFrames.count > 60 {
             storedFrames.remove(at: 0)
         }
     }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
     {
         if playAndCapture == false {
             return
@@ -348,9 +350,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 return
             }
             
-            sendCameraFrame(jpegData,
-                            (pinball.leftButtonPressed ? 1 : 0),
-                            (pinball.rightButtonPressed ? 1 : 0))
+            sendCameraFrame(jpegData, left, right)
         }
     }
     
