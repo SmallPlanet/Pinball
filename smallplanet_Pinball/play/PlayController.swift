@@ -94,7 +94,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             //print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
             
-            let flipDelay = 15
+            let flipDelay = 7
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay/2
                 
@@ -321,7 +321,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         storedFrames.append(SkippedFrame(jpegData, left, right))
         
-        while storedFrames.count > 60 {
+        while storedFrames.count > 30 {
             storedFrames.remove(at: 0)
         }
     }
