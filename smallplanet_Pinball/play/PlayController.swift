@@ -243,8 +243,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         autoreleasepool {
                             var ciImage = CIImage(contentsOf: file)!
                             
-                            //let r = CGFloat(Float(arc4random()) / Float(UINT32_MAX) * 6.0 - 3.0)
-                            //ciImage = ciImage.transformed(by: CGAffineTransform(rotationAngle: r.degreesToRadians))
+                            let r = CGFloat(Float(arc4random()) / Float(UINT32_MAX) * 6.0 - 3.0)
+                            ciImage = ciImage.transformed(by: CGAffineTransform(rotationAngle: r.degreesToRadians))
                             
                             let handler = VNImageRequestHandler(ciImage: ciImage)
                             

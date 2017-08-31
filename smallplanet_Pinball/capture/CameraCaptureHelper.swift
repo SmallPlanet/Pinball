@@ -174,7 +174,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var lastDate = Date()
     
     let serialQueue = DispatchQueue(label: "frame_transformation_queue")
-    let playQueue = DispatchQueue(label: "handle_play_frames_queue")
+    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
     
     var motionBlurFrames:[CIImage] = []
     
@@ -250,7 +250,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 self.motionBlurFrames.removeLast()
             }
             
-            let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
+            //let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
+            let maskedImage = lastBlurFrame
             
             var leftButton:Byte = 0
             var rightButton:Byte = 0
@@ -260,7 +261,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 rightButton = (self.pinball!.rightButtonPressed ? 1 : 0)
             }
             
-            self.playQueue.sync {
+            self.playQueue.async {
                 self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton)
             }
             
