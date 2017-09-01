@@ -197,7 +197,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             DispatchQueue.global(qos: .background).async {
                 do {
-                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar3/")
+                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar/")
                     let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
                     
                     var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
