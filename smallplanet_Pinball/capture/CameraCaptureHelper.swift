@@ -37,7 +37,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         set {
             // if we're turning off capture frames when we are on, make sure we snag a few extra frames
             if _shouldProcessFrames == true && newValue == false {
-                self.extraFramesToCapture = 100
+                self.extraFramesToCapture = 10
             }
             _shouldProcessFrames = newValue
         }
@@ -191,7 +191,15 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             frameNumber = frameNumber + 1
         }
         
-        serialQueue.sync {
+        var leftButton:Byte = 0
+        var rightButton:Byte = 0
+        
+        if self.pinball != nil {
+            leftButton = (self.pinball!.leftButtonPressed ? 1 : 0)
+            rightButton = (self.pinball!.rightButtonPressed ? 1 : 0)
+        }
+        
+        serialQueue.async {
             var bufferCopy : CMSampleBuffer?
             let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
             if err != noErr {
@@ -250,16 +258,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 self.motionBlurFrames.removeLast()
             }
             
-            //let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
-            let maskedImage = lastBlurFrame
+            let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
+            //let maskedImage = lastBlurFrame
             
-            var leftButton:Byte = 0
-            var rightButton:Byte = 0
             
-            if self.pinball != nil {
-                leftButton = (self.pinball!.leftButtonPressed ? 1 : 0)
-                rightButton = (self.pinball!.rightButtonPressed ? 1 : 0)
-            }
             
             self.playQueue.async {
                 self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton)

@@ -92,7 +92,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             leftFlipperShouldBePressed = leftFlipperTotalConfidence > 0.4
             rightFlipperShouldBePressed = rightFlipperTotalConfidence > 0.4
             
-            //print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
+            print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
             
             let flipDelay = 7
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
