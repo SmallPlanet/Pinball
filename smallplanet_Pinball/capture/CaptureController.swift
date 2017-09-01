@@ -53,7 +53,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         
         storedFrames.append(SkippedFrame(jpegData, left, right))
         
-        while storedFrames.count > 60 {
+        while storedFrames.count > 10 {
             storedFrames.remove(at: 0)
         }
     }
