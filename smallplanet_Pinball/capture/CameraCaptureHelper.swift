@@ -22,6 +22,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     let cameraPosition: AVCaptureDevice.Position
     var captureDevice : AVCaptureDevice? = nil
     
+    var pinball:PinballInterface? = nil
+    
     var maskImage:CIImage?
     
     var isLocked = false
@@ -35,7 +37,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         set {
             // if we're turning off capture frames when we are on, make sure we snag a few extra frames
             if _shouldProcessFrames == true && newValue == false {
-                self.extraFramesToCapture = 100
+                self.extraFramesToCapture = 10
             }
             _shouldProcessFrames = newValue
         }
@@ -165,24 +167,36 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
     
     
-    
+    var playFrameNumber = 0
     var frameNumber = 0
     var fpsCounter:Int = 0
     var fpsDisplay:Int = 0
     var lastDate = Date()
     
     let serialQueue = DispatchQueue(label: "frame_transformation_queue")
+    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
     
     var motionBlurFrames:[CIImage] = []
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
         let localFrameNumber = frameNumber
+        let localPlayFrameNumber = playFrameNumber
+        
+        playFrameNumber = playFrameNumber + 1
         
         if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
             
         } else {
             frameNumber = frameNumber + 1
+        }
+        
+        var leftButton:Byte = 0
+        var rightButton:Byte = 0
+        
+        if self.pinball != nil {
+            leftButton = (self.pinball!.leftButtonPressed ? 1 : 0)
+            rightButton = (self.pinball!.rightButtonPressed ? 1 : 0)
         }
         
         serialQueue.async {
@@ -240,21 +254,28 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             }
             
             // only save blur frame every few frames
-            if localFrameNumber % 10 != 1 {
+            if localPlayFrameNumber % 10 != 1 {
                 self.motionBlurFrames.removeLast()
             }
             
             let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
+            //let maskedImage = lastBlurFrame
+            
+            
+            
+            self.playQueue.async {
+                self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton)
+            }
             
             if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-                self.delegate?.skippedCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+                self.delegate?.skippedCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton)
             } else {
                 self.extraFramesToCapture = self.extraFramesToCapture - 1
                 if self.extraFramesToCapture < 0 {
                     self.extraFramesToCapture = 0
                 }
                 
-                self.delegate?.newCameraImage(self, image: maskedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay)
+                self.delegate?.newCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton)
             }
         }
  
@@ -272,6 +293,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
 protocol CameraCaptureHelperDelegate: class
 {
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
+    
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
 }
