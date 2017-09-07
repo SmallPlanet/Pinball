@@ -52,7 +52,6 @@ def cnn_model():
     model.add(Dense(768))
     model.add(BatchNormalization())
     model.add(Activation('elu'))
-    model.add(Dropout(0.5))
     model.add(Dense(images.NUM_CLASSES))
     model.add(Activation('sigmoid'))
     

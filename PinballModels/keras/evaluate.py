@@ -8,10 +8,10 @@ import images
 import numpy as np
 
 # Load test dataset
-validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/validation/"
+validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/validation/"
 
 print("Loading evaluation images...")
-validate_imgs = images.generate_image_array(validate_path)
+validate_imgs = images.generate_image_array(validate_path, 0)
 validate_labels = []
 
 images.load_images(validate_imgs, validate_labels, validate_path, 0)
