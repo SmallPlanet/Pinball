@@ -199,7 +199,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             rightButton = (self.pinball!.rightButtonPressed ? 1 : 0)
         }
         
-        serialQueue.async {
+        serialQueue.sync {
             var bufferCopy : CMSampleBuffer?
             let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
             if err != noErr {
@@ -263,7 +263,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             
             
-            self.playQueue.async {
+            self.playQueue.sync {
                 self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton)
             }
             

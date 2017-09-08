@@ -27,9 +27,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
     
-    var leftFlipperWindow:[Float] = [0,0]
-    var rightFlipperWindow:[Float] = [0,0]
-    
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
     {        
@@ -75,26 +72,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 rightFlipperConfidence = 0
             }
             
-            var leftFlipperTotalConfidence:Float = leftFlipperConfidence
-            var rightFlipperTotalConfidence:Float = rightFlipperConfidence
+            leftFlipperShouldBePressed = leftFlipperConfidence > 0.15
+            rightFlipperShouldBePressed = rightFlipperConfidence > 0.15
             
-            for i in 0...self!.leftFlipperWindow.count-2 {
-                self!.leftFlipperWindow[i] = self!.leftFlipperWindow[i+1]
-                self!.rightFlipperWindow[i] = self!.rightFlipperWindow[i+1]
-                
-                leftFlipperTotalConfidence += self!.leftFlipperWindow[i]
-                rightFlipperTotalConfidence += self!.rightFlipperWindow[i]
-            }
+            //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
             
-            self!.leftFlipperWindow[self!.leftFlipperWindow.count-1] = leftFlipperConfidence
-            self!.rightFlipperWindow[self!.rightFlipperWindow.count-1] = rightFlipperConfidence
-            
-            leftFlipperShouldBePressed = leftFlipperTotalConfidence > 0.4
-            rightFlipperShouldBePressed = rightFlipperTotalConfidence > 0.4
-            
-            print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
-            
-            let flipDelay = 7
+            let flipDelay = 30
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay/2
                 
@@ -106,7 +89,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
                 self?.pinball.leftButtonStart()
-                print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
+                print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
                 self?.HandleShouldFrameCapture()
             }
             if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
@@ -116,7 +99,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
                 self?.pinball.rightButtonStart()
-                print("\(String(format:"%0.2f", leftFlipperTotalConfidence))  \(String(format:"%0.2f", rightFlipperTotalConfidence)) \(fps) fps")
+                print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
                 self?.HandleShouldFrameCapture()
             }
             if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
@@ -124,7 +107,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 self?.HandleShouldFrameCapture()
             }
 
-            let confidence = "\(String(format:"%0.2f", leftFlipperTotalConfidence))% \(left!.identifier), \(String(format:"%0.2f", rightFlipperTotalConfidence))% \(right!.identifier), \(fps) fps"
+            let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right!.identifier), \(fps) fps"
             DispatchQueue.main.async {
                 self?.statusLabel.label.text = confidence
             }
