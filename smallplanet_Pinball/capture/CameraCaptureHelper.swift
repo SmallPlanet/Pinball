@@ -37,7 +37,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         set {
             // if we're turning off capture frames when we are on, make sure we snag a few extra frames
             if _shouldProcessFrames == true && newValue == false {
-                self.extraFramesToCapture = 10
+                self.extraFramesToCapture = 30
             }
             _shouldProcessFrames = newValue
         }
