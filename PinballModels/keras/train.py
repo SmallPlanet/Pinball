@@ -34,11 +34,14 @@ class EvaluationMonitor(Callback):
         calc_predict(predictions, 0.3)
         calc_predict(predictions, 0.4)
         calc_predict(predictions, 0.5)
+        calc_predict(predictions, 0.6)
+        calc_predict(predictions, 0.7)
+        calc_predict(predictions, 0.8)
         
 
 
-train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/train/"
-validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day4/validation/"
+train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/train/"
+validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/validation/"
 
 train_max_size = 0
 validate_max_size = 0
@@ -55,11 +58,8 @@ images.load_images(train_imgs, train_labels, train_path, train_max_size)
 print("Image Data Generator...")
 datagen = ImageDataGenerator(featurewise_center=False,
                              featurewise_std_normalization=False,
-                             #width_shift=2,
-                             #height_shift=2,
-                             width_shift_range=0.01,
-                             height_shift_range=0.01,
-                             #zoom_range=[1.05,1.05]
+                             width_shift_range=0.02,
+                             height_shift_range=0.02,
                              )
                              
 
@@ -90,8 +90,10 @@ print("Preprocessing validation images...")
 images.load_images(validate_imgs, validate_labels, validate_path, validate_max_size)
 
 
+#batch_size = 1024
+#batch_size = 1536
 batch_size = 512
-epochs = 15
+epochs = 12
 
            
 # if we have some pre-existing weights, load those first
@@ -119,23 +121,23 @@ model.fit_generator(datagen.flow(train_imgs, train_labels, batch_size=batch_size
                     validation_data=(validate_imgs, validate_labels),
                     callbacks=[clr,
                                 em,
-                               ModelCheckpoint('model.h5', save_best_only=True)]
+                               ModelCheckpoint('model.stage1.{epoch:02d}-{val_acc:.3f}.h5', save_best_only=True)]
                     )
 #model.{epoch:02d}-{val_loss:.2f}.h5
 
 
 # then let's train the network on the altered images
-#print("Training the network stage 2...")
-#model.fit(train_imgs, train_labels,
-#          batch_size=batch_size,
-#          epochs=epochs,
-#          shuffle=True,
-#          verbose=1,
-#          callbacks=[clr,
-#                     em,
-#                     ModelCheckpoint('model.h5', save_best_only=True)],
-#        validation_data=(validate_imgs, validate_labels)
-#          )
+print("Training the network stage 2...")
+model.fit(train_imgs, train_labels,
+          batch_size=batch_size,
+          epochs=epochs,
+          shuffle=True,
+          verbose=1,
+          callbacks=[clr,
+                     em,
+                     ModelCheckpoint('model.stage2.{epoch:02d}-{val_acc:.3f}.h5', save_best_only=True)],
+        validation_data=(validate_imgs, validate_labels)
+          )
 
 
 
