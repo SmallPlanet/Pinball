@@ -6,7 +6,7 @@ import glob
 import gc
 
 NUM_CLASSES = 2
-IMG_SIZE = [169,120,1]
+IMG_SIZE = [169,120,3]
 
 K.set_image_data_format('channels_last')
 
