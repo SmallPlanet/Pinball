@@ -28,7 +28,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var rightFlipperCounter:Int = 0
     
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
         // Create a Vision request with completion handler
         guard let model = model else {
@@ -180,7 +180,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             DispatchQueue.global(qos: .background).async {
                 do {
-                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar2/")
+                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar/")
                     let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
                     
                     var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
@@ -292,7 +292,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var serverSocket:Socket? = nil
 
     var storedFrames:[SkippedFrame] = []
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         if playAndCapture == false {
             return
@@ -302,14 +302,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        storedFrames.append(SkippedFrame(jpegData, left, right))
+        storedFrames.append(SkippedFrame(jpegData, left, right, start, ballKicker))
         
         while storedFrames.count > 30 {
             storedFrames.remove(at: 0)
         }
     }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         if playAndCapture == false {
             return
@@ -322,7 +322,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 
                 sendCameraFrame(storedFrames[0].jpegData,
                                 storedFrames[0].leftButton,
-                                storedFrames[0].rightButton)
+                                storedFrames[0].rightButton,
+                                storedFrames[0].startButton,
+                                storedFrames[0].ballKickerButton)
                 
                 storedFrames.remove(at: 0)
             }
@@ -333,11 +335,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 return
             }
             
-            sendCameraFrame(jpegData, left, right)
+            sendCameraFrame(jpegData, left, right, start, ballKicker)
         }
     }
     
-    func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte) {
+    func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
         // send the size of the image data
         var sizeAsInt = UInt32(jpegData.count)
         let sizeAsData = Data(bytes: &sizeAsInt,
@@ -349,6 +351,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var byteArray = [Byte]()
             byteArray.append(leftButton)
             byteArray.append(rightButton)
+            byteArray.append(startButton)
+            byteArray.append(ballKicker)
             _ = try serverSocket?.write(from: Data(byteArray))
             
             _ = try serverSocket?.write(from: jpegData)
@@ -437,6 +441,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         return nil
     }
     internal var rightButton: Button? {
+        return nil
+    }
+    internal var ballKicker: Button? {
+        return nil
+    }
+    internal var startButton: Button? {
         return nil
     }
     

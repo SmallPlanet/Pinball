@@ -16,6 +16,8 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     var isConnectedToServer = false
     var serverSocket:Socket? = nil
 
+    var startButtonPressed:Byte = 0
+    var kickerButtonPressed:Byte = 0
     var leftButtonPressed:Byte = 0
     var rightButtonPressed:Byte = 0
     var captureModeEnabled:Byte = 0
@@ -53,6 +55,36 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
             }
         }
         
+        
+        startButton.button.add(for: .touchUpInside) {
+            if self.isConnectedToServer {
+                self.startButtonPressed = 0
+                self.sendButtonStatesToServer()
+            }
+        }
+        startButton.button.add(for: .touchDown) {
+            if self.isConnectedToServer {
+                self.startButtonPressed = 1
+                self.sendButtonStatesToServer()
+            }
+        }
+        
+        
+        kickerButton.button.add(for: .touchUpInside) {
+            if self.isConnectedToServer {
+                self.kickerButtonPressed = 0
+                self.sendButtonStatesToServer()
+            }
+        }
+        kickerButton.button.add(for: .touchDown) {
+            if self.isConnectedToServer {
+                self.kickerButtonPressed = 1
+                self.sendButtonStatesToServer()
+            }
+        }
+        
+        
+        
         captureButton.button.add(for: .touchUpInside) {
             if self.isConnectedToServer {
                 if self.captureModeEnabled == 1 {
@@ -64,6 +96,9 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
             }
         }
         
+        self.captureButton.button.titleLabel?.numberOfLines = 2
+        self.captureButton.button.titleLabel?.textAlignment = .center
+        
         UIApplication.shared.isIdleTimerDisabled = true
         
         findRemoteControlServer()
@@ -74,12 +109,14 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         byteArray.append(leftButtonPressed)
         byteArray.append(rightButtonPressed)
         byteArray.append(captureModeEnabled)
+        byteArray.append(kickerButtonPressed)
+        byteArray.append(startButtonPressed)
         _ = try! serverSocket?.write(from: Data(byteArray))
         
         if self.captureModeEnabled == 1 {
-            self.captureButton.button.setTitle("Capture Mode On", for:.normal)
+            self.captureButton.button.setTitle("Capture\nOn", for:.normal)
         }else {
-            self.captureButton.button.setTitle("Capture Mode Off", for:.normal)
+            self.captureButton.button.setTitle("Capture\nOff", for:.normal)
         }
     }
     
@@ -162,6 +199,12 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     }
     internal var captureButton: Button {
         return mainXmlView!.elementForId("captureButton")!.asButton!
+    }
+    internal var kickerButton: Button {
+        return mainXmlView!.elementForId("kickerButton")!.asButton!
+    }
+    internal var startButton: Button {
+        return mainXmlView!.elementForId("startButton")!.asButton!
     }
     
 }

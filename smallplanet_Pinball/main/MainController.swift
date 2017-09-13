@@ -18,8 +18,13 @@ class MainController: PlanetViewController, NetServiceDelegate {
         case LeftButtonUp
         case RightButtonDown
         case RightButtonUp
+        case StartButtonDown
+        case StartButtonUp
+        case BallKickerDown
+        case BallKickerUp
         case BeginCaptureMode
         case EndCaptureMode
+        
     }
     
     override func viewDidLoad() {
@@ -161,6 +166,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         var leftButtonState:Byte = 0
         var rightButtonState:Byte = 0
+        var kickerButtonState:Byte = 0
+        var startButtonState:Byte = 0
         var captureModeEnabledState:Byte = 0
 
         // Add the new socket to the list of connected sockets...
@@ -179,7 +186,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
             while true {
                 do {
                     
-                    while readData.count < 3 {
+                    while readData.count < 5 {
                         tmpData.removeAll(keepingCapacity: true)
                         _ = try socket.read(into: &tmpData)
                         readData.append(tmpData)
@@ -188,8 +195,36 @@ class MainController: PlanetViewController, NetServiceDelegate {
                     let leftButton:Byte = readData[0]
                     let rightButton:Byte = readData[1]
                     let captureModeEnabled:Byte = readData[2]
+                    let kickerButton:Byte = readData[3]
+                    let startButton:Byte = readData[4]
 
-                    readData.removeSubrange(0..<3)
+                    readData.removeSubrange(0..<5)
+                    
+                    if startButtonState != startButton {
+                        if startButton == 0 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.StartButtonUp.rawValue), object: nil, userInfo: nil)
+                            }
+                        } else if startButton == 1 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.StartButtonDown.rawValue), object: nil, userInfo: nil)
+                            }
+                        }
+                        startButtonState = startButton
+                    }
+                    
+                    if kickerButtonState != kickerButton {
+                        if kickerButton == 0 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
+                            }
+                        } else if kickerButton == 1 {
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
+                            }
+                        }
+                        kickerButtonState = kickerButton
+                    }
                     
                     if captureModeEnabledState != captureModeEnabled {
                         if captureModeEnabled == 0 {
