@@ -145,8 +145,15 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             data = "R" + (on ? "1" : "0")
             rightButtonPressed = on
         case .ballKicker(let on):
-            data = "B" + (on ? "1" : "0")
             ballKickerPressed = on
+            if on {
+                data = "B"
+            } else {
+                // python server cycles ball kicker on and off
+                // automatically, so only need to send the on
+                // trigger
+                return
+            }
         case .startButton(let on):
             data = "S" + (on ? "1" : "0")
             startButtonPressed = on

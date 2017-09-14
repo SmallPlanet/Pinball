@@ -17,4 +17,16 @@
     <Constraint firstItem="rightButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.45"/>
     <Constraint firstItem="rightButton" firstAttribute="bottom" secondItem="root" secondAttribute="bottom"/>
 
+    <Button id="startButton" title="start" styleId="ButtonStd" />
+    <Constraint firstItem="startButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.45"/>
+    <Constraint firstItem="startButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="5" />
+    <Constraint firstItem="startButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.1"/>
+    <Constraint firstItem="startButton" firstAttribute="bottom" secondItem="leftButton" secondAttribute="top" constant="-5" />
+
+    <Button id="ballKicker" title="ball" styleId="ButtonStd"/>
+    <Constraint firstItem="ballKicker" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.45"/>
+    <Constraint firstItem="ballKicker" firstAttribute="right" secondItem="root" secondAttribute="right" constant="-5" />
+    <Constraint firstItem="ballKicker" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.1"/>
+    <Constraint firstItem="ballKicker" firstAttribute="bottom" secondItem="rightButton" secondAttribute="top" constant="-5" />
+
 </Scene>
