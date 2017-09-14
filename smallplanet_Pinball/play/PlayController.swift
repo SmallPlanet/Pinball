@@ -20,6 +20,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     let ciContext = CIContext(options: [:])
     
+    var observers:[NSObjectProtocol] = [NSObjectProtocol]()
+
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     var model:VNCoreMLModel? = nil
     var lastVisibleFrameNumber = 0
@@ -72,12 +74,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 rightFlipperConfidence = 0
             }
             
-            leftFlipperShouldBePressed = leftFlipperConfidence > 0.15
-            rightFlipperShouldBePressed = rightFlipperConfidence > 0.15
+            leftFlipperShouldBePressed = leftFlipperConfidence > 0.16
+            rightFlipperShouldBePressed = rightFlipperConfidence > 0.16
             
             //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
             
-            let flipDelay = 30
+            let flipDelay = 15
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay/2
                 
@@ -151,6 +153,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegate = self
         
         UIApplication.shared.isIdleTimerDisabled = true
+        
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
+            //self.pinball.ballKickerEnd()
+        })
+        
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
+            //self.pinball.ballKickerStart()
+        })
         
         // Load the ML model through its generated class
         model = try? VNCoreMLModel(for: nascar_9190_9288().model)
@@ -275,6 +285,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         UIApplication.shared.isIdleTimerDisabled = false
         captureHelper.stop()
         pinball.disconnect()
+        
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
     
     // MARK: Hardware Controller
