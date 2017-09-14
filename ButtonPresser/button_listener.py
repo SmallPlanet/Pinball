@@ -39,6 +39,21 @@ print 'Socket bind complete'
 s.listen(10)
 print 'Socket now listening'
 
+def triggerBallLauncher():
+    # trigger launcher on
+        relayExp.setChannel(relayBank2, 1, 1)
+        relayExp.setChannel(relayBank2, 0, 1)
+        print 'Ball launcher on'
+
+    # wait predetermined time
+        time.sleep(0.05) # time in seconds
+
+    # trigger launcher off
+        relayExp.setChannel(relayBank2, 1, 0)
+        relayExp.setChannel(relayBank2, 0, 0)
+        print 'Ball launcher off'
+
+
 #Function for handling connections. This will be used to create threads
 def clientthread(conn):
     #infinite loop so that function do not terminate and thread do not end.
@@ -48,16 +63,17 @@ def clientthread(conn):
         data = conn.recv(1024)
 
         if not data:
-	    reply = chr(1) # 1 = FAILURE
+        reply = chr(1) # 1 = FAILURE
             break
 
         value = 1
         if data.endswith("0"):
             value = 0
 
-        if data.startswith("R"):
+        if data.startswith("B"):
+            start_new_thread(triggerBallLauncher, ())
+        elif data.startswith("R"):
             relayExp.setChannel(relayBank1, 0, value)
-            #relayExp.setChannel(relayBank2, 0, value)
         else:
             relayExp.setChannel(relayBank1, 1, value)
 
