@@ -121,7 +121,7 @@ class PinballServer {
             while true {
                 do {
                     
-                    while readData.count < 6 {
+                    while readData.count < 8 {
                         tmpData.removeAll(keepingCapacity: true)
                         _ = try socket.read(into: &tmpData)
                         readData.append(tmpData)

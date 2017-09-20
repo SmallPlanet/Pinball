@@ -37,6 +37,8 @@ class SkippedFrame {
 
 class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let  mutex = NSLock()
+    
     let ciContext = CIContext(options: [:])
     
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
@@ -71,17 +73,21 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     {
         if isConnectedToServer {
             
-            // send all stored frames
-            while storedFrames.count > 0 {
-                
-                sendCameraFrame(storedFrames[0].jpegData,
-                                storedFrames[0].leftButton,
-                                storedFrames[0].rightButton,
-                                storedFrames[0].startButton,
-                                storedFrames[0].ballKickerButton)
-                
-                storedFrames.remove(at: 0)
-            }
+            synchronized(lockable: mutex, criticalSection: {
+                // send all stored frames
+                while storedFrames.count > 0 {
+                    
+                    // for the ball kicker, we want the pre-frames to always have the current button value to ensure we get enough ball kicker frames
+                    sendCameraFrame(storedFrames[0].jpegData,
+                                    storedFrames[0].leftButton,
+                                    storedFrames[0].rightButton,
+                                    storedFrames[0].startButton,
+                                    ballKicker)
+                    
+                    storedFrames.remove(at: 0)
+                }
+            })
+            
             
             
             // get the actual bytes out of the CIImage
@@ -159,10 +165,29 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
+            // we need to force all stored frames to be dumped here...
+            if self.isConnectedToServer {
+                synchronized(lockable: self.mutex, criticalSection: {
+                    // send all stored frames
+                    while self.storedFrames.count > 0 {
+                        
+                        // for the ball kicker, we want the pre-frames to always have the current button value to ensure we get enough ball kicker frames
+                        self.sendCameraFrame(self.storedFrames[0].jpegData,
+                                        self.storedFrames[0].leftButton,
+                                        self.storedFrames[0].rightButton,
+                                        self.storedFrames[0].startButton,
+                                        1)
+                        
+                        self.storedFrames.remove(at: 0)
+                    }
+                })
+            }
+                
             if self.pinball.ballKickerPressed == true {
                 self.ballKicker?.button.isHighlighted = false
                 self.pinball.ballKickerEnd()
             }
+            
             self.HandleShouldFrameCapture()
         })
         

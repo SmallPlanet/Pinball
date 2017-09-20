@@ -203,7 +203,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             ballKicker = (self.pinball!.ballKickerPressed ? 1 : 0)
         }
         
-        serialQueue.sync {
+        serialQueue.async {
             var bufferCopy : CMSampleBuffer?
             let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
             if err != noErr {
@@ -267,11 +267,11 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             
             
-            //self.playQueue.sync {
+            self.playQueue.sync {
                 self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-            //}
+            }
             
-            /*
+            
             if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
                 self.delegate?.skippedCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             } else {
@@ -281,7 +281,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 }
                 
                 self.delegate?.newCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-            }*/
+            }
         }
  
         fpsCounter += 1
