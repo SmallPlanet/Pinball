@@ -74,12 +74,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 rightFlipperConfidence = 0
             }
             
-            leftFlipperShouldBePressed = leftFlipperConfidence > 0.16
-            rightFlipperShouldBePressed = rightFlipperConfidence > 0.16
+            leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
+            rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
             
             //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
             
-            let flipDelay = 15
+            let flipDelay = 12
             if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
                 self?.leftFlipperCounter = flipDelay/2
                 
@@ -155,11 +155,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         UIApplication.shared.isIdleTimerDisabled = true
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
-            //self.pinball.ballKickerEnd()
+            self.pinball.ballKickerEnd()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
-            //self.pinball.ballKickerStart()
+            self.pinball.ballKickerStart()
         })
         
         // Load the ML model through its generated class

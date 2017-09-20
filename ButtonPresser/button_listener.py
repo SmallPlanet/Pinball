@@ -42,7 +42,6 @@ print 'Socket now listening'
 def triggerBallLauncher():
     # trigger launcher on
         relayExp.setChannel(relayBank2, 1, 1)
-        relayExp.setChannel(relayBank2, 0, 1)
         print 'Ball launcher on'
 
     # wait predetermined time
@@ -50,7 +49,6 @@ def triggerBallLauncher():
 
     # trigger launcher off
         relayExp.setChannel(relayBank2, 1, 0)
-        relayExp.setChannel(relayBank2, 0, 0)
         print 'Ball launcher off'
 
 
@@ -63,7 +61,7 @@ def clientthread(conn):
         data = conn.recv(1024)
 
         if not data:
-        reply = chr(1) # 1 = FAILURE
+            reply = chr(1) # 1 = FAILURE
             break
 
         value = 1
@@ -74,8 +72,10 @@ def clientthread(conn):
             start_new_thread(triggerBallLauncher, ())
         elif data.startswith("R"):
             relayExp.setChannel(relayBank1, 0, value)
-        else:
+        elif data.startswith("L"):
             relayExp.setChannel(relayBank1, 1, value)
+        elif data.startswith("S"):
+            relayExp.setChannel(relayBank2, 0, value)
 
         reply = chr(0) # 0 == OKAY
         conn.sendall(reply)
