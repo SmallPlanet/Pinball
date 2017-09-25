@@ -20,41 +20,46 @@ class Validator {
         return Double(correct)/Double(correct+incorrect)*100.0
     }
     
+    func requestHandler(request: VNRequest, error: Error?) {
+        guard let results = request.results as? [VNClassificationObservation] else {
+            return
+        }
+        
+        let leftResult = results.filter{ $0.identifier == "left" }.first
+        let rightResult = results.filter{ $0.identifier == "right" }.first
+        
+        let confidence = (left: Double(leftResult?.confidence ?? 0), right: Double(rightResult?.confidence ?? 0))
+        let model_output = (left: confidence.left > 0.5, right: confidence.right > 0.5)
+        categoryCorrect.left += model_output.left == currentValues.left ? 1 : 0
+        categoryCorrect.right += model_output.right == currentValues.right ? 1 : 0
+        
+        thresholds.enumerated().forEach { index, threshold in
+            let prediction = (left: confidence.left > threshold, right: confidence.right > threshold)
+            if prediction == currentValues {
+                thresholdCorrect[index] = (thresholdCorrect[index] ?? 0) + 1
+            }
+        }
+        
+        processedCount += 1
+        
+        if model_output == currentValues {
+            correct += 1
+        } else {
+            incorrect += 1
+        }
+        print("\(correct + incorrect)/\(totalFiles) \(String(format: "%0.4f",percentCorrect))% correct (\(correct+incorrect)/\(totalFiles))\r", terminator: "")
+    }
+    
+    
     func process() {
+        let startDate = Date()
+        
         guard let model = try? VNCoreMLModel(for: model) else {
             print("Unable to create an instance of the model")
             exit(EXIT_FAILURE)
         }
 
-        let request = VNCoreMLRequest(model: model) { request, error in
-            guard let results = request.results as? [VNClassificationObservation] else {
-                return
-            }
-            
-            let leftResult = results.filter{ $0.identifier == "left" }.first
-            let rightResult = results.filter{ $0.identifier == "right" }.first
-            
-            let confidence = (left: Double(leftResult?.confidence ?? 0), right: Double(rightResult?.confidence ?? 0))
-            let model_output = (left: confidence.left > 0.5, right: confidence.right > 0.5)
-            self.categoryCorrect.left += model_output.left == self.currentValues.left ? 1 : 0
-            self.categoryCorrect.right += model_output.right == self.currentValues.right ? 1 : 0
-
-            self.thresholds.enumerated().forEach { index, threshold in
-                let prediction = (left: confidence.left > threshold, right: confidence.right > threshold)
-                if prediction == self.currentValues {
-                    self.thresholdCorrect[index] = (self.thresholdCorrect[index] ?? 0) + 1
-                }
-            }
-            
-            self.processedCount += 1
-
-            if model_output == self.currentValues {
-                self.correct += 1
-            } else {
-                self.incorrect += 1
-            }
-            print("\(self.correct + self.incorrect)/\(self.totalFiles) \(String(format: "%0.4f",self.percentCorrect))% correct (\(self.correct+self.incorrect)/\(self.totalFiles))\r", terminator: "")
-        }
+        let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
         
         let directoryContents = try! FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
         let allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
@@ -62,7 +67,7 @@ class Validator {
 
         for file in allFiles {
             autoreleasepool {
-                let ciImage = CIImage(contentsOf: file)!
+                guard let ciImage = CIImage(contentsOf: file) else { return }
                 
                 let handler = VNImageRequestHandler(ciImage: ciImage)
                 
@@ -83,6 +88,7 @@ class Validator {
             print(String(format: "%8f   %0.4f", threshold, Double(thresholdCorrect[index] ?? 0)/Double(processedCount)))
         }
         print(String(format: "%0.4f left    %0.4f right", Double(categoryCorrect.left)/Double(processedCount), Double(categoryCorrect.right)/Double(processedCount)))
+        print(String(format: "%0.3fs elapsed time", Date().timeIntervalSince(startDate)))
 
     }
     
