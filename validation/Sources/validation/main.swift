@@ -1,6 +1,7 @@
 import CoreImage
 import CoreML
 import Vision
+//import CommandLineKit
 
 class Validator {
 
@@ -28,8 +29,9 @@ class Validator {
         let leftResult = results.filter{ $0.identifier == "left" }.first
         let rightResult = results.filter{ $0.identifier == "right" }.first
         
-        let confidence = (left: Double(leftResult?.confidence ?? 0), right: Double(rightResult?.confidence ?? 0))
+        let confidence = (left: Double(leftResult?.confidence ?? -1), right: Double(rightResult?.confidence ?? -1))
         let model_output = (left: confidence.left > 0.5, right: confidence.right > 0.5)
+
         categoryCorrect.left += model_output.left == currentValues.left ? 1 : 0
         categoryCorrect.right += model_output.right == currentValues.right ? 1 : 0
         
@@ -60,7 +62,8 @@ class Validator {
         }
 
         let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
-        
+        request.imageCropAndScaleOption = .scaleFill
+
         let directoryContents = try! FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
         let allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
         totalFiles = allFiles.count
@@ -72,7 +75,6 @@ class Validator {
                 let handler = VNImageRequestHandler(ciImage: ciImage)
                 
                 do {
-                    request.imageCropAndScaleOption = .scaleFill
                     let components = file.lastPathComponent.split(separator: "_", maxSplits: 8, omittingEmptySubsequences: true)
                     currentValues = (left: Int(components[1]) ?? 0 == 1, right: Int(components[2]) ?? 0 == 1)
                     try handler.perform([request])
@@ -105,8 +107,16 @@ class Validator {
     
 }
 
+guard CommandLine.arguments.count == 3 else {
+    print("Error: requires 2 arguments, path to mlmodel file and path to directory containing images")
+    exit(EXIT_FAILURE)
+}
 
+let modelUrl = URL(fileURLWithPath: CommandLine.arguments[1])
+let compiledUrl = try MLModel.compileModel(at: modelUrl)
+let model = try MLModel(contentsOf: compiledUrl)
 
-let v = Validator(imagesPath: "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/Validation/Images/validate_tng", model: tng_alpha_16h().model)
+let v = Validator(imagesPath: CommandLine.arguments[2], model: model)
 v.process()
 
+exit(EXIT_SUCCESS)
