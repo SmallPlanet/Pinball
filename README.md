@@ -13,7 +13,7 @@ An experiment in using machine vision, deep learning, and CoreML to allow an iPh
 
 #  Rules
 
-We allow ourselves the ability to modify the machine for the purposes on providing input only. For example, we can uses hardware relays to drive the left/right flippers.  
+We allow ourselves the ability to modify the machine for the purposes on providing input only. For example, we can use hardware relays to drive the left/right flippers.  
 
 We do not allow ourselves to instrument output from the machine. For example if we want to utilize the player's score then we need to read it visually off of the machine's display instead of providing it electronically to the app.
 
@@ -27,7 +27,7 @@ Utilize an Omega2 to allow networked control of the pinball machine
 3. ~~activate the ball kicker~~
 
 ### Phase 1
-Implement supervised learning such that the AI an intelligently hit the pinball with the flippers
+Implement supervised learning such that the AI can intelligently hit the pinball with the flippers
 
 1. ~~capture mode to gather training images of human playing~~
 3. ~~create and train model using keras~~
