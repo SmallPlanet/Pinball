@@ -16,8 +16,6 @@ We allow ourselves the ability to modify the machine for the purposes on providi
 
 We do not allow ourselves to instrument output from the machine. For example if we want to utilize the player's score then we need to read it visually off of the machine's display instead of providing it electronically to the app.
 
-![smallplanet_Pinball](/meta/training.gif?raw=true "training sample")
-
 #  Roadmap
 
 
@@ -46,6 +44,16 @@ Implement unsupervised learning/Deep Q-Learning such that the AI can play well
 4. upload new coreml models dynamically
 
 
+## Cool stuff
+
+*iPhone is suspended above Nascar machine providing full view of the playing field*
+![smallplanet_Pinball](/meta/iphone.jpg?raw=true "iPhone rig")
+
+*90 frames from a 220k frame training set*
+![smallplanet_Pinball](/meta/training.gif?raw=true "Training sample")
+
+*Phase 1 model playing Nascar pinball*
+![smallplanet_Pinball](/meta/clip_high.gif?raw=true "Phase 1 Nascar model")
 
 ## License
 
