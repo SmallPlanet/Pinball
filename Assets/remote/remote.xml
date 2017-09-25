@@ -27,9 +27,21 @@
     <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="root" secondAttribute="top" constant="80" />
     
     <Button id="captureButton" title="Capture Mode Unknown" styleId="ButtonStd" />
-    <Constraint firstItem="captureButton" firstAttribute="width" constant="400"/>
+    <Constraint firstItem="captureButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
     <Constraint firstItem="captureButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.2" />
     <Constraint firstItem="captureButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="captureButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
+    
+    <Button id="kickerButton" title="Ball Kicker" styleId="ButtonStd" />
+    <Constraint firstItem="kickerButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
+    <Constraint firstItem="kickerButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.15" />
+    <Constraint firstItem="kickerButton" firstAttribute="left" secondItem="captureButton" secondAttribute="right" constant="20" />
+    <Constraint firstItem="kickerButton" firstAttribute="top" secondItem="captureButton" secondAttribute="top" constant="0" />
+    
+    <Button id="startButton" title="Start Game" styleId="ButtonStd" />
+    <Constraint firstItem="startButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
+    <Constraint firstItem="startButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.15" />
+    <Constraint firstItem="startButton" firstAttribute="right" secondItem="captureButton" secondAttribute="left" constant="-20" />
+    <Constraint firstItem="startButton" firstAttribute="top" secondItem="captureButton" secondAttribute="top" constant="0" />
     
 </Scene>

@@ -121,7 +121,7 @@ class PinballServer {
             while true {
                 do {
                     
-                    while readData.count < 6 {
+                    while readData.count < 8 {
                         tmpData.removeAll(keepingCapacity: true)
                         _ = try socket.read(into: &tmpData)
                         readData.append(tmpData)
@@ -134,8 +134,10 @@ class PinballServer {
 
                     let leftButton: Byte = readData[4]
                     let rightButton: Byte = readData[5]
+                    let startButton: Byte = readData[6]
+                    let ballKicker: Byte = readData[7]
                     
-                    readData.removeSubrange(0..<6)
+                    readData.removeSubrange(0..<8)
 
                     while readData.count < jpegSize {
                         tmpData.removeAll(keepingCapacity: true)
@@ -144,7 +146,7 @@ class PinballServer {
                     }
 
                     do {
-                        let outputFilePath = "\(outputFolderPath)/\(leftButton)_\(rightButton)_\(imageNumber)_\(sessionUUID).jpg"
+                        let outputFilePath = "\(outputFolderPath)/\(leftButton)_\(rightButton)_\(ballKicker)_\(startButton)_\(imageNumber)_\(sessionUUID).jpg"
                         print("  saving image \(imageNumber): \(outputFilePath)")
                         try Data(readData[0..<jpegSize]).write(to: URL(fileURLWithPath: outputFilePath, isDirectory: false), options: .atomic)
                     } catch {

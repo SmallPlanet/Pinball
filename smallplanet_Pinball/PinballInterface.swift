@@ -15,6 +15,8 @@ typealias Byte = UInt8
 protocol PinballPlayer {
     var leftButton: Button? { get }
     var rightButton: Button? { get }
+    var startButton: Button? { get }
+    var ballKicker: Button? { get }
     var pinball: PinballInterface { get }
     func setupButtons(_ didChange:( ()->() )?)
 }
@@ -41,6 +43,24 @@ extension PinballPlayer {
             self.pinball.rightButtonEnd()
             didChange?()
         }
+        
+        ballKicker?.button.add(for: startEvents) {
+            self.pinball.ballKickerStart()
+            didChange?()
+        }
+        ballKicker?.button.add(for: endEvents) {
+            self.pinball.ballKickerEnd()
+            didChange?()
+        }
+        
+        startButton?.button.add(for: startEvents) {
+            self.pinball.startButtonStart()
+            didChange?()
+        }
+        startButton?.button.add(for: endEvents) {
+            self.pinball.startButtonEnd()
+            didChange?()
+        }
     }
 }
 
@@ -49,6 +69,8 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     enum ButtonType {
         case left(on: Bool)
         case right(on: Bool)
+        case ballKicker(on: Bool)
+        case startButton(on: Bool)
     }
     
     var connected = false
@@ -58,6 +80,8 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     
     var leftButtonPressed = false
     var rightButtonPressed = false
+    var ballKickerPressed = false
+    var startButtonPressed = false
     
     func connect() {
         guard let client = client else {
@@ -95,6 +119,22 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         sendPress(forButton: .right(on: false))
     }
     
+    @objc func ballKickerStart() {
+        sendPress(forButton: .ballKicker(on: true))
+    }
+    
+    @objc func ballKickerEnd() {
+        sendPress(forButton: .ballKicker(on: false))
+    }
+    
+    @objc func startButtonStart() {
+        sendPress(forButton: .startButton(on: true))
+    }
+    
+    @objc func startButtonEnd() {
+        sendPress(forButton: .startButton(on: false))
+    }
+    
     private func sendPress(forButton type: ButtonType) {
         let data: String
         switch type {
@@ -104,6 +144,19 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         case .right(let on):
             data = "R" + (on ? "1" : "0")
             rightButtonPressed = on
+        case .ballKicker(let on):
+            ballKickerPressed = on
+            if on {
+                data = "B"
+            } else {
+                // python server cycles ball kicker on and off
+                // automatically, so only need to send the on
+                // trigger
+                return
+            }
+        case .startButton(let on):
+            data = "S" + (on ? "1" : "0")
+            startButtonPressed = on
         }
         
         guard let client = client else {

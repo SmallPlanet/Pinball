@@ -40,5 +40,11 @@ class ControlController: PlanetViewController, PinballPlayer {
     internal var rightButton: Button? {
         return mainXmlView!.elementForId("rightButton")!.asButton!
     }
+    internal var ballKicker: Button? {
+        return mainXmlView!.elementForId("ballKicker")!.asButton!
+    }
+    internal var startButton: Button? {
+        return mainXmlView!.elementForId("startButton")!.asButton!
+    }
     
 }
