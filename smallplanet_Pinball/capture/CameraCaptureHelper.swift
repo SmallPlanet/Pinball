@@ -205,82 +205,36 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         serialQueue.async {
             var bufferCopy : CMSampleBuffer?
-            let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
-            if err != noErr {
-                return
-            }
-            
-            guard let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else
-            {
+            guard CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy) == noErr, let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else {
                 return
             }
 
             let image = CIImage(cvPixelBuffer: pixelBuffer)
+            let size = image.extent.size
+            let cropped = image.cropped(to: CGRect(x: (size.width-size.height)/2, y: 0, width: size.height, height: size.height))
             
-            let rotation:CGFloat = 90
-            
-            let hw = image.extent.width / 2
-            let hh = image.extent.height / 2
-            
-            // scale down to 50 pixels on min size
-            let scaleW = 169.0 / image.extent.height
-            let scaleH = 300.0 / image.extent.width
-            
+            let rotation = CGFloat(-90)
+            let scale = CGFloat(240/size.height)
             var transform = CGAffineTransform.identity
-            
-            transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
             transform = transform.rotated(by: rotation.degreesToRadians)
-            transform = transform.scaledBy(x: scaleW, y: scaleH)
-            transform = transform.translatedBy(x: -hw, y: -hh)
+            transform = transform.scaledBy(x: scale, y: scale)
             
-            let rotatedImage = image.transformed(by: transform)
-            
-            let croppedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-            
-            self.motionBlurFrames.append(croppedImage)
-            while self.motionBlurFrames.count > 3 {
-                self.motionBlurFrames.remove(at: 0)
-            }
-            
-            var lastBlurFrame = self.motionBlurFrames[0]
-            for i in 1..<self.motionBlurFrames.count {
-                // merge on our motion blur frames
-                guard let colorMatrix = CIFilter(name:"CIColorMatrix") else {
-                    return
-                }
-                let blurFactor:CGFloat = 0.5
-                
-                colorMatrix.setDefaults()
-                colorMatrix.setValue(self.motionBlurFrames[i], forKey: kCIInputImageKey)
-                colorMatrix.setValue(CIVector(x:0.0,y:0.0,z:0.0,w:blurFactor), forKey: "inputAVector")
-                
-                lastBlurFrame = self.motionBlurFrames[i].composited(over: lastBlurFrame)
-            }
-            
-            // only save blur frame every few frames
-            if localPlayFrameNumber % 10 != 1 {
-                self.motionBlurFrames.removeLast()
-            }
-            
-            let maskedImage = self.maskImage!.composited(over: lastBlurFrame)
-            //let maskedImage = lastBlurFrame
-            
-            
-            
+            let processedImage = cropped.transformed(by: transform)
+
             self.playQueue.sync {
-                self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+                self.delegate?.playCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             }
             
             
             if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-                self.delegate?.skippedCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+                self.delegate?.skippedCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             } else {
                 self.extraFramesToCapture = self.extraFramesToCapture - 1
                 if self.extraFramesToCapture < 0 {
                     self.extraFramesToCapture = 0
                 }
                 
-                self.delegate?.newCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+                self.delegate?.newCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             }
         }
  

@@ -28,7 +28,72 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
+    var fps = 0
     
+    func requestHandler(request: VNRequest, error: Error?) {
+        guard let results = request.results as? [VNClassificationObservation] else {
+            return
+        }
+        
+        // find the results which match each flipper
+        let left = results.filter{ $0.identifier == "left" }.first!
+        let right = results.filter{ $0.identifier == "right" }.first!
+        
+        // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
+        // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
+        // (basically trying to handle small false positives)
+        var leftFlipperShouldBePressed = false
+        var rightFlipperShouldBePressed = false
+        
+        var leftFlipperConfidence:Float = left.confidence
+        var rightFlipperConfidence:Float = right.confidence
+        
+        if leftFlipperCounter > 0 {
+            leftFlipperConfidence = 0
+        }
+        if rightFlipperCounter > 0 {
+            rightFlipperConfidence = 0
+        }
+        
+        leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
+        rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
+        
+        //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
+        
+        let flipDelay = 12
+        if leftFlipperShouldBePressed && leftFlipperCounter < -flipDelay {
+            leftFlipperCounter = flipDelay/2
+            
+        }
+        if rightFlipperShouldBePressed && rightFlipperCounter < -flipDelay {
+            rightFlipperCounter = flipDelay/2
+        }
+        
+        print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
+        
+        if pinball.leftButtonPressed == false && leftFlipperCounter > 0 {
+            pinball.leftButtonStart()
+            handleShouldFrameCapture()
+        }
+        if pinball.leftButtonPressed == true && leftFlipperCounter < 0 {
+            pinball.leftButtonEnd()
+            handleShouldFrameCapture()
+        }
+        
+        if pinball.rightButtonPressed == false && rightFlipperCounter > 0 {
+            pinball.rightButtonStart()
+            handleShouldFrameCapture()
+        }
+        if pinball.rightButtonPressed == true && rightFlipperCounter < 0 {
+            pinball.rightButtonEnd()
+            handleShouldFrameCapture()
+        }
+        
+        let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right.identifier), \(fps) fps"
+        DispatchQueue.main.async {
+            self.statusLabel.label.text = confidence
+        }
+    }
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
@@ -37,83 +102,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
+        self.fps = fps
+        
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
         
-        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
-            guard let results = request.results as? [VNClassificationObservation] else {
-                return
-            }
-            
-            
-            // find the results which match each flipper
-            var left:VNClassificationObservation? = nil
-            var right:VNClassificationObservation? = nil
-            
-            for result in results {
-                if result.identifier == "left" {
-                    left = result
-                } else if result.identifier == "right" {
-                    right = result
-                }
-            }
-            
-            // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
-            // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
-            // (basically trying to handle small false positives)
-            var leftFlipperShouldBePressed = false
-            var rightFlipperShouldBePressed = false
-            
-            var leftFlipperConfidence:Float = left!.confidence
-            var rightFlipperConfidence:Float = right!.confidence
-            
-            if self!.leftFlipperCounter > 0 {
-                leftFlipperConfidence = 0
-            }
-            if self!.rightFlipperCounter > 0 {
-                rightFlipperConfidence = 0
-            }
-            
-            leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
-            rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
-            
-            //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            
-            let flipDelay = 12
-            if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
-                self?.leftFlipperCounter = flipDelay/2
-                
-            }
-            if rightFlipperShouldBePressed && self!.rightFlipperCounter < -flipDelay {
-                self?.rightFlipperCounter = flipDelay/2
-            }
-            
-            
-            if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
-                self?.pinball.leftButtonStart()
-                print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-                self?.HandleShouldFrameCapture()
-            }
-            if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
-                self?.pinball.leftButtonEnd()
-                self?.HandleShouldFrameCapture()
-            }
-            
-            if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
-                self?.pinball.rightButtonStart()
-                print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-                self?.HandleShouldFrameCapture()
-            }
-            if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
-                self?.pinball.rightButtonEnd()
-                self?.HandleShouldFrameCapture()
-            }
-
-            let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right!.identifier), \(fps) fps"
-            DispatchQueue.main.async {
-                self?.statusLabel.label.text = confidence
-            }
-        }
+        let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
         
         // Run the Core ML classifier on global dispatch queue
         let handler = VNImageRequestHandler(ciImage: maskedImage)
@@ -123,18 +117,22 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print(error)
         }
         
-        if lastVisibleFrameNumber + 100 < frameNumber {
+        if lastVisibleFrameNumber + 30 < frameNumber {
             lastVisibleFrameNumber = frameNumber
             DispatchQueue.main.async {
                 guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
                     return
                 }
+                let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                let filename = path.appendingPathComponent("sampled_\(String(format: "%06d", self.counter)).jpg")
+                self.counter += 1
+                try! jpegData.write(to: filename)
                 self.preview.imageView.image = UIImage(data:jpegData)
             }
         }
     }
 
-    
+    var counter = 0
     
     var currentValidationURL:URL?
     override func viewDidLoad() {
@@ -148,7 +146,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             findCaptureServer()
         }
         
-        HandleShouldFrameCapture()
+        handleShouldFrameCapture()
         
         captureHelper.delegate = self
         
@@ -163,21 +161,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         // Load the ML model through its generated class
-        model = try? VNCoreMLModel(for: nascar_9190_9288().model)
+        model = try? VNCoreMLModel(for: tng_alpha_16h().model)
         
         
-        // load the overlay so we can manmually line up the flippers
-        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
-        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
-        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
-            return
-        }
-        overlay.imageView.image = UIImage(data:tiffData)
+//        // load the overlay so we can manmually line up the flippers
+//        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
+//        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
+//        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+//        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+//            return
+//        }
+//        overlay.imageView.image = UIImage(data:tiffData)
         
-        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
-        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
-        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+//        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
+//        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
+//        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
         
         validateNascarButton.button.add(for: .touchUpInside) {
             
@@ -190,21 +188,20 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             DispatchQueue.global(qos: .background).async {
                 do {
-                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar/")
-                    let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
-                    
-                    var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
-                    
-                    allFiles.shuffle()
-                    
                     guard let model = self.model else {
                         return
                     }
+
+                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_tng/")
+                    let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
+                    
+                    var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
+                    allFiles.shuffle()
                     
                     var numberOfCorrectFiles:Float = 0
                     var numberOfProcessedFiles:Float = 0
-                    var fileNumber:Int = 0
-                    let totalFiles:Int = allFiles.count
+                    var fileNumber = 0
+                    let totalFiles = allFiles.count
                     
                     let request = VNCoreMLRequest(model: model) { [weak self] request, error in
                         guard let results = request.results as? [VNClassificationObservation] else {
@@ -212,41 +209,37 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         }
                         
                         // TODO: compare returned accuracy to the accuracy recorded in the file's name
-                        var leftIsPressed:Int = 0
-                        var rightIsPressed:Int = 0
                         
-                        for result in results {
-                            if result.identifier == "left" {
-                                leftIsPressed = (result.confidence > 0.5 ? 1 : 0)
-                            } else if result.identifier == "right" {
-                                rightIsPressed = (result.confidence > 0.5 ? 1 : 0)
-                            }
-                        }
+                        let leftResult = results.filter{ $0.identifier == "left" }.first
+                        let rightResult = results.filter{ $0.identifier == "right" }.first
+
+                        let leftIsPressed = (leftResult?.confidence ?? 0) > 0.5 ? 1 : 0
+                        let rightIsPressed = (rightResult?.confidence ?? 0) > 0.5 ? 1 : 0
+
                         
                         numberOfProcessedFiles += 1
-                        if (self?.currentValidationURL?.lastPathComponent.hasPrefix("\(leftIsPressed)_\(rightIsPressed)_"))! {
+                        let outstring = self?.currentValidationURL?.lastPathComponent.prefix(10).suffix(3) ?? "X"
+                        if outstring == "\(leftIsPressed)_\(rightIsPressed)" {
                             numberOfCorrectFiles += 1
-                        }else{
-                            print("wrong: \(self!.currentValidationURL!.lastPathComponent), guessed: \(leftIsPressed)_\(rightIsPressed)_")
+                        } else {
+                            print("wrong: \(self!.currentValidationURL!.lastPathComponent), was: \(outstring) guessed: \(leftIsPressed)_\(rightIsPressed) <- \(leftResult?.confidence ?? -1), \(rightResult?.confidence ?? -1)")
                         }
                         
                     }
 
+                    let start = Date()
+                    
                     for file in allFiles {
                         autoreleasepool {
                             let ciImage = CIImage(contentsOf: file)!
                             
-                            //let r = CGFloat(Float(arc4random()) / Float(UINT32_MAX) * 6.0 - 3.0)
-                            //ciImage = ciImage.transformed(by: CGAffineTransform(rotationAngle: r.degreesToRadians))
-                            
                             let handler = VNImageRequestHandler(ciImage: ciImage)
                             
                             DispatchQueue.main.async {
-                                
                                 self.preview.imageView.image = UIImage(ciImage: ciImage)
                                 
                                 fileNumber += 1
-                                self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
+                                self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(1.0 * numberOfCorrectFiles / numberOfProcessedFiles))"
                             }
                             
                             do {
@@ -258,6 +251,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                             }
                         }
                     }
+                    print("Summary: \(1.0 * numberOfCorrectFiles / numberOfProcessedFiles)")
+                    print("Elapsed time: \(Date().timeIntervalSince(start))s")
                     
                     sleep(5000)
 
@@ -273,12 +268,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.pinball = pinball
     }
     
-    func HandleShouldFrameCapture() {
-        if pinball.rightButtonPressed || pinball.leftButtonPressed {
-            captureHelper.shouldProcessFrames = true
-        } else {
-            captureHelper.shouldProcessFrames = false
-        }
+    func handleShouldFrameCapture() {
+        captureHelper.shouldProcessFrames = pinball.rightButtonPressed || pinball.leftButtonPressed
     }
     
     override func viewDidDisappear(_ animated: Bool) {

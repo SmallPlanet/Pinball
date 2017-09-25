@@ -112,11 +112,11 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     }
     
     @objc func rightButtonStart() {
-        sendPress(forButton: .right(on: true))
+//        sendPress(forButton: .right(on: true))
     }
     
     @objc func rightButtonEnd() {
-        sendPress(forButton: .right(on: false))
+//        sendPress(forButton: .right(on: false))
     }
     
     @objc func ballKickerStart() {
