@@ -46,13 +46,13 @@ Implement unsupervised learning/Deep Q-Learning such that the AI can play well
 
 ## Cool stuff
 
-*iPhone is suspended above Nascar machine providing full view of the playing field*
+*iPhone is suspended above Nascar machine providing full view of the playing field*  
 ![smallplanet_Pinball](/meta/iphone.jpg?raw=true "iPhone rig")
 
-*90 frames from a 220k frame training set*
+*90 frames from a 220k frame training set*  
 ![smallplanet_Pinball](/meta/training.gif?raw=true "Training sample")
 
-*Phase 1 model playing Nascar pinball*
+*Phase 1 model playing Nascar pinball*  
 ![smallplanet_Pinball](/meta/clip_high.gif?raw=true "Phase 1 Nascar model")
 
 ## License
