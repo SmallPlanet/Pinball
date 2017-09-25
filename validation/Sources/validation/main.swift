@@ -2,7 +2,6 @@ import CoreImage
 import CoreML
 import Vision
 
-@available(OSX 10.13, *)
 class Validator {
 
     let imagesPath: String
@@ -102,14 +101,6 @@ class Validator {
 
 
 
-
-
-if #available(OSX 10.13, *) {
-    let v = Validator(imagesPath: "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/Validation/Images/validate_tng", model: tng_alpha_16h().model)
-    v.process()
-} else {
-    print("Must be running macOS 10.13 or higher")
-    exit(EXIT_FAILURE)
-}
-
+let v = Validator(imagesPath: "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/Validation/Images/validate_tng", model: tng_alpha_16h().model)
+v.process()
 

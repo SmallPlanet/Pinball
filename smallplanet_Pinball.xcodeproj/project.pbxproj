@@ -28,6 +28,7 @@
 		46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */; };
 		46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402871F3CB54700C46E3C /* CaptureController.swift */; };
 		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
+		A93D39941F7945CF000A2A4B /* tng_alpha_16h.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A93D39931F7945CA000A2A4B /* tng_alpha_16h.mlmodel */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -71,6 +72,7 @@
 		46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Closures.swift"; sourceTree = "<group>"; };
 		46C402871F3CB54700C46E3C /* CaptureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureController.swift; sourceTree = "<group>"; };
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
+		A93D39931F7945CA000A2A4B /* tng_alpha_16h.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_alpha_16h.mlmodel; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -151,6 +153,7 @@
 		465F737A1F493915002CFF71 /* PinballModels */ = {
 			isa = PBXGroup;
 			children = (
+				A93D39931F7945CA000A2A4B /* tng_alpha_16h.mlmodel */,
 				465F737B1F493915002CFF71 /* nascar_9190_9288.mlmodel */,
 			);
 			path = PinballModels;
@@ -284,6 +287,7 @@
 				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
 				46530BCA1F72BA1B00D9AB7A /* locking.swift in Sources */,
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
+				A93D39941F7945CF000A2A4B /* tng_alpha_16h.mlmodel in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 				4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */,
