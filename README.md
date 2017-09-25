@@ -1,14 +1,22 @@
 ![smallplanet_Pinball](/meta/logo.png?raw=true "smallplanet_Pinball")
 
-# Pinball
+# Overview
 
-Our experiement in using machine vision, deep learning, and CoreML to allow an iPhone to play a real pinball machine.
+An experiement in using machine vision, deep learning, and CoreML to allow an iPhone to play a real pinball machine.
+
+#  The Machines
+
+* **Nascar** by Stern Pinball
+* **Stargate** by Gottlieb
+* **Star Trek: The Next Generation** by Williams Electronics
 
 #  Rules
 
 We allow ourselves the ability to modify the machine for the purposes on providing input only. For example, we can uses hardware relays to drive the left/right flippers.  
 
 We do not allow ourselves to instrument output from the machine. For example if we want to utilize the player's score then we need to read it visually off of the machine's display instead of providing it electronically to the app.
+
+![smallplanet_Pinball](/meta/training.gif?raw=true "training sample")
 
 #  Roadmap
 
