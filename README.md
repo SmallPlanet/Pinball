@@ -2,7 +2,8 @@
 
 # Overview
 
-An experiement in using machine vision, deep learning, and CoreML to allow an iPhone to play a real pinball machine.
+An experiment in using machine vision, deep learning, and CoreML to allow an iPhone to play a real pinball machine. We believe that intelligently driving a pinball machine will provide several unique challenges to deep (Q)-learning not present in experiments on digital game systems. For example, since the only input into the system is from the device's camera, the whole system from hardware, software, training, to playback must be fast enough to handle the hectic pace of pinball in real-time, whereas a computer emulator can be stepped through at a much slower, more regulated pace.
+
 
 #  The Machines
 
@@ -18,15 +19,14 @@ We do not allow ourselves to instrument output from the machine. For example if 
 
 #  Roadmap
 
-
-## Phase 0
-Utilize an Omega2 to allow networked control of the pinball machie
+### Phase 0
+Utilize an Omega2 to allow networked control of the pinball machine
 
 1. ~~flip left and right flippers~~
 2. ~~press the start button~~
 3. ~~activate the ball kicker~~
 
-## Phase 1
+### Phase 1
 Implement supervised learning such that the AI an intelligently hit the pinball with the flippers
 
 1. ~~capture mode to gather training images of human playing~~
@@ -35,16 +35,16 @@ Implement supervised learning such that the AI an intelligently hit the pinball 
 5. ~~activate the ball kicker~~
 6. ~~activate the start button~~
 
-## Phase 2
+### Phase 2
 Implement unsupervised learning/Deep Q-Learning such that the AI can play well
 
 1. train model to read score off of the machine's display
 2. provide a play & capture mode to flip the flippers while capturing training material
 3. perform continuous learning on a machine on the same network as the app (ie don't attempt to train on the phone)
-4. upload new coreml models dynamically
+4. upload new CoreML models dynamically
 
 
-## Cool stuff
+# Cool stuff
 
 *iPhone is suspended above Nascar machine providing full view of the playing field*  
 ![smallplanet_Pinball](/meta/iphone.jpg?raw=true "iPhone rig")
