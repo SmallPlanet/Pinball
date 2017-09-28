@@ -126,10 +126,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         if lastVisibleFrameNumber + 100 < frameNumber {
             lastVisibleFrameNumber = frameNumber
             DispatchQueue.main.async {
-                guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
-                    return
-                }
-                self.preview.imageView.image = UIImage(data:jpegData)
+                self.preview.imageView.image = UIImage(ciImage: maskedImage)
             }
         }
     }
@@ -151,6 +148,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         HandleShouldFrameCapture()
         
         captureHelper.delegate = self
+        captureHelper.delegateWantsPlayImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         
@@ -170,7 +168,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
         var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
         overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRG8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
             return
         }
         overlay.imageView.image = UIImage(data:tiffData)
@@ -312,11 +310,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let jpgData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else {
             return
         }
         
-        storedFrames.append(SkippedFrame(jpegData, left, right, start, ballKicker))
+        storedFrames.append(SkippedFrame(jpgData, left, right, start, ballKicker))
         
         while storedFrames.count > 30 {
             storedFrames.remove(at: 0)
@@ -334,7 +332,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // send all stored frames
             while storedFrames.count > 0 {
                 
-                sendCameraFrame(storedFrames[0].jpegData,
+                sendCameraFrame(storedFrames[0].jpgData,
                                 storedFrames[0].leftButton,
                                 storedFrames[0].rightButton,
                                 storedFrames[0].startButton,
@@ -345,17 +343,17 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            guard let jpgData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else {
                 return
             }
             
-            sendCameraFrame(jpegData, left, right, start, ballKicker)
+            sendCameraFrame(jpgData, left, right, start, ballKicker)
         }
     }
     
-    func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
+    func sendCameraFrame(_ jpgData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
         // send the size of the image data
-        var sizeAsInt = UInt32(jpegData.count)
+        var sizeAsInt = UInt32(jpgData.count)
         let sizeAsData = Data(bytes: &sizeAsInt,
                               count: MemoryLayout.size(ofValue: sizeAsInt))
         
@@ -369,7 +367,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             byteArray.append(ballKicker)
             _ = try serverSocket?.write(from: Data(byteArray))
             
-            _ = try serverSocket?.write(from: jpegData)
+            _ = try serverSocket?.write(from: jpgData)
         } catch (let error) {
             self.disconnectedFromServer()
             print(error)

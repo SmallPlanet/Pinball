@@ -20,14 +20,14 @@ extension NSData {
 }
 
 class SkippedFrame {
-    var jpegData:Data
+    var jpgData:Data
     var leftButton:Byte
     var rightButton:Byte
     var startButton:Byte
     var ballKickerButton:Byte
     
-    init(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKickerButton:Byte) {
-        self.jpegData = jpegData
+    init(_ jpgData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKickerButton:Byte) {
+        self.jpgData = jpgData
         self.leftButton = leftButton
         self.rightButton = rightButton
         self.startButton = startButton
@@ -53,7 +53,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var storedFrames:[SkippedFrame] = []
     func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
             return
         }
         
@@ -64,10 +64,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         }
     }
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    {
-        
-    }
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) { }
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
@@ -78,7 +75,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                 while storedFrames.count > 0 {
                     
                     // for the ball kicker, we want the pre-frames to always have the current button value to ensure we get enough ball kicker frames
-                    sendCameraFrame(storedFrames[0].jpegData,
+                    sendCameraFrame(storedFrames[0].jpgData,
                                     storedFrames[0].leftButton,
                                     storedFrames[0].rightButton,
                                     storedFrames[0].startButton,
@@ -91,25 +88,25 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            guard let jpgData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else {
                 return
             }
             
-            sendCameraFrame(jpegData, left, right, start, ballKicker)
+            sendCameraFrame(jpgData, left, right, start, ballKicker)
             
             if lastVisibleFrameNumber + 100 < frameNumber {
                 lastVisibleFrameNumber = frameNumber
                 DispatchQueue.main.async {
-                    self.preview.imageView.image = UIImage(data: jpegData)
+                    self.preview.imageView.image = UIImage(data: jpgData)
                     self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
                 }
             }
         }
     }
     
-    func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKickerButton:Byte) {
+    func sendCameraFrame(_ jpgData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKickerButton:Byte) {
         // send the size of the image data
-        var sizeAsInt = UInt32(jpegData.count)
+        var sizeAsInt = UInt32(jpgData.count)
         let sizeAsData = Data(bytes: &sizeAsInt,
                               count: MemoryLayout.size(ofValue: sizeAsInt))
         
@@ -123,7 +120,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             byteArray.append(ballKickerButton)
             _ = try serverSocket?.write(from: Data(byteArray))
             
-            _ = try serverSocket?.write(from: jpegData)
+            _ = try serverSocket?.write(from: jpgData)
         } catch (let error) {
             self.disconnectedFromServer()
             print(error)
@@ -138,6 +135,8 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         loadView()
         
         captureHelper.delegate = self
+        captureHelper.delegateWantsProcessedImages = true
+        captureHelper.delegateWantsSkippedImages = true
         findCaptureServer()
 
         setupButtons(HandleShouldFrameCapture)
@@ -172,7 +171,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
                     while self.storedFrames.count > 0 {
                         
                         // for the ball kicker, we want the pre-frames to always have the current button value to ensure we get enough ball kicker frames
-                        self.sendCameraFrame(self.storedFrames[0].jpegData,
+                        self.sendCameraFrame(self.storedFrames[0].jpgData,
                                         self.storedFrames[0].leftButton,
                                         self.storedFrames[0].rightButton,
                                         self.storedFrames[0].startButton,

@@ -39,8 +39,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
             self.navigationController?.pushViewController(CaptureController(), animated: true)
         }
         
-        controlModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(ControlController(), animated: true)
+        previewModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(PreviewController(), animated: true)
         }
         
         playModeButton.button.add(for: .touchUpInside) {
@@ -88,8 +88,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
     fileprivate var captureModeButton: Button {
         return mainXmlView!.elementForId("captureModeButton")!.asButton!
     }
-    fileprivate var controlModeButton: Button {
-        return mainXmlView!.elementForId("controlModeButton")!.asButton!
+    fileprivate var previewModeButton: Button {
+        return mainXmlView!.elementForId("previewModeButton")!.asButton!
     }
     fileprivate var remoteModeButton: Button {
         return mainXmlView!.elementForId("remoteModeButton")!.asButton!
