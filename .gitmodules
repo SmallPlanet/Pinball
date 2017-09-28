@@ -4,9 +4,6 @@
 [submodule "PlanetSwift"]
 	path = PlanetSwift
 	url = https://github.com/SmallPlanetSwift/PlanetSwift
-[submodule "SwiftSocket"]
-	path = SwiftSocket
-	url = https://github.com/swiftsocket/SwiftSocket.git
 [submodule "BlueSocket"]
 	path = BlueSocket
 	url = https://github.com/IBM-Swift/BlueSocket.git
