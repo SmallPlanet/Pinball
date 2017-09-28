@@ -13,9 +13,9 @@ An experiment in using machine vision, deep learning, and CoreML to allow an iPh
 
 #  Rules
 
-We allow ourselves the ability to modify the machine for the purposes on providing input only. For example, we can use hardware relays to drive the left/right flippers.  
+We allow ourselves the ability to modify the machine for the purposes of providing input only. For example, we can use hardware relays to drive the left/right flippers.  
 
-We do not allow ourselves to instrument output from the machine. For example if we want to utilize the player's score then we need to read it visually off of the machine's display instead of providing it electronically to the app.
+We chose not allow ourselves to instrument any output from the machine. For example if we wanted to utilize the player's score then we need to read it visually off of the machine's display instead of providing it electronically to the app.
 
 #  Roadmap
 
