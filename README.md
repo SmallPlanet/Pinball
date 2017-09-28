@@ -46,6 +46,9 @@ Implement unsupervised learning/Deep Q-Learning such that the AI can play well
 
 # Cool stuff
 
+*Omega2 board is connected to the flippers in the machine*  
+![smallplanet_Pinball](/meta/omega.jpg?raw=true "Omega2 connected to machine")
+
 *iPhone is suspended above Nascar machine providing full view of the playing field*  
 ![smallplanet_Pinball](/meta/iphone.jpg?raw=true "iPhone rig")
 
