@@ -1,4 +1,6 @@
+Models
+Images
 .DS_Store
-/.build
-/Packages
-/*.xcodeproj
+.build
+Packages
+*.xcodeproj

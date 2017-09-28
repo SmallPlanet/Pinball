@@ -19,16 +19,17 @@ extension CGFloat {
 class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 {
     let captureSession = AVCaptureSession()
+    
     let cameraPosition: AVCaptureDevice.Position
-    var captureDevice : AVCaptureDevice? = nil
+    var captureDevice: AVCaptureDevice? = nil
     
-    var pinball:PinballInterface? = nil
+    var pinball: PinballInterface? = nil
     
-    var maskImage:CIImage?
+    var maskImage: CIImage?
     
     var isLocked = false
     
-    var extraFramesToCapture:Int = 0
+    var extraFramesToCapture = 0
     var _shouldProcessFrames:Bool = false
     var shouldProcessFrames:Bool {
         get {
@@ -36,7 +37,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         }
         set {
             // if we're turning off capture frames when we are on, make sure we snag a few extra frames
-            if _shouldProcessFrames == true && newValue == false {
+            if _shouldProcessFrames && !newValue {
                 self.extraFramesToCapture = 30
             }
             _shouldProcessFrames = newValue
@@ -45,8 +46,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     weak var delegate: CameraCaptureHelperDelegate?
     
-    required init(cameraPosition: AVCaptureDevice.Position)
-    {
+    required init(cameraPosition: AVCaptureDevice.Position) {
         self.cameraPosition = cameraPosition
         
         super.init()
@@ -54,16 +54,15 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         initialiseCaptureSession()
     }
     
-    fileprivate func initialiseCaptureSession()
-    {
+    fileprivate func initialiseCaptureSession() {
 
-        guard let camera = (AVCaptureDevice.devices(for: AVMediaType.video) )
+        guard let camera = AVCaptureDevice.devices(for: AVMediaType.video)
             .filter({ $0.position == cameraPosition })
-            .first else
-        {
+            .first else {
             fatalError("Unable to access camera")
         }
         
+//        captureSession.automaticallyConfiguresCaptureDeviceForWideColor = false
         captureDevice = camera
         
         var bestFormat:AVCaptureDevice.Format? = nil
@@ -78,14 +77,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             }
         }
 
-        do
-        {
+        do {
             let input = try AVCaptureDeviceInput(device: camera)
-            
             captureSession.addInput(input)
-        }
-        catch
-        {
+        } catch {
             fatalError("Unable to access back camera")
         }
         
@@ -113,15 +108,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         videoOutput.setSampleBufferDelegate(self,
             queue: DispatchQueue(label: "sample buffer delegate", attributes: []))
         
-        if captureSession.canAddOutput(videoOutput)
-        {
+        if captureSession.canAddOutput(videoOutput) {
             captureSession.addOutput(videoOutput)
         }
-        
-        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
-        maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
-        maskImage = maskImage!.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-
         
         start()
     }

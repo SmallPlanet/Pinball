@@ -53,7 +53,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var storedFrames:[SkippedFrame] = []
     func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
             return
         }
         
@@ -64,10 +64,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
         }
     }
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    {
-        
-    }
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) { }
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
@@ -91,7 +88,7 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
                 return
             }
             

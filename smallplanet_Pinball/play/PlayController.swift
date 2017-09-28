@@ -16,6 +16,9 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let prefix = "0_1"
+    let session = String(Int(Date.timeIntervalSinceReferenceDate))
+    
     let playAndCapture = true
     
     let ciContext = CIContext(options: [:])
@@ -107,26 +110,38 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
         
-        let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
         
+        guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+            print("failed to make jpegData")
+            return
+        }
+        let ciImage = CIImage(data: jpegData)!
+//        let ciImage = maskedImage
+        
+        let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
+
         // Run the Core ML classifier on global dispatch queue
-        let handler = VNImageRequestHandler(ciImage: maskedImage)
+        let handler = VNImageRequestHandler(ciImage: ciImage)
         do {
             try handler.perform([request])
         } catch {
             print(error)
         }
         
+//        let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+//        let filename = path.appendingPathComponent("\(prefix)_\(String(format: "%06d", counter))_\(session).jpg")
+        counter += 1
+//        guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+//            return
+//        }
+//        try! jpegData.write(to: filename)
+
         if lastVisibleFrameNumber + 30 < frameNumber {
             lastVisibleFrameNumber = frameNumber
+            guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+                return
+            }
             DispatchQueue.main.async {
-                guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
-                    return
-                }
-                let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-                let filename = path.appendingPathComponent("sampled_\(String(format: "%06d", self.counter)).jpg")
-                self.counter += 1
-                try! jpegData.write(to: filename)
                 self.preview.imageView.image = UIImage(data:jpegData)
             }
         }
@@ -161,14 +176,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         // Load the ML model through its generated class
-        model = try? VNCoreMLModel(for: tng_alpha_16h().model)
-        
+//        model = try? VNCoreMLModel(for: tng_alpha_16h().model)
+        model = try? VNCoreMLModel(for: tng_bravo_0c().model)
+
         
 //        // load the overlay so we can manmually line up the flippers
 //        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
 //        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
 //        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-//        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+//        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
 //            return
 //        }
 //        overlay.imageView.image = UIImage(data:tiffData)
@@ -177,93 +193,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
 //        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
 //        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
         
-        validateNascarButton.button.add(for: .touchUpInside) {
-            
-            // run through all of the images in bundle://Assets/play/validate_nascar/, run them through CoreML, calculate total
-            // validation accuracy.  I've read that the ordering of channels in the images (RGBA vs ARGB for example) might not
-            // match between how the model was trained and how it is fed in through CoreML. Is the accuracy does not match
-            // the keras validation accuracy that will confirm or deny the image is being processed correctly.
-            
-            self.captureHelper.stop()
-            
-            DispatchQueue.global(qos: .background).async {
-                do {
-                    guard let model = self.model else {
-                        return
-                    }
-
-                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_tng/")
-                    let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
-                    
-                    var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
-                    allFiles.shuffle()
-                    
-                    var numberOfCorrectFiles:Float = 0
-                    var numberOfProcessedFiles:Float = 0
-                    var fileNumber = 0
-                    let totalFiles = allFiles.count
-                    
-                    let request = VNCoreMLRequest(model: model) { [weak self] request, error in
-                        guard let results = request.results as? [VNClassificationObservation] else {
-                            return
-                        }
-                        
-                        // TODO: compare returned accuracy to the accuracy recorded in the file's name
-                        
-                        let leftResult = results.filter{ $0.identifier == "left" }.first
-                        let rightResult = results.filter{ $0.identifier == "right" }.first
-
-                        let leftIsPressed = (leftResult?.confidence ?? 0) > 0.5 ? 1 : 0
-                        let rightIsPressed = (rightResult?.confidence ?? 0) > 0.5 ? 1 : 0
-
-                        
-                        numberOfProcessedFiles += 1
-                        let outstring = self?.currentValidationURL?.lastPathComponent.prefix(10).suffix(3) ?? "X"
-                        if outstring == "\(leftIsPressed)_\(rightIsPressed)" {
-                            numberOfCorrectFiles += 1
-                        } else {
-                            print("wrong: \(self!.currentValidationURL!.lastPathComponent), was: \(outstring) guessed: \(leftIsPressed)_\(rightIsPressed) <- \(leftResult?.confidence ?? -1), \(rightResult?.confidence ?? -1)")
-                        }
-                        
-                    }
-
-                    let start = Date()
-                    
-                    for file in allFiles {
-                        autoreleasepool {
-                            let ciImage = CIImage(contentsOf: file)!
-                            
-                            let handler = VNImageRequestHandler(ciImage: ciImage)
-                            
-                            DispatchQueue.main.async {
-                                self.preview.imageView.image = UIImage(ciImage: ciImage)
-                                
-                                fileNumber += 1
-                                self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(1.0 * numberOfCorrectFiles / numberOfProcessedFiles))"
-                            }
-                            
-                            do {
-                                request.imageCropAndScaleOption = .scaleFill
-                                self.currentValidationURL = file
-                                try handler.perform([request])
-                            } catch {
-                                print(error)
-                            }
-                        }
-                    }
-                    print("Summary: \(1.0 * numberOfCorrectFiles / numberOfProcessedFiles)")
-                    print("Elapsed time: \(Date().timeIntervalSince(start))s")
-                    
-                    sleep(5000)
-
-                } catch let error as NSError {
-                    print(error.localizedDescription)
-                }
-                
-                self.captureHelper.start()
-            }
-            
-        }
+        validateNascarButton.button.add(for: .touchUpInside) { }
         
         captureHelper.pinball = pinball
     }
@@ -303,7 +233,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
             return
         }
         
@@ -336,7 +266,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
                 return
             }
             

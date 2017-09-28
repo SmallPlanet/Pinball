@@ -76,7 +76,7 @@ class Validator {
                 
                 do {
                     let components = file.lastPathComponent.split(separator: "_", maxSplits: 8, omittingEmptySubsequences: true)
-                    currentValues = (left: Int(components[1]) ?? 0 == 1, right: Int(components[2]) ?? 0 == 1)
+                    currentValues = (left: Int(components[0]) ?? 0 == 1, right: Int(components[1]) ?? 0 == 1)
                     try handler.perform([request])
                 } catch {
                     print(error)
@@ -87,7 +87,7 @@ class Validator {
         print("\nCorrect: \(correct)  Incorrect: \(incorrect)  \(percentCorrect)%")
         print("\nThreshold accuracies:")
         thresholds.enumerated().forEach { (index, threshold) in
-            print(String(format: "%8f   %0.4f", threshold, Double(thresholdCorrect[index] ?? 0)/Double(processedCount)))
+            print(String(format: "%8g   %0.4f", threshold, Double(thresholdCorrect[index] ?? 0)/Double(processedCount)))
         }
         print(String(format: "%0.4f left    %0.4f right", Double(categoryCorrect.left)/Double(processedCount), Double(categoryCorrect.right)/Double(processedCount)))
         print(String(format: "%0.3fs elapsed time", Date().timeIntervalSince(startDate)))
@@ -115,6 +115,8 @@ guard CommandLine.arguments.count == 3 else {
 let modelUrl = URL(fileURLWithPath: CommandLine.arguments[1])
 let compiledUrl = try MLModel.compileModel(at: modelUrl)
 let model = try MLModel(contentsOf: compiledUrl)
+
+print("\n\(model.description)\n")
 
 let v = Validator(imagesPath: CommandLine.arguments[2], model: model)
 v.process()
