@@ -26,12 +26,17 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
 
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
-    var model:VNCoreMLModel? = nil
-    var lastVisibleFrameNumber = 0
+    var model: VNCoreMLModel? = nil
     
-    var leftFlipperCounter:Int = 0
-    var rightFlipperCounter:Int = 0
+    var leftFlipperCounter = 0
+    var rightFlipperCounter = 0
     var fps = 0
+    let flipperEnabledColor = UIColor(gaxbString: "#ffed00ff").cgColor
+    let flipperDisabledColor = UIColor(gaxbString: "#1c2f42ff").cgColor
+
+    var omegaEnabled: Bool {
+        return deadmanSwitch.switch_.isOn
+    }
     
     func requestHandler(request: VNRequest, error: Error?) {
         guard let results = request.results as? [VNClassificationObservation] else {
@@ -48,15 +53,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         var leftFlipperShouldBePressed = false
         var rightFlipperShouldBePressed = false
         
-        var leftFlipperConfidence:Float = left.confidence
-        var rightFlipperConfidence:Float = right.confidence
+        let leftFlipperConfidence:Float = left.confidence
+        let rightFlipperConfidence:Float = right.confidence
         
-        if leftFlipperCounter > 0 {
-            leftFlipperConfidence = 0
-        }
-        if rightFlipperCounter > 0 {
-            rightFlipperConfidence = 0
-        }
+//        if leftFlipperCounter > 0 {
+//            leftFlipperConfidence = 0
+//        }
+//        if rightFlipperCounter > 0 {
+//            rightFlipperConfidence = 0
+//        }
         
         leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
         rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
@@ -74,27 +79,35 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
         
-        if pinball.leftButtonPressed == false && leftFlipperCounter > 0 {
+        let sendToMachine = omegaEnabled
+        
+        if sendToMachine && !pinball.leftButtonPressed && leftFlipperCounter > 0 {
             pinball.leftButtonStart()
             handleShouldFrameCapture()
         }
-        if pinball.leftButtonPressed == true && leftFlipperCounter < 0 {
+        if pinball.leftButtonPressed && leftFlipperCounter < 0 {
             pinball.leftButtonEnd()
             handleShouldFrameCapture()
         }
         
-        if pinball.rightButtonPressed == false && rightFlipperCounter > 0 {
+        if sendToMachine && !pinball.rightButtonPressed && rightFlipperCounter > 0 {
             pinball.rightButtonStart()
             handleShouldFrameCapture()
         }
-        if pinball.rightButtonPressed == true && rightFlipperCounter < 0 {
+        if pinball.rightButtonPressed && rightFlipperCounter < 0 {
             pinball.rightButtonEnd()
             handleShouldFrameCapture()
         }
         
-        let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right.identifier), \(fps) fps"
+//        let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right.identifier), \(fps) fps"
+        
+        let labelValue = "\(fps) fps"
         DispatchQueue.main.async {
-            self.statusLabel.label.text = confidence
+            self.statusLabel.label.text = labelValue
+            self.leftPredictionRatio.constraint!.constant = CGFloat(left.confidence) * self.leftFlipper.view.frame.size.height
+            self.leftFlipper.view.layer.borderColor = left.confidence > 0.5 ? self.flipperEnabledColor : self.flipperDisabledColor
+            self.rightPredictionRatio.constraint!.constant = CGFloat(right.confidence) * self.leftFlipper.view.frame.size.height
+            self.rightFlipper.view.layer.borderColor = right.confidence > 0.5 ? self.flipperEnabledColor : self.flipperDisabledColor
         }
     }
     
@@ -116,7 +129,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         let ciImage = CIImage(data: imageData)!
-//        let ciImage = maskedImage
         
         let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
 
@@ -128,21 +140,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print(error)
         }
         
-//        let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-//        let filename = path.appendingPathComponent("\(prefix)_\(String(format: "%06d", counter))_\(session).jpg")
-        counter += 1
-//        guard let jpegData = self.ciContext.pngRepresentation(of: maskedImage, format: ciFormat, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
-//            print("failed to make image data")
-//            return
-//        }
-//        try! jpegData.write(to: filename)
-
-        if lastVisibleFrameNumber + 30 < frameNumber {
-            lastVisibleFrameNumber = frameNumber
-//            guard let imageData = ciContext.pinballData(maskedImage) else {
-//                print("failed to make image data")
-//                return
-//            }
+        if frameNumber % 5 == 0 {
             DispatchQueue.main.async {
                 self.preview.imageView.image = UIImage(data:imageData)
             }
@@ -178,25 +176,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         // Load the ML model through its generated class
-//        model = try? VNCoreMLModel(for: tng_alpha_16h().model)
         model = try? VNCoreMLModel(for: tng_bravo_0c().model)
 
-        
-//        // load the overlay so we can manmually line up the flippers
-//        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
-//        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
-//        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-//        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRGBA8, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
-//            return
-//        }
-//        overlay.imageView.image = UIImage(data:tiffData)
-        
-//        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
-//        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
-//        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-        
-        validateNascarButton.button.add(for: .touchUpInside) { }
-        
         captureHelper.pinball = pinball
     }
     
@@ -308,7 +289,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         bonjour.delegate = self
         bonjour.searchForServices(ofType: "_pinball._tcp.", inDomain: "local.")
         
-        statusLabel.label.text = "Searching for capture server..."
+        statusLabel.label.text = "Searching..."
     }
     
     func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
@@ -331,7 +312,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             try serverSocket!.connect(to: sender.hostName!, port: Int32(sender.port))
             print("connected to capture server")
             
-            lastVisibleFrameNumber = 0
             isConnectedToServer = true
             bonjour.stop()
             
@@ -344,7 +324,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     func disconnectedFromServer() {
         DispatchQueue.main.async {
-            self.lastVisibleFrameNumber = 0
             self.serverSocket = nil
             self.isConnectedToServer = false
             
@@ -372,10 +351,22 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
-    fileprivate var validateNascarButton: Button {
-        return mainXmlView!.elementForId("validateNascarButton")!.asButton!
+    fileprivate var leftFlipper: View {
+        return mainXmlView!.elementForId("leftFlipper")!.asView!
     }
-    
+    fileprivate var leftPredictionRatio: Constraint {
+        return mainXmlView!.elementForId("leftPredictionRatio")!.asConstraint!
+    }
+    fileprivate var rightFlipper: View {
+        return mainXmlView!.elementForId("rightFlipper")!.asView!
+    }
+    fileprivate var rightPredictionRatio: Constraint {
+        return mainXmlView!.elementForId("rightPredictionRatio")!.asConstraint!
+    }
+    fileprivate var deadmanSwitch: Switch {
+        return mainXmlView!.elementForId("deadman")!.asSwitch!
+    }
+
     internal var leftButton: Button? {
         return nil
     }
@@ -392,17 +383,3 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
 }
 
-
-extension MutableCollection {
-    /// Shuffle the elements of `self` in-place.
-    mutating func shuffle() {
-        // empty and single-element collections don't shuffle
-        if count < 2 { return }
-        
-        for i in indices.dropLast() {
-            let diff = distance(from: i, to: endIndex)
-            let j = index(i, offsetBy: numericCast(arc4random_uniform(numericCast(diff))))
-            swapAt(i, j)
-        }
-    }
-}

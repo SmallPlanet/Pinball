@@ -12,24 +12,49 @@
     <Constraint firstItem="preview" firstAttribute="left" secondItem="root" secondAttribute="left"/>
     <Constraint firstItem="preview" firstAttribute="right" secondItem="root" secondAttribute="right"/>
     <Constraint firstItem="preview" firstAttribute="height" secondItem="preview" secondAttribute="width"/>
-    <Constraint firstItem="preview" firstAttribute="top" secondItem="root" secondAttribute="top" constant="100" />
+    <Constraint firstItem="preview" firstAttribute="top" secondItem="root" secondAttribute="top" constant="60" />
     
-    <Label id="cameraLabel" styleId="LabelStd" text="Camera Preview" textAlignment="center" />
-    <Constraint firstItem="cameraLabel" firstAttribute="width" constant="260"/>
-    <Constraint firstItem="cameraLabel" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="cameraLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="cameraLabel" firstAttribute="bottom" secondItem="preview" secondAttribute="top" constant="3" />
+    <Label id="statusLabel" styleId="LabelStd" text="fps" fontSize="14" textAlignment="right" textColor="#46586dff" />
+    <Constraint firstItem="statusLabel" firstAttribute="right" secondItem="root" secondAttribute="right" constant="-5"/>
+    <Constraint firstItem="statusLabel" firstAttribute="centerY" secondItem="deadman" secondAttribute="centerY" />
+    
+    <Switch id="deadman" on="false"/>
+    <Constraint firstItem="deadman" firstAttribute="left" secondItem="root" secondAttribute="left" constant="10"/>
+    <Constraint firstItem="deadman" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="8"/>
+    <Label id="deadmanLabel" styleId="LabelBld" text="Use Omega" textAlignment="left"/>
+    <Constraint firstItem="deadmanLabel" firstAttribute="left" secondItem="deadman" secondAttribute="right" constant="8"/>
+    <Constraint firstItem="deadmanLabel" firstAttribute="centerY" secondItem="deadman" secondAttribute="centerY"/>
 
-    <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
-    <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
-    <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="40" />
-    
-    <Button id="validateNascarButton" title="Validate Nascar" styleId="ButtonStd" />
-    <Constraint firstItem="validateNascarButton" firstAttribute="width" constant="200"/>
-    <Constraint firstItem="validateNascarButton" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="validateNascarButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
-    <Constraint firstItem="validateNascarButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="40" />
+    <View id="leftFlipper" backgroundColor="#46586dff" borderColor="#1c2f42ff" borderWidth="8">
+        <View id="leftPrediction" backgroundColor="#06c2fcff"/>
+        <Constraint firstItem="leftPrediction" firstAttribute="left" secondItem="leftFlipper" secondAttribute="left"/>
+        <Constraint firstItem="leftPrediction" firstAttribute="width" secondItem="leftFlipper" secondAttribute="width"/>
+        <Constraint firstItem="leftPrediction" firstAttribute="bottom" secondItem="leftFlipper" secondAttribute="bottom"/>
+        <Constraint id="leftPredictionRatio" firstItem="leftPrediction" firstAttribute="height" />
+    </View>
+    <Constraint firstItem="leftFlipper" firstAttribute="left" secondItem="root" secondAttribute="left"/>
+    <Constraint firstItem="leftFlipper" firstAttribute="bottom" secondItem="root" secondAttribute="bottom"/>
+    <Constraint firstItem="leftFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.25"/>
+    <Constraint firstItem="leftFlipper" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80"/>
+    <Label id="leftLabel" styleId="LabelBld" text="Left Flipper" textAlignment="center" />
+    <Constraint firstItem="leftLabel" firstAttribute="centerX" secondItem="leftFlipper" secondAttribute="centerX"/>
+    <Constraint firstItem="leftLabel" firstAttribute="baseline" secondItem="leftFlipper" secondAttribute="top" constant="-8"/>
+
+
+    <View id="rightFlipper" backgroundColor="#46586dff" borderColor="#1c2f42ff" borderWidth="8">
+        <View id="rightPrediction" backgroundColor="#06c2fcff"/>
+        <Constraint firstItem="rightPrediction" firstAttribute="right" secondItem="rightFlipper" secondAttribute="right"/>
+        <Constraint firstItem="rightPrediction" firstAttribute="width" secondItem="rightFlipper" secondAttribute="width"/>
+        <Constraint firstItem="rightPrediction" firstAttribute="bottom" secondItem="rightFlipper" secondAttribute="bottom"/>
+        <Constraint id="rightPredictionRatio" firstItem="rightPrediction" firstAttribute="height"/>
+    </View>
+    <Constraint firstItem="rightFlipper" firstAttribute="right" secondItem="root" secondAttribute="right"/>
+    <Constraint firstItem="rightFlipper" firstAttribute="bottom" secondItem="root" secondAttribute="bottom"/>
+    <Constraint firstItem="rightFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.25"/>
+    <Constraint firstItem="rightFlipper" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80"/>
+    <Label id="rightLabel" styleId="LabelBld" text="Right Flipper" textAlignment="center" />
+    <Constraint firstItem="rightLabel" firstAttribute="centerX" secondItem="rightFlipper" secondAttribute="centerX"/>
+    <Constraint firstItem="rightLabel" firstAttribute="baseline" secondItem="rightFlipper" secondAttribute="top" constant="-8"/>
+
 
 </Scene>
