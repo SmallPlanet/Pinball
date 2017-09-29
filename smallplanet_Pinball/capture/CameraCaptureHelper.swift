@@ -246,3 +246,13 @@ protocol CameraCaptureHelperDelegate: class
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
 }
+
+
+
+extension CIContext {
+    func pinballData(_ image: CIImage) -> Data? {
+        let ciFormat = CIFormat(kCIFormatRGBA8)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        return pngRepresentation(of: image, format: ciFormat, colorSpace: colorSpace, options: [:])
+    }
+}

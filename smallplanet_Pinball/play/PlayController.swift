@@ -111,11 +111,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         rightFlipperCounter -= 1
         
         
-        guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
-            print("failed to make jpegData")
+        guard let imageData = ciContext.pinballData(maskedImage) else {
+            print("failed to make image data")
             return
         }
-        let ciImage = CIImage(data: jpegData)!
+        let ciImage = CIImage(data: imageData)!
 //        let ciImage = maskedImage
         
         let request = VNCoreMLRequest(model: model, completionHandler: requestHandler)
@@ -131,18 +131,20 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
 //        let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
 //        let filename = path.appendingPathComponent("\(prefix)_\(String(format: "%06d", counter))_\(session).jpg")
         counter += 1
-//        guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+//        guard let jpegData = self.ciContext.pngRepresentation(of: maskedImage, format: ciFormat, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+//            print("failed to make image data")
 //            return
 //        }
 //        try! jpegData.write(to: filename)
 
         if lastVisibleFrameNumber + 30 < frameNumber {
             lastVisibleFrameNumber = frameNumber
-            guard let jpegData = self.ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
-                return
-            }
+//            guard let imageData = ciContext.pinballData(maskedImage) else {
+//                print("failed to make image data")
+//                return
+//            }
             DispatchQueue.main.async {
-                self.preview.imageView.image = UIImage(data:jpegData)
+                self.preview.imageView.image = UIImage(data:imageData)
             }
         }
     }
@@ -233,11 +235,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+        guard let imageData = ciContext.pinballData(maskedImage) else {
+            print("failed to make image data")
             return
         }
-        
-        storedFrames.append(SkippedFrame(jpegData, left, right, start, ballKicker))
+
+        storedFrames.append(SkippedFrame(imageData, left, right, start, ballKicker))
         
         while storedFrames.count > 30 {
             storedFrames.remove(at: 0)
@@ -266,11 +269,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+            guard let imageData = ciContext.pinballData(maskedImage) else {
+                print("failed to make image data")
                 return
             }
-            
-            sendCameraFrame(jpegData, left, right, start, ballKicker)
+
+            sendCameraFrame(imageData, left, right, start, ballKicker)
         }
     }
     

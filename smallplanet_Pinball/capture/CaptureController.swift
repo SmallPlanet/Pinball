@@ -53,11 +53,12 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
     var storedFrames:[SkippedFrame] = []
     func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+        guard let imageData = ciContext.pinballData(maskedImage) else {
+            print("failed to make image data")
             return
         }
-        
-        storedFrames.append(SkippedFrame(jpegData, left, right, start, ballKicker))
+
+        storedFrames.append(SkippedFrame(imageData, left, right, start, ballKicker))
         
         while storedFrames.count > 30 {
             storedFrames.remove(at: 0)
@@ -88,16 +89,17 @@ class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, Pinb
             
             
             // get the actual bytes out of the CIImage
-            guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!, options: [:]) else {
+            guard let imageData = ciContext.pinballData(maskedImage) else {
+                print("failed to make image data")
                 return
             }
-            
-            sendCameraFrame(jpegData, left, right, start, ballKicker)
+
+            sendCameraFrame(imageData, left, right, start, ballKicker)
             
             if lastVisibleFrameNumber + 100 < frameNumber {
                 lastVisibleFrameNumber = frameNumber
                 DispatchQueue.main.async {
-                    self.preview.imageView.image = UIImage(data: jpegData)
+                    self.preview.imageView.image = UIImage(data: imageData)
                     self.statusLabel.label.text = "Sending image \(frameNumber) (\(fps) fps)"
                 }
             }
