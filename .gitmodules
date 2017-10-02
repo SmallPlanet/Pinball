@@ -4,3 +4,6 @@
 [submodule "Laba"]
 	path = Laba
 	url = https://github.com/KittyMac/Laba
+[submodule "BlueSocket"]
+	path = BlueSocket
+	url = https://github.com/SmallPlanetSporks/BlueSocket
