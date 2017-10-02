@@ -36,7 +36,11 @@ class MainController: PlanetViewController, NetServiceDelegate {
         loadView()
 		
         captureModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(CaptureController(), animated: true)
+            if #available(iOS 11.0, *) {
+                self.navigationController?.pushViewController(CaptureController(), animated: true)
+            } else {
+                
+            }
         }
         
         previewModeButton.button.add(for: .touchUpInside) {
@@ -62,7 +66,11 @@ class MainController: PlanetViewController, NetServiceDelegate {
         // handle remote control notifications
         NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginCaptureMode.rawValue), object:nil, queue:nil) {_ in
             self.navigationController?.popToRootViewController(animated: true)
-            self.navigationController?.pushViewController(CaptureController(), animated: true)
+            if #available(iOS 11.0, *) {
+                self.navigationController?.pushViewController(CaptureController(), animated: true)
+            } else {
+                
+            }
         }
         
         NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndCaptureMode.rawValue), object:nil, queue:nil) {_ in

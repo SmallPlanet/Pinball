@@ -6,4 +6,4 @@
 	url = https://github.com/SmallPlanetSwift/PlanetSwift
 [submodule "BlueSocket"]
 	path = BlueSocket
-	url = https://github.com/IBM-Swift/BlueSocket.git
+url=https://github.com/SmallPlanetSporks/BlueSocket.git

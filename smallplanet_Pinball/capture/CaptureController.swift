@@ -35,6 +35,7 @@ class SkippedFrame {
     }
 }
 
+@available(iOS 11.0, *)
 class CaptureController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
     let  mutex = NSLock()
