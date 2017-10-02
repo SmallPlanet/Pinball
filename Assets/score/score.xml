@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scene id="root" xmlns="http://schema.smallplanet.com/PlanetUI">
+    <Constraint firstItem="root" ruleSet="fillSuperview" />
+	
+    <View id="background" backgroundColor="#EEEEEEFF" />
+    <Constraint firstItem="background" ruleSet="fillSuperview" />
+    
+    <ImageView id="preview" contentMode="scaleAspectFit" backgroundColor="#000000FF" cornerRadius="5" shadowRadius="4" shadowOffset="0,3" shadowColor="#000000FF" shadowOpacity="0.5">
+        <ImageView id="overlay" contentMode="scaleAspectFit" />
+        <Constraint firstItem="overlay" ruleSet="fillSuperview" />
+    </ImageView>
+    <Constraint firstItem="preview" firstAttribute="width" constant="260"/>
+    <Constraint firstItem="preview" firstAttribute="height" constant="200"/>
+    <Constraint firstItem="preview" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+    <Constraint firstItem="preview" firstAttribute="centerY" secondItem="root" secondAttribute="top" constant="200" />
+    
+    <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
+    <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
+    <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+    <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="40" />
+    
+    <Button id="saveImageButton" title="Save Image" styleId="ButtonStd" />
+    <Constraint firstItem="saveImageButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="saveImageButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="saveImageButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="saveImageButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
+
+</Scene>

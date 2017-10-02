@@ -28,5 +28,11 @@
     <Constraint firstItem="playModeButton" firstAttribute="height" constant="40"/>
     <Constraint firstItem="playModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
     <Constraint firstItem="playModeButton" firstAttribute="top" secondItem="remoteModeButton" secondAttribute="bottom" constant="40" />
+    
+    <Button id="scoreModeButton" title="Score Mode" styleId="ButtonStd" />
+    <Constraint firstItem="scoreModeButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="scoreModeButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="scoreModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="scoreModeButton" firstAttribute="top" secondItem="playModeButton" secondAttribute="bottom" constant="20" />
 
 </Scene>

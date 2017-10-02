@@ -41,6 +41,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Pinball needs your camera in order to see the game it is playing</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pinball wants to save an image to your photo library</string>
 	<key>PlanetSwift</key>
 	<dict>
 		<key>styleSheetPath</key>

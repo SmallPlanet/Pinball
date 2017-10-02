@@ -31,9 +31,18 @@ class MainController: PlanetViewController, NetServiceDelegate {
         super.viewDidLoad()
 
         title = "Pinball"
-
+        
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
+        
+        if #available(iOS 11.0, *) {
+            
+        } else {
+            captureModeButton.button.alpha = 0.25
+            captureModeButton.button.isEnabled = false
+            playModeButton.button.alpha = 0.25
+            playModeButton.button.isEnabled = false
+        }
 		
         captureModeButton.button.add(for: .touchUpInside) {
             if #available(iOS 11.0, *) {
@@ -45,6 +54,10 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         previewModeButton.button.add(for: .touchUpInside) {
             self.navigationController?.pushViewController(PreviewController(), animated: true)
+        }
+        
+        scoreModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(ScoreController(), animated: true)
         }
         
         playModeButton.button.add(for: .touchUpInside) {
@@ -104,6 +117,9 @@ class MainController: PlanetViewController, NetServiceDelegate {
     }
     fileprivate var playModeButton: Button {
         return mainXmlView!.elementForId("playModeButton")!.asButton!
+    }
+    fileprivate var scoreModeButton: Button {
+        return mainXmlView!.elementForId("scoreModeButton")!.asButton!
     }
     
     

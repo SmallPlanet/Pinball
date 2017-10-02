@@ -23,6 +23,7 @@
 		4632CB1B1F3B53BE00359AA3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4632CB191F3B53BE00359AA3 /* LaunchScreen.storyboard */; };
 		4637FD601F41E99800A2BC55 /* RemoteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4637FD5F1F41E98C00A2BC55 /* RemoteController.swift */; };
 		4638FD3F1F7D80D500A0261C /* PreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4638FD3E1F7D7F8C00A0261C /* PreviewController.swift */; };
+		464055291F82868A0055756C /* ScoreController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464055281F82839B0055756C /* ScoreController.swift */; };
 		46530BCA1F72BA1B00D9AB7A /* locking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46530BC91F72BA1B00D9AB7A /* locking.swift */; };
 		465F737C1F493929002CFF71 /* nascar_9190_9288.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 465F737B1F493915002CFF71 /* nascar_9190_9288.mlmodel */; };
 		465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F737E1F493AF2002CFF71 /* PlayController.swift */; };
@@ -67,6 +68,7 @@
 		4632CB1C1F3B53BE00359AA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4637FD5F1F41E98C00A2BC55 /* RemoteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteController.swift; sourceTree = "<group>"; };
 		4638FD3E1F7D7F8C00A0261C /* PreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewController.swift; sourceTree = "<group>"; };
+		464055281F82839B0055756C /* ScoreController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreController.swift; sourceTree = "<group>"; };
 		46530BC91F72BA1B00D9AB7A /* locking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = locking.swift; sourceTree = "<group>"; };
 		465F737B1F493915002CFF71 /* nascar_9190_9288.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = nascar_9190_9288.mlmodel; sourceTree = "<group>"; };
 		465F737E1F493AF2002CFF71 /* PlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayController.swift; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 				4637FD5E1F41E98C00A2BC55 /* remote */,
 				46C402891F3CBB2500C46E3C /* control */,
 				46C402861F3CB54700C46E3C /* capture */,
+				464055271F82839B0055756C /* score */,
 				461893371F3B58C300AA4599 /* main */,
 				4618932B1F3B577A00AA4599 /* Localizations.swift */,
 				A9C946411F3E0AB200CEA23C /* PinballInterface.swift */,
@@ -157,6 +160,14 @@
 				4638FD3E1F7D7F8C00A0261C /* PreviewController.swift */,
 			);
 			path = preview;
+			sourceTree = "<group>";
+		};
+		464055271F82839B0055756C /* score */ = {
+			isa = PBXGroup;
+			children = (
+				464055281F82839B0055756C /* ScoreController.swift */,
+			);
+			path = score;
 			sourceTree = "<group>";
 		};
 		465F737A1F493915002CFF71 /* PinballModels */ = {
@@ -296,6 +307,7 @@
 				46530BCA1F72BA1B00D9AB7A /* locking.swift in Sources */,
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
 				4638FD3F1F7D80D500A0261C /* PreviewController.swift in Sources */,
+				464055291F82868A0055756C /* ScoreController.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 				4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */,
