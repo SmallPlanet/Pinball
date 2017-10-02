@@ -43,10 +43,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         }
     }
     
+    
     var delegateWantsPlayImages = false
     var delegateWantsSkippedImages = false
     var delegateWantsProcessedImages = false
     
+    var delegateWantsScaledImages = true
     var delegateWantsCroppedImages = true
     var delegateWantsBlurredImages = true
     
@@ -230,8 +232,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let hh = image.extent.height / 2
             
             // scale down to 50 pixels on min size
-            let scaleW = 169.0 / image.extent.height
-            let scaleH = 300.0 / image.extent.width
+            var scaleW = image.extent.height
+            var scaleH = image.extent.width
+            
+            if self.delegateWantsScaledImages {
+                scaleW = 169.0 / image.extent.height
+                scaleH = 300.0 / image.extent.width
+            }
             
             var transform = CGAffineTransform.identity
             
