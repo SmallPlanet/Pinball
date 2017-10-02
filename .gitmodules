@@ -1,0 +1,3 @@
+[submodule "PlanetSwift"]
+	path = PlanetSwift
+	url = https://github.com/SmallPlanetSwift/PlanetSwift
