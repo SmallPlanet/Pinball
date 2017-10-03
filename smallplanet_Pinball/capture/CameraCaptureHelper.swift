@@ -60,7 +60,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         super.init()
         
-        initialiseCaptureSession()
+        DispatchQueue.main.async {
+            self.initialiseCaptureSession()
+        }
     }
     
     fileprivate func initialiseCaptureSession()
@@ -77,15 +79,36 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         var bestFormat:AVCaptureDevice.Format? = nil
         var bestFrameRateRange:AVFrameRateRange? = nil
+        var bestReolution:CGFloat = 0.0
         
-        for format in camera.formats {
-            for range in format.videoSupportedFrameRateRanges {
-                if bestFrameRateRange == nil || range.maxFrameRate > bestFrameRateRange!.maxFrameRate {
+        if delegateWantsScaledImages == true {
+            // choose the highest framerate
+            for format in camera.formats {
+                for range in format.videoSupportedFrameRateRanges {
+                    if bestFrameRateRange == nil || range.maxFrameRate > bestFrameRateRange!.maxFrameRate {
+                        bestFormat = format
+                        bestFrameRateRange = range
+                    }
+                }
+            }
+        } else {
+          // choose the best quality picture
+            for format in camera.formats {
+                
+                // Get video dimensions
+                let formatDescription = format.formatDescription
+                let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+                let resolution = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
+                
+                let area = resolution.width * resolution.height
+                if area > bestReolution {
+                    bestReolution = area
                     bestFormat = format
-                    bestFrameRateRange = range
                 }
             }
         }
+        
+        print(bestFormat)
 
         do
         {
@@ -106,12 +129,14 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 try camera.lockForConfiguration()
                 
                 camera.activeFormat = bestFormat!
-                var frameDuration = bestFrameRateRange!.minFrameDuration
-                frameDuration.value *= 2
-                camera.activeVideoMinFrameDuration = frameDuration
+                if bestFrameRateRange != nil {
+                    var frameDuration = bestFrameRateRange!.minFrameDuration
+                    frameDuration.value *= 2
+                    camera.activeVideoMinFrameDuration = frameDuration
+                    print("setting camera fps to \(bestFrameRateRange!.minFrameDuration.timescale)")
+                }
                 camera.unlockForConfiguration()
                 
-                print("setting camera fps to \(bestFrameRateRange!.minFrameDuration.timescale)")
             } catch {
                 captureSession.sessionPreset = AVCaptureSession.Preset.high
             }
@@ -232,12 +257,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let hh = image.extent.height / 2
             
             // scale down to 50 pixels on min size
-            var scaleW = image.extent.height
-            var scaleH = image.extent.width
+            var scaleW = 169.0 / image.extent.height
+            var scaleH = 300.0 / image.extent.width
             
-            if self.delegateWantsScaledImages {
-                scaleW = 169.0 / image.extent.height
-                scaleH = 300.0 / image.extent.width
+            if self.delegateWantsScaledImages == false {
+                scaleW = 1.0
+                scaleH = 1.0
             }
             
             var transform = CGAffineTransform.identity

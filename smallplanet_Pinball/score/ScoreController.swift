@@ -25,9 +25,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         
+        let croppedImage = image.cropped(to: CGRect(x:1308, y:170, width:300, height:1282))
+        
         DispatchQueue.main.async {
             self.statusLabel.label.text = "(no score identified)"
-            //self.preview.imageView.image = UIImage(ciImage: image)
+            self.preview.imageView.image = UIImage(ciImage: croppedImage)
         }
     }
 
@@ -52,6 +54,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         saveImageButton.button.add(for: .touchUpInside) {
             let cgImage = self.ciContext.createCGImage((self.preview.imageView.image?.ciImage)!, from: (self.preview.imageView.image?.ciImage?.extent)!)
+            
             UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
         }
     }
@@ -81,11 +84,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        /*
         do {
             try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0013.JPG"))))!)
         } catch {
             print("unable to load sample image")
-        }
+        }*/
     }
     
     // MARK: Test convert pixels to bit maps
