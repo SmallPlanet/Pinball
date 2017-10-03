@@ -27,12 +27,26 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
-        
-        let croppedImage = image.cropped(to: CGRect(x:1308, y:170, width:300, height:1282))
+        // 2448x3264
+        let x1:CGFloat = 1308.0 / 2448.0
+        let y1:CGFloat = 170.0 / 3264.0
+        let w1:CGFloat = 300.0 / 2448.0
+        let h1:CGFloat = 1282.0 / 3264.0
+                
+        let croppedImage = image.cropped(to: CGRect(x:x1 * image.extent.size.width,
+                                                    y:y1 * image.extent.size.height,
+                                                    width:w1 * image.extent.size.width,
+                                                    height:h1 * image.extent.size.height))
         
         DispatchQueue.main.async {
-            self.statusLabel.label.text = "(no score identified)"
-            //self.preview.imageView.image = UIImage(ciImage: croppedImage)
+            
+            let uiImage = UIImage(ciImage: croppedImage)
+            
+            let dotmatrix = self.getDotMatrix(uiImage)
+            let score = self.ocrScore(dotmatrix)
+            
+            self.statusLabel.label.text = "score: \(score)"
+            self.preview.imageView.image = uiImage
         }
     }
 
