@@ -30,7 +30,8 @@
 		46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */; };
 		46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402871F3CB54700C46E3C /* CaptureController.swift */; };
 		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
-		46FAF3BE1F83E313002DA596 /* UDPBroadcastConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FAF3BD1F83E313002DA596 /* UDPBroadcastConnection.swift */; };
+		46FAF3C81F83FC70002DA596 /* GCDAsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 46FAF3C51F83FB27002DA596 /* GCDAsyncUdpSocket.m */; };
+		46FAF3C91F83FC73002DA596 /* UDPMulticast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FAF3C71F83FB3B002DA596 /* UDPMulticast.swift */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -76,7 +77,10 @@
 		46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Closures.swift"; sourceTree = "<group>"; };
 		46C402871F3CB54700C46E3C /* CaptureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureController.swift; sourceTree = "<group>"; };
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
-		46FAF3BD1F83E313002DA596 /* UDPBroadcastConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPBroadcastConnection.swift; sourceTree = "<group>"; };
+		46FAF3C41F83FB27002DA596 /* GCDAsyncUdpSocket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GCDAsyncUdpSocket.h; sourceTree = "<group>"; };
+		46FAF3C51F83FB27002DA596 /* GCDAsyncUdpSocket.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncUdpSocket.m; sourceTree = "<group>"; };
+		46FAF3C61F83FB27002DA596 /* smallplanet_Pinball-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "smallplanet_Pinball-Bridging-Header.h"; sourceTree = "<group>"; };
+		46FAF3C71F83FB3B002DA596 /* UDPMulticast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPMulticast.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -136,6 +140,7 @@
 				46C402861F3CB54700C46E3C /* capture */,
 				464055271F82839B0055756C /* score */,
 				461893371F3B58C300AA4599 /* main */,
+				46FAF3C31F83FB27002DA596 /* udp */,
 				4618932B1F3B577A00AA4599 /* Localizations.swift */,
 				A9C946411F3E0AB200CEA23C /* PinballInterface.swift */,
 				46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */,
@@ -167,7 +172,6 @@
 		464055271F82839B0055756C /* score */ = {
 			isa = PBXGroup;
 			children = (
-				46FAF3BD1F83E313002DA596 /* UDPBroadcastConnection.swift */,
 				464055281F82839B0055756C /* ScoreController.swift */,
 			);
 			path = score;
@@ -207,6 +211,17 @@
 			path = control;
 			sourceTree = "<group>";
 		};
+		46FAF3C31F83FB27002DA596 /* udp */ = {
+			isa = PBXGroup;
+			children = (
+				46FAF3C71F83FB3B002DA596 /* UDPMulticast.swift */,
+				46FAF3C41F83FB27002DA596 /* GCDAsyncUdpSocket.h */,
+				46FAF3C51F83FB27002DA596 /* GCDAsyncUdpSocket.m */,
+				46FAF3C61F83FB27002DA596 /* smallplanet_Pinball-Bridging-Header.h */,
+			);
+			path = udp;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -242,6 +257,7 @@
 					4632CB0C1F3B53BE00359AA3 = {
 						CreatedOnToolsVersion = 8.3.2;
 						DevelopmentTeam = 4WR66L3TZA;
+						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -301,8 +317,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				465F737C1F493929002CFF71 /* nascar_9190_9288.mlmodel in Sources */,
+				46FAF3C81F83FC70002DA596 /* GCDAsyncUdpSocket.m in Sources */,
 				465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */,
-				46FAF3BE1F83E313002DA596 /* UDPBroadcastConnection.swift in Sources */,
 				4637FD601F41E99800A2BC55 /* RemoteController.swift in Sources */,
 				46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */,
 				46C402881F3CB5A100C46E3C /* CaptureController.swift in Sources */,
@@ -312,6 +328,7 @@
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
 				4638FD3F1F7D80D500A0261C /* PreviewController.swift in Sources */,
 				464055291F82868A0055756C /* ScoreController.swift in Sources */,
+				46FAF3C91F83FC73002DA596 /* UDPMulticast.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 				4603BCCE1F3CC2D7007CAE19 /* CameraCaptureHelper.swift in Sources */,
@@ -439,6 +456,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 4WR66L3TZA;
 				INFOPLIST_FILE = smallplanet_Pinball/Info.plist;
@@ -446,6 +464,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "smallplanet_Pinball/udp/smallplanet_Pinball-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -454,12 +474,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				DEVELOPMENT_TEAM = 4WR66L3TZA;
 				INFOPLIST_FILE = smallplanet_Pinball/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "smallplanet_Pinball/udp/smallplanet_Pinball-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;

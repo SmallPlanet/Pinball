@@ -14,9 +14,9 @@ import CoreML
 import Vision
 
 @available(iOS 11.0, *)
-class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
+class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
     
-    var scoreConnection: UDPBroadcastConnection!
+    var scoreConnection: UDPMulticast!
 
     let playAndCapture = true
     
@@ -133,8 +133,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
 
-    
-    
     var currentValidationURL:URL?
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -154,11 +152,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         UIApplication.shared.isIdleTimerDisabled = true
         
-        
-        scoreConnection = UDPBroadcastConnection(port: scorePort) { [unowned self] (ipAddress: String, port: Int, response: [UInt8]) -> Void in
-            let log = "Received from \(ipAddress):\(port):\n\n\(response)"
-            print(log)
-        }
+        scoreConnection = UDPMulticast(ScoreController.scoreAddress, ScoreController.scorePort, { (data) in
+            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            print("play controller received: \(dataAsString!)")
+        })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerEnd()

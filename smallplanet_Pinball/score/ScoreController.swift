@@ -13,11 +13,12 @@ import Socket
 import CoreML
 import Vision
 
-class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
+class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
     
-    let scorePort:UInt16 = 35687
+    static let scoreAddress = "239.1.1.234"
+    static let scorePort:UInt16 = 35687
     
-    var scoreConnection: UDPBroadcastConnection!
+    var scoreConnection: UDPMulticast!
     
     let dotwidth = 30
     let dotheight = 126
@@ -52,11 +53,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             self.statusLabel.label.text = "score: \(score)"
             self.preview.imageView.image = uiImage
             
-            self.scoreConnection.sendBroadcast("\(score)")
+            self.scoreConnection.send("\(score)")
         }
     }
-
-    
     
     var currentValidationURL:URL?
     override func viewDidLoad() {
@@ -65,6 +64,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         mainBundlePath = "bundle://Assets/score/score.xml"
         loadView()
+        
+        scoreConnection = UDPMulticast(ScoreController.scoreAddress, ScoreController.scorePort, nil)
         
         captureHelper.delegate = self
         captureHelper.pinball = nil
@@ -126,8 +127,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         let score = ocrScore(dotmatrix)
         
-        self.scoreConnection.sendBroadcast("\(score)")
-        
+        self.scoreConnection.send("\(score)".data(using: .utf8)!)
+
         print("score: \(score)")
     }
     
