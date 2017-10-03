@@ -15,6 +15,10 @@ import Vision
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let scorePort:UInt16 = 35687
+    
+    var scoreConnection: UDPBroadcastConnection!
+    
     let dotwidth = 30
     let dotheight = 126
     
@@ -47,6 +51,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             self.statusLabel.label.text = "score: \(score)"
             self.preview.imageView.image = uiImage
+            
+            self.scoreConnection.sendBroadcast("\(score)")
         }
     }
 
@@ -119,6 +125,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let dotmatrix = getDotMatrix(image)
         
         let score = ocrScore(dotmatrix)
+        
+        self.scoreConnection.sendBroadcast("\(score)")
         
         print("score: \(score)")
     }
@@ -288,13 +296,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     if dotmatrix[dot_i] > 190 {
                         dotmatrix[dot_i] = 1
-                        print("@", terminator:"")
+                        //print("@", terminator:"")
                     } else {
                         dotmatrix[dot_i] = 0
-                        print("_", terminator:"")
+                        //print("_", terminator:"")
                     }
                 }
-                print("")
+                //print("")
             }
         }
         

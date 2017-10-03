@@ -16,6 +16,8 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    var scoreConnection: UDPBroadcastConnection!
+
     let playAndCapture = true
     
     let ciContext = CIContext(options: [:])
@@ -151,6 +153,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegateWantsPlayImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
+        
+        
+        scoreConnection = UDPBroadcastConnection(port: scorePort) { [unowned self] (ipAddress: String, port: Int, response: [UInt8]) -> Void in
+            let log = "Received from \(ipAddress):\(port):\n\n\(response)"
+            print(log)
+        }
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerEnd()
