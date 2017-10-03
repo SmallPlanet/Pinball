@@ -25,10 +25,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         
-        statusLabel.label.text = "(no score identified)"
-        
         DispatchQueue.main.async {
-            self.preview.imageView.image = UIImage(ciImage: image)
+            self.statusLabel.label.text = "(no score identified)"
+            //self.preview.imageView.image = UIImage(ciImage: image)
         }
     }
 
@@ -44,6 +43,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         captureHelper.delegate = self
         captureHelper.pinball = nil
+        captureHelper.delegateWantsScaledImages = false
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsCroppedImages = false
         captureHelper.delegateWantsBlurredImages = false
@@ -80,7 +80,72 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        do {
+            try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0013.JPG"))))!)
+        } catch {
+            print("unable to load sample image")
+        }
     }
+    
+    // MARK: Test convert pixels to bit maps
+    
+    func test(_ image:UIImage) {
+        
+        
+        if let imageRef = image.cgImage {
+            
+            if let croppedImage = imageRef.cropping(to: CGRect(x: 120, y: 126, width: 30, height: 90)) {
+            
+                // 0. get access to the raw pixels
+                let width = croppedImage.width
+                let height = croppedImage.height
+                let bitsPerComponent = croppedImage.bitsPerComponent
+                let bytesPerRow = croppedImage.bytesPerRow
+                let totalBytes = height * bytesPerRow
+                
+                let colorSpace = CGColorSpaceCreateDeviceGray()
+                var intensities = [UInt8](repeating: 0, count: totalBytes)
+                
+                let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: 0)
+                contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
+                
+                // run through all intensities and round them
+                var max:UInt8 = 0
+                let cutoff = 160
+                
+                for i in 0..<totalBytes {
+                    if intensities[i] > max {
+                        max = intensities[i]
+                    }
+                    if intensities[i] > cutoff {
+                        intensities[i] = 255
+                    } else {
+                        intensities[i] = 0
+                    }
+                }
+                
+                print("max: \(max)")
+                
+                for y in 0..<height {
+                    for x in 0..<width {
+                        let i = y * width + x
+                        if intensities[i] > 127 {
+                            print("*", terminator:"")
+                        } else {
+                            print(" ", terminator:"")
+                        }
+                    }
+                    print("\n")
+                }
+                
+                self.preview.imageView.image = UIImage(cgImage:(contextRef?.makeImage())!)
+            }
+        }
+
+        
+    }
+    
 
     
     // MARK: Play and capture
