@@ -15,6 +15,9 @@ import Vision
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let dotwidth = 30
+    let dotheight = 126
+    
     let ciContext = CIContext(options: [:])
     
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
@@ -29,7 +32,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         DispatchQueue.main.async {
             self.statusLabel.label.text = "(no score identified)"
-            self.preview.imageView.image = UIImage(ciImage: croppedImage)
+            //self.preview.imageView.image = UIImage(ciImage: croppedImage)
         }
     }
 
@@ -53,9 +56,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         UIApplication.shared.isIdleTimerDisabled = true
         
         saveImageButton.button.add(for: .touchUpInside) {
-            let cgImage = self.ciContext.createCGImage((self.preview.imageView.image?.ciImage)!, from: (self.preview.imageView.image?.ciImage?.extent)!)
-            
-            UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
+            if self.preview.imageView.image?.ciImage != nil {
+                let cgImage = self.ciContext.createCGImage((self.preview.imageView.image?.ciImage)!, from: (self.preview.imageView.image?.ciImage?.extent)!)
+                UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
+            } else {
+                UIImageWriteToSavedPhotosAlbum(self.preview.imageView.image!, self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
+            }
         }
     }
     
@@ -84,70 +90,201 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        /*
+        
         do {
-            try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0013.JPG"))))!)
+            try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0028.JPG"))))!)
         } catch {
             print("unable to load sample image")
-        }*/
+        }
     }
     
     // MARK: Test convert pixels to bit maps
     
     func test(_ image:UIImage) {
         
+        let dotmatrix = getDotMatrix(image)
         
-        if let imageRef = image.cgImage {
+        let score = ocrScore(dotmatrix)
+        
+        print("score: \(score)")
+    }
+    
+    func ocrScore(_ dotmatrix:[UInt8]) -> Int {
+        var score = 0
+        
+        
+        // scan from left to right, top to bottom and try and
+        // identify score numbers of 90%+ accuracy
+        var next_valid_y = 0
+        let accuracy = 0.88
+        let advance_on_letter_found = 10
+        
+        for y in 0..<dotheight {
             
-            if let croppedImage = imageRef.cropping(to: CGRect(x: 120, y: 126, width: 30, height: 90)) {
+            if y < next_valid_y {
+                continue
+            }
             
-                // 0. get access to the raw pixels
-                let width = croppedImage.width
-                let height = croppedImage.height
-                let bitsPerComponent = croppedImage.bitsPerComponent
-                let bytesPerRow = croppedImage.bytesPerRow
-                let totalBytes = height * bytesPerRow
-                
-                let colorSpace = CGColorSpaceCreateDeviceGray()
-                var intensities = [UInt8](repeating: 0, count: totalBytes)
-                
-                let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: 0)
-                contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
-                
-                // run through all intensities and round them
-                var max:UInt8 = 0
-                let cutoff = 160
-                
-                for i in 0..<totalBytes {
-                    if intensities[i] > max {
-                        max = intensities[i]
-                    }
-                    if intensities[i] > cutoff {
-                        intensities[i] = 255
-                    } else {
-                        intensities[i] = 0
-                    }
+            for x in 0..<dotwidth {
+                if ocrNumber(score0, accuracy, x, y, dotmatrix) {
+                    print("matched 0 at \(x),\(y)")
+                    score = score * 10 + 0
+                    next_valid_y = y + advance_on_letter_found
+                    break
                 }
-                
-                print("max: \(max)")
-                
-                for y in 0..<height {
-                    for x in 0..<width {
-                        let i = y * width + x
-                        if intensities[i] > 127 {
-                            print("*", terminator:"")
-                        } else {
-                            print(" ", terminator:"")
-                        }
-                    }
-                    print("\n")
+                if ocrNumber(score1, accuracy, x, y, dotmatrix) {
+                    print("matched 1 at \(x),\(y)")
+                    score = score * 10 + 1
+                    next_valid_y = y + advance_on_letter_found
+                    break
                 }
-                
-                self.preview.imageView.image = UIImage(cgImage:(contextRef?.makeImage())!)
+                if ocrNumber(score2, accuracy, x, y, dotmatrix) {
+                    print("matched 2 at \(x),\(y)")
+                    score = score * 10 + 2
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score3, accuracy, x, y, dotmatrix) {
+                    print("matched 3 at \(x),\(y)")
+                    score = score * 10 + 3
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score4, accuracy, x, y, dotmatrix) {
+                    print("matched 4 at \(x),\(y)")
+                    score = score * 10 + 4
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score5, accuracy, x, y, dotmatrix) {
+                    print("matched 5 at \(x),\(y)")
+                    score = score * 10 + 5
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score6, accuracy, x, y, dotmatrix) {
+                    print("matched 6 at \(x),\(y)")
+                    score = score * 10 + 6
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score7, accuracy, x, y, dotmatrix) {
+                    print("matched 7 at \(x),\(y)")
+                    score = score * 10 + 7
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score8, accuracy, x, y, dotmatrix) {
+                    print("matched 8 at \(x),\(y)")
+                    score = score * 10 + 8
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
+                if ocrNumber(score9, accuracy, x, y, dotmatrix) {
+                    print("matched 9 at \(x),\(y)")
+                    score = score * 10 + 9
+                    next_valid_y = y + advance_on_letter_found
+                    break
+                }
             }
         }
-
         
+        return score
+    }
+    
+    func ocrNumber(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ dotmatrix:[UInt8]) -> Bool {
+        let width = 14
+        let height = 21
+        
+        // early outs: if our letter would be outside of the dotmatix, we cannot possibly match it
+        if startY+width >= dotheight {
+            return false
+        }
+        if startX+height >= dotwidth {
+            return false
+        }
+        
+        
+        var match = 0.0
+        
+        for y in 0..<width {
+            for x in 0..<height {
+                if dotmatrix[(startY+y) * dotwidth + (startX+x)] == letter[y * height + x] {
+                    match += 1.0
+                }
+            }
+        }
+        
+        return match / Double(width * height) > accuracy
+    }
+    
+    func getDotMatrix(_ image:UIImage) -> [UInt8] {
+        var dotmatrix = [UInt8](repeating: 0, count: dotwidth * dotheight)
+        
+        if let croppedImage = image.cgImage {
+            // 0. get access to the raw pixels
+            let width = croppedImage.width
+            let height = croppedImage.height
+            let bitsPerComponent = croppedImage.bitsPerComponent
+            let totalBytes = height * width
+            
+            let colorSpace = CGColorSpaceCreateDeviceGray()
+            var intensities = [UInt8](repeating: 0, count: totalBytes)
+            
+            let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: width, space: colorSpace, bitmapInfo: 0)
+            contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
+
+            let x_margin = 7
+            let y_margin = 18
+            let x_step = 10
+            let y_step = 10
+            
+            for y in 0..<dotheight {
+                
+                for x in 0..<dotwidth {
+                    
+                    let intensity_x = Double(x * x_step + x_margin)
+                    let intensity_y = Double(y * y_step + y_margin)
+                    
+                    let skewY = (intensity_y / 1282.0)
+                    let skewX = (intensity_x / 300.0)
+                    
+                    let intensity_i0 = Int(round(intensity_y - skewY * 30 * skewX)) * width + Int(round(intensity_x))
+                    let intensity_i1 = intensity_i0 + 1
+                    let intensity_i2 = intensity_i0 - 1
+                    let intensity_i3 = intensity_i0 + width
+                    let intensity_i4 = intensity_i0 - width
+                    let dot_i = y * dotwidth + x
+                    
+                    if intensities[intensity_i0] > dotmatrix[dot_i] {
+                        dotmatrix[dot_i] = intensities[intensity_i0]
+                    }
+                    if intensities[intensity_i1] > dotmatrix[dot_i] {
+                        dotmatrix[dot_i] = intensities[intensity_i1]
+                    }
+                    if intensities[intensity_i2] > dotmatrix[dot_i] {
+                        dotmatrix[dot_i] = intensities[intensity_i2]
+                    }
+                    if intensities[intensity_i3] > dotmatrix[dot_i] {
+                        dotmatrix[dot_i] = intensities[intensity_i3]
+                    }
+                    if intensities[intensity_i4] > dotmatrix[dot_i] {
+                        dotmatrix[dot_i] = intensities[intensity_i4]
+                    }
+                    
+                    if dotmatrix[dot_i] > 190 {
+                        dotmatrix[dot_i] = 1
+                        print("@", terminator:"")
+                    } else {
+                        dotmatrix[dot_i] = 0
+                        print("_", terminator:"")
+                    }
+                }
+                print("")
+            }
+        }
+        
+        return dotmatrix
     }
     
 
@@ -176,5 +313,177 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return mainXmlView!.elementForId("saveImageButton")!.asButton!
     }
 
+    
+    
+    fileprivate var score0: [UInt8] = [
+        0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+    ]
+    
+    fileprivate var score1: [UInt8] = [
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        ]
+    
+    
+    fileprivate var score3: [UInt8] = [
+        0,0,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,0,0,
+        0,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,1,1,1,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,
+        ]
+    
+    fileprivate var score2: [UInt8] = [
+        1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,
+        1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,
+        ]
+    
+    fileprivate var score4: [UInt8] = [
+        0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+        0,0,0,0,0,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        ]
+    
+    fileprivate var score5: [UInt8] = [
+        0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,
+        0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        ]
+    
+    fileprivate var score6: [UInt8] = [
+        0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+        0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,
+        ]
+    
+    fileprivate var score7: [UInt8] = [
+        1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,
+        0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,
+        0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,
+        ]
+    
+    fileprivate var score8: [UInt8] = [
+        0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,
+        ]
+    
+    fileprivate var score9: [UInt8] = [
+        0,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,
+        0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+        ]
 }
 
