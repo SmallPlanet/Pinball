@@ -100,6 +100,14 @@ class MainController: PlanetViewController, NetServiceDelegate {
                 
             }
         })*/
+        
+        if #available(iOS 11.0, *) {
+            
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
+                self.navigationController?.pushViewController(ScoreController(), animated: true)
+            })
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {

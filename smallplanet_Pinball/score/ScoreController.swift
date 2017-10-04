@@ -18,6 +18,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     static let scoreAddress = "239.1.1.234"
     static let scorePort:UInt16 = 35687
     
+    var lastHighScore = 0
+    
     var scoreConnection: UDPMulticast!
     
     let dotwidth = 30
@@ -33,27 +35,34 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
-        let x1:CGFloat = 1308.0 / 2448.0
-        let y1:CGFloat = 170.0 / 3264.0
-        let w1:CGFloat = 300.0 / 2448.0
-        let h1:CGFloat = 1282.0 / 3264.0
-                
+        let x1:CGFloat = 1331.0 / 2448.0
+        let y1:CGFloat = 186.0 / 3264.0
+        let w1:CGFloat = 310.0 / 2448.0
+        let h1:CGFloat = 1274.0 / 3264.0
+        
+        
         let croppedImage = image.cropped(to: CGRect(x:x1 * image.extent.size.width,
                                                     y:y1 * image.extent.size.height,
                                                     width:w1 * image.extent.size.width,
                                                     height:h1 * image.extent.size.height))
         
+        let uiImage = UIImage(ciImage: croppedImage)
+        
+        let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent)
+        let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage!))
+        let score = self.ocrScore(dotmatrix)
+        
+        if score > lastHighScore {
+            lastHighScore = score
+            self.scoreConnection.send("\(lastHighScore)")
+            print("score: \(lastHighScore)")
+        } else if score > 0 {
+            //print("     [\(score)]")
+        }
+        
         DispatchQueue.main.async {
-            
-            let uiImage = UIImage(ciImage: croppedImage)
-            
-            let dotmatrix = self.getDotMatrix(uiImage)
-            let score = self.ocrScore(dotmatrix)
-            
-            self.statusLabel.label.text = "score: \(score)"
+            self.statusLabel.label.text = "score: \(self.lastHighScore)"
             self.preview.imageView.image = uiImage
-            
-            self.scoreConnection.send("\(score)")
         }
     }
     
@@ -113,7 +122,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         do {
-            try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0028.JPG"))))!)
+            try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0045.JPG"))))!)
         } catch {
             print("unable to load sample image")
         }
@@ -148,63 +157,64 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 continue
             }
             
-            for x in 0..<dotwidth {
+            //for x in 0..<dotwidth {
+            for x in 6..<9 {
                 if ocrNumber(score0, accuracy, x, y, dotmatrix) {
-                    print("matched 0 at \(x),\(y)")
+                    //print("matched 0 at \(x),\(y)")
                     score = score * 10 + 0
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score1, accuracy, x, y, dotmatrix) {
-                    print("matched 1 at \(x),\(y)")
+                    //print("matched 1 at \(x),\(y)")
                     score = score * 10 + 1
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score2, accuracy, x, y, dotmatrix) {
-                    print("matched 2 at \(x),\(y)")
+                    //print("matched 2 at \(x),\(y)")
                     score = score * 10 + 2
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score3, accuracy, x, y, dotmatrix) {
-                    print("matched 3 at \(x),\(y)")
+                    //print("matched 3 at \(x),\(y)")
                     score = score * 10 + 3
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score4, accuracy, x, y, dotmatrix) {
-                    print("matched 4 at \(x),\(y)")
+                    //print("matched 4 at \(x),\(y)")
                     score = score * 10 + 4
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score5, accuracy, x, y, dotmatrix) {
-                    print("matched 5 at \(x),\(y)")
+                    //print("matched 5 at \(x),\(y)")
                     score = score * 10 + 5
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score6, accuracy, x, y, dotmatrix) {
-                    print("matched 6 at \(x),\(y)")
+                    //print("matched 6 at \(x),\(y)")
                     score = score * 10 + 6
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score7, accuracy, x, y, dotmatrix) {
-                    print("matched 7 at \(x),\(y)")
+                    //print("matched 7 at \(x),\(y)")
                     score = score * 10 + 7
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score8, accuracy, x, y, dotmatrix) {
-                    print("matched 8 at \(x),\(y)")
+                    //print("matched 8 at \(x),\(y)")
                     score = score * 10 + 8
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
                 if ocrNumber(score9, accuracy, x, y, dotmatrix) {
-                    print("matched 9 at \(x),\(y)")
+                    //print("matched 9 at \(x),\(y)")
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
                     break
@@ -218,6 +228,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     func ocrNumber(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ dotmatrix:[UInt8]) -> Bool {
         let width = 14
         let height = 21
+        var bad:Double = 0
+        let total:Double = Double(width * height)
+        let inv_accuracy = 1.0 - accuracy
         
         // early outs: if our letter would be outside of the dotmatix, we cannot possibly match it
         if startY+width >= dotheight {
@@ -234,6 +247,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             for x in 0..<height {
                 if dotmatrix[(startY+y) * dotwidth + (startX+x)] == letter[y * height + x] {
                     match += 1.0
+                } else {
+                    bad += 1.0
+                    
+                    // if the number of bad ones would put use as inaccurate, then end early
+                    if bad / total  > inv_accuracy {
+                        return false
+                    }
                 }
             }
         }
@@ -257,8 +277,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: width, space: colorSpace, bitmapInfo: 0)
             contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
 
-            let x_margin = 7
-            let y_margin = 18
+            let x_margin = 5
+            let y_margin = 5
             let x_step = 10
             let y_step = 10
             

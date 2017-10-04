@@ -25,9 +25,14 @@ class UDPMulticast : NSObject, GCDAsyncUdpSocketDelegate {
         super.init()
         
         socket = GCDAsyncUdpSocket(delegate: self, delegateQueue: DispatchQueue.main)
-        try! socket.bind(toPort: port, interface: nil)
-        try! socket.joinMulticastGroup(address, onInterface: nil)
-        try! socket.beginReceiving()
+        
+        do {
+            try socket.bind(toPort: port, interface: nil)
+            try socket.joinMulticastGroup(address, onInterface: nil)
+            try socket.beginReceiving()
+        } catch {
+            print("unable to open socket")
+        }
     }
     
     deinit {
