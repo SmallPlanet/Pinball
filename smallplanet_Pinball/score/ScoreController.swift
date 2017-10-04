@@ -41,10 +41,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let h1:CGFloat = 1274.0 / 3264.0
         
         
-        let croppedImage = image.cropped(to: CGRect(x:x1 * image.extent.size.width,
-                                                    y:y1 * image.extent.size.height,
-                                                    width:w1 * image.extent.size.width,
-                                                    height:h1 * image.extent.size.height))
+        let croppedImage = (image.extent.size.width != 310 ?
+            image.cropped(to: CGRect(x:x1 * image.extent.size.width,
+                                     y:y1 * image.extent.size.height,
+                                     width:w1 * image.extent.size.width,
+                                     height:h1 * image.extent.size.height)) : maskedImage)
         
         let uiImage = UIImage(ciImage: croppedImage)
         
@@ -57,7 +58,19 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             self.scoreConnection.send("\(lastHighScore)")
             print("score: \(lastHighScore)")
         } else if score > 0 {
-            //print("     [\(score)]")
+            print("     [\(score)]")
+            
+            
+        } else {
+            
+            // if this is not a score, check for other things...
+            let gameover = self.ocrGameOver(dotmatrix)
+            if gameover {
+                print("GAME OVER")
+                lastHighScore = 0
+                self.scoreConnection.send("gameover")
+            }
+            
         }
         
         DispatchQueue.main.async {
@@ -120,25 +133,26 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        
-        do {
-            try test(UIImage(data: Data(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0045.JPG"))))!)
-        } catch {
-            print("unable to load sample image")
-        }
+        let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0046.JPG")))
+        playCameraImage(captureHelper, maskedImage: testImage!, image: testImage!, frameNumber:0, fps:0, left:0, right:0, start:0, ballKicker:0)
     }
     
-    // MARK: Test convert pixels to bit maps
-    
-    func test(_ image:UIImage) {
-        
-        let dotmatrix = getDotMatrix(image)
-        
-        let score = ocrScore(dotmatrix)
-        
-        self.scoreConnection.send("\(score)".data(using: .utf8)!)
+    // MARK: "OCR" code
 
-        print("score: \(score)")
+    
+    func ocrGameOver(_ dotmatrix:[UInt8]) -> Bool {
+        
+        //game_over
+        for y in 29..<33 {
+            for x in 8..<10 {
+                if ocrMatch(game_over, 0.9, x, y, 66, 12, dotmatrix) {
+                    print("matched GAME OVER")
+                    return true
+                }
+            }
+        }
+        
+        return false
     }
     
     func ocrScore(_ dotmatrix:[UInt8]) -> Int {
@@ -148,7 +162,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         // scan from left to right, top to bottom and try and
         // identify score numbers of 90%+ accuracy
         var next_valid_y = 0
-        let accuracy = 0.88
+        let accuracy = 0.96
         let advance_on_letter_found = 10
         
         for y in 0..<dotheight {
@@ -159,61 +173,61 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             //for x in 0..<dotwidth {
             for x in 6..<9 {
-                if ocrNumber(score0, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score0, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 0 at \(x),\(y)")
                     score = score * 10 + 0
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score1, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score1, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 1 at \(x),\(y)")
                     score = score * 10 + 1
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score2, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score2, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 2 at \(x),\(y)")
                     score = score * 10 + 2
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score3, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score3, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 3 at \(x),\(y)")
                     score = score * 10 + 3
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score4, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score4, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 4 at \(x),\(y)")
                     score = score * 10 + 4
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score5, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score5, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 5 at \(x),\(y)")
                     score = score * 10 + 5
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score6, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score6, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 6 at \(x),\(y)")
                     score = score * 10 + 6
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score7, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score7, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 7 at \(x),\(y)")
                     score = score * 10 + 7
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score8, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score8, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 8 at \(x),\(y)")
                     score = score * 10 + 8
                     next_valid_y = y + advance_on_letter_found
                     break
                 }
-                if ocrNumber(score9, accuracy, x, y, dotmatrix) {
+                if ocrMatch(score9, accuracy, x, y, 14, 21, dotmatrix) {
                     //print("matched 9 at \(x),\(y)")
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
@@ -225,9 +239,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return score
     }
     
-    func ocrNumber(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ dotmatrix:[UInt8]) -> Bool {
-        let width = 14
-        let height = 21
+    func ocrMatch(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ width:Int, _ height:Int, _ dotmatrix:[UInt8]) -> Bool {
         var bad:Double = 0
         let total:Double = Double(width * height)
         let inv_accuracy = 1.0 - accuracy
@@ -277,7 +289,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: width, space: colorSpace, bitmapInfo: 0)
             contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
 
-            let x_margin = 5
+            let x_margin = 0
             let y_margin = 5
             let x_step = 10
             let y_step = 10
@@ -289,8 +301,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     let intensity_x = Double(x * x_step + x_margin)
                     let intensity_y = Double(y * y_step + y_margin)
                     
-                    let skewY = (intensity_y / 1282.0)
-                    let skewX = (intensity_x / 300.0)
+                    let skewY = (intensity_y / Double(image.size.height))
+                    let skewX = (intensity_x / Double(image.size.width))
                     
                     let intensity_i0 = Int(round(intensity_y - skewY * 30 * skewX)) * width + Int(round(intensity_x))
                     let intensity_i1 = intensity_i0 + 1
@@ -317,13 +329,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     if dotmatrix[dot_i] > 190 {
                         dotmatrix[dot_i] = 1
-                        //print("@", terminator:"")
+                        print("@", terminator:"")
                     } else {
                         dotmatrix[dot_i] = 0
-                        //print("_", terminator:"")
+                        print("_", terminator:"")
                     }
                 }
-                //print("")
+                print("")
             }
         }
         
@@ -518,15 +530,86 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
-        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
-        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
-        1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
         0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+        ]
+    
+    
+    fileprivate var game_over: [UInt8] = [
+        0,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,
+        0,1,1,1,1,1,1,0,1,1,1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,1,1,0,0,0,1,1,
+        0,0,0,0,0,1,1,0,0,0,1,1,
+        0,0,0,0,0,1,1,0,0,0,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,0,
+        0,0,0,0,0,0,0,1,1,1,0,0,
+        0,0,0,0,0,0,0,0,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        0,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,0,0,0,1,1,
+        1,1,0,0,0,0,0,0,0,0,1,1,
+        1,1,0,0,0,0,0,0,0,0,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,0,0,0,0,0,0,0,0,
+        1,1,1,0,0,0,0,0,0,0,0,0,
+        0,1,1,1,0,0,0,0,0,0,0,0,
+        0,0,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,1,1,0,0,0,1,1,
+        0,0,0,0,1,1,1,0,0,0,1,1,
+        0,0,0,1,1,1,1,0,0,0,1,1,
+        1,1,1,1,0,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,1,1,0,
         ]
 }
 
