@@ -12,6 +12,7 @@ import Laba
 import Socket
 import CoreML
 import Vision
+import MKTween
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
     
@@ -22,9 +23,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     var scoreConnection: UDPMulticast!
     
-    let dotwidth = 30
-    let dotheight = 126
-    
     let ciContext = CIContext(options: [:])
     
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
@@ -33,6 +31,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
+        if frameNumber > 0 {
+            return
+        }
+        
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
         let x1:CGFloat = 1331.0 / 2448.0
@@ -47,37 +49,25 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                                      width:w1 * image.extent.size.width,
                                      height:h1 * image.extent.size.height)) : maskedImage)
         
-        let uiImage = UIImage(ciImage: croppedImage)
+        let rectCoords:[String:Any] = [
+            "inputTopLeft":CIVector(x: 5, y: 1262),
+            "inputTopRight":CIVector(x: 290, y: 1265),
+            "inputBottomLeft":CIVector(x: 7, y: 10),
+            "inputBottomRight":CIVector(x: 301, y: 34)
+        ]
+        let alignedImage = croppedImage.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
-        let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent)
-        let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage!))
-        let score = self.ocrScore(dotmatrix)
+        let uiImage = UIImage(ciImage: alignedImage)
         
-        if score > lastHighScore {
-            lastHighScore = score
-            self.scoreConnection.send("\(lastHighScore)")
-            print("score: \(lastHighScore)")
-        } else if score > 0 {
-            print("     [\(score)]")
-            
-            
-        } else {
-            
-            // if this is not a score, check for other things...
-            let gameover = self.ocrGameOver(dotmatrix)
-            if gameover {
-                print("GAME OVER")
-                lastHighScore = 0
-                self.scoreConnection.send("gameover")
-            }
-            
-        }
+        _ = ocrReadScreen(alignedImage)
         
         DispatchQueue.main.async {
             self.statusLabel.label.text = "score: \(self.lastHighScore)"
             self.preview.imageView.image = uiImage
         }
     }
+    
+    
     
     var currentValidationURL:URL?
     override func viewDidLoad() {
@@ -133,8 +123,50 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/sample/IMG_0046.JPG")))
-        playCameraImage(captureHelper, maskedImage: testImage!, image: testImage!, frameNumber:0, fps:0, left:0, right:0, start:0, ballKicker:0)
+        
+        let testImages = [
+            "bundle://Assets/score/sample/IMG_0040.JPG",
+            "bundle://Assets/score/sample/IMG_0041.JPG",
+            "bundle://Assets/score/sample/IMG_0042.JPG",
+            "bundle://Assets/score/sample/IMG_0043.JPG",
+            "bundle://Assets/score/sample/IMG_0044.JPG",
+            "bundle://Assets/score/sample/IMG_0045.JPG",
+            "bundle://Assets/score/sample/IMG_0046.JPG",
+        ]
+        
+        let testResults = [
+            "PUSH START",
+            "0",
+            "0",
+            "3030",
+            "79040",
+            "894910",
+            "GAME OVER",
+        ]
+        
+        for i in 0..<testImages.count {
+            var testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
+            
+            let rectCoords:[String:Any] = [
+                "inputTopLeft":CIVector(x: 5, y: 1262),
+                "inputTopRight":CIVector(x: 290, y: 1265),
+                "inputBottomLeft":CIVector(x: 7, y: 10),
+                "inputBottomRight":CIVector(x: 301, y: 34)
+            ]
+            testImage = testImage?.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
+            
+            let result = ocrReadScreen(testImage!)
+            
+            if result != testResults[i] {
+                print("OCR UNIT TEST FAILED: \(result) should be \(testResults[i])")
+            }
+            
+            //let cgImage = self.ciContext.createCGImage(testImage!, from: testImage!.extent)
+            //UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
+
+            
+            //break
+        }
     }
     
     // MARK: "OCR" code
@@ -155,7 +187,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return false
     }
     
-    func ocrScore(_ dotmatrix:[UInt8]) -> Int {
+    func ocrScore(_ dotmatrix:[UInt8]) -> (Int,Bool) {
         var score = 0
         
         
@@ -164,6 +196,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         var next_valid_y = 0
         let accuracy = 0.96
         let advance_on_letter_found = 10
+        var didMatchSomething = false
         
         for y in 0..<dotheight {
             
@@ -172,71 +205,81 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             //for x in 0..<dotwidth {
-            for x in 6..<9 {
+            for x in 8..<11 {
                 if ocrMatch(score0, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 0 at \(x),\(y)")
+                    print("matched 0 at \(x),\(y)")
                     score = score * 10 + 0
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score1, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 1 at \(x),\(y)")
+                    print("matched 1 at \(x),\(y)")
                     score = score * 10 + 1
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score2, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 2 at \(x),\(y)")
+                    print("matched 2 at \(x),\(y)")
                     score = score * 10 + 2
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score3, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 3 at \(x),\(y)")
+                    print("matched 3 at \(x),\(y)")
                     score = score * 10 + 3
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score4, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 4 at \(x),\(y)")
+                    print("matched 4 at \(x),\(y)")
                     score = score * 10 + 4
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score5, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 5 at \(x),\(y)")
+                    print("matched 5 at \(x),\(y)")
                     score = score * 10 + 5
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score6, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 6 at \(x),\(y)")
+                    print("matched 6 at \(x),\(y)")
                     score = score * 10 + 6
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score7, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 7 at \(x),\(y)")
+                    print("matched 7 at \(x),\(y)")
                     score = score * 10 + 7
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score8, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 8 at \(x),\(y)")
+                    print("matched 8 at \(x),\(y)")
                     score = score * 10 + 8
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
                 if ocrMatch(score9, accuracy, x, y, 14, 21, dotmatrix) {
-                    //print("matched 9 at \(x),\(y)")
+                    print("matched 9 at \(x),\(y)")
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
                     break
                 }
             }
         }
         
-        return score
+        return (score,didMatchSomething)
     }
     
     func ocrMatch(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ width:Int, _ height:Int, _ dotmatrix:[UInt8]) -> Bool {
@@ -273,6 +316,43 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return match / Double(width * height) > accuracy
     }
     
+    func ocrReadScreen(_ croppedImage:CIImage) -> String {
+        guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
+            return ""
+        }
+        let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage))
+        let (score, scoreWasFound) = self.ocrScore(dotmatrix)
+        var screenText = ""
+        
+        if scoreWasFound {
+            screenText = "\(score)"
+            if score > lastHighScore {
+                lastHighScore = score
+            } else if score > 0 {
+                
+            }
+        } else {
+            
+            // if this is not a score, check for other things...
+            let gameover = self.ocrGameOver(dotmatrix)
+            if gameover {
+                screenText = "GAME OVER"
+                lastHighScore = 0
+            }
+            
+        }
+        
+        if screenText != "" {
+            self.scoreConnection.send(screenText)
+            print("screen: \(screenText)")
+        }
+        
+        return screenText
+    }
+    
+    let dotwidth = 31
+    let dotheight = 126
+    
     func getDotMatrix(_ image:UIImage) -> [UInt8] {
         var dotmatrix = [UInt8](repeating: 0, count: dotwidth * dotheight)
         
@@ -281,60 +361,80 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let width = croppedImage.width
             let height = croppedImage.height
             let bitsPerComponent = croppedImage.bitsPerComponent
-            let totalBytes = height * width
+            let rowBytes = width * 4
+            let totalBytes = height * width * 4
             
-            let colorSpace = CGColorSpaceCreateDeviceGray()
-            var intensities = [UInt8](repeating: 0, count: totalBytes)
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
             
-            let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: width, space: colorSpace, bitmapInfo: 0)
+            let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
             contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
 
-            let x_margin = 0
-            let y_margin = 5
-            let x_step = 10
-            let y_step = 10
+            let x_margin = 0.0
+            let y_margin = 4.0
+            
+            let x_step = Double(image.size.width) / Double(dotwidth)
+            let y_step = Double(image.size.height) / Double(dotheight)
+            
+            let cutoff = 100
             
             for y in 0..<dotheight {
                 
                 for x in 0..<dotwidth {
                     
-                    let intensity_x = Double(x * x_step + x_margin)
-                    let intensity_y = Double(y * y_step + y_margin)
+                    let intensity_x = round(Double(x) * x_step + x_margin)
+                    let intensity_y = round(Double(y) * y_step + y_margin)
                     
-                    let skewY = (intensity_y / Double(image.size.height))
-                    let skewX = (intensity_x / Double(image.size.width))
+                    /*
+                    if y == 0 {
+                        print("  x: \(intensity_x)")
+                    }*/
                     
-                    let intensity_i0 = Int(round(intensity_y - skewY * 30 * skewX)) * width + Int(round(intensity_x))
-                    let intensity_i1 = intensity_i0 + 1
-                    let intensity_i2 = intensity_i0 - 1
-                    let intensity_i3 = intensity_i0 + width
-                    let intensity_i4 = intensity_i0 - width
+                    let intensity_i0 = Int(intensity_y) * rowBytes + (Int(intensity_x) * 4)
+                    let intensity_i1 = intensity_i0 + 4
+                    var intensity_i2 = intensity_i0 - 4
+                    let intensity_i3 = intensity_i0 + (width * 4)
+                    var intensity_i4 = intensity_i0 - (width * 4)
+                    
+                    if intensity_i2 < 0 {
+                        intensity_i2 = 0
+                    }
+                    if intensity_i4 < 0 {
+                        intensity_i4 = 0
+                    }
+                    
+                    let intensity_i0b = intensity_i0 + 2
+                    let intensity_i1b = intensity_i1 + 2
+                    let intensity_i2b = intensity_i2 + 2
+                    let intensity_i3b = intensity_i3 + 2
+                    let intensity_i4b = intensity_i4 + 2
+                    
                     let dot_i = y * dotwidth + x
                     
-                    if intensities[intensity_i0] > dotmatrix[dot_i] {
-                        dotmatrix[dot_i] = intensities[intensity_i0]
-                    }
-                    if intensities[intensity_i1] > dotmatrix[dot_i] {
-                        dotmatrix[dot_i] = intensities[intensity_i1]
-                    }
-                    if intensities[intensity_i2] > dotmatrix[dot_i] {
-                        dotmatrix[dot_i] = intensities[intensity_i2]
-                    }
-                    if intensities[intensity_i3] > dotmatrix[dot_i] {
-                        dotmatrix[dot_i] = intensities[intensity_i3]
-                    }
-                    if intensities[intensity_i4] > dotmatrix[dot_i] {
-                        dotmatrix[dot_i] = intensities[intensity_i4]
-                    }
+                    var avg:Int = 0
+                    avg += Int(rgbBytes[intensity_i0b])
+                    avg += Int(rgbBytes[intensity_i1b])
+                    avg += Int(rgbBytes[intensity_i2b])
+                    avg += Int(rgbBytes[intensity_i3b])
+                    avg += Int(rgbBytes[intensity_i4b])
+                    avg /= 5
                     
-                    if dotmatrix[dot_i] > 190 {
+                    avg = Int(rgbBytes[intensity_i0b])
+                    
+                    printValue(avg)
+                    
+                    if avg > cutoff {
                         dotmatrix[dot_i] = 1
-                        print("@", terminator:"")
                     } else {
                         dotmatrix[dot_i] = 0
-                        print("_", terminator:"")
                     }
                 }
+                
+                /*
+                let intensity_y = round(Double(y) * y_step + y_margin)
+                print("  y: \(intensity_y)")
+                 */
+                
                 print("")
             }
         }
@@ -342,6 +442,29 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return dotmatrix
     }
     
+    func printValue(_ v:Int) {
+        if v < 25*1 {
+            print("0-", terminator:"")
+        } else if v < 25*2 {
+            print("1-", terminator:"")
+        } else if v < 25*3 {
+            print("2-", terminator:"")
+        } else if v < 25*4 {
+            print("3-", terminator:"")
+        } else if v < 25*5 {
+            print("4@", terminator:"")
+        } else if v < 25*6 {
+            print("5@", terminator:"")
+        } else if v < 25*7 {
+            print("6@", terminator:"")
+        } else if v < 25*8 {
+            print("7@", terminator:"")
+        } else if v < 25*9 {
+            print("8@", terminator:"")
+        } else {
+            print("9@", terminator:"")
+        }
+    }
 
     
     // MARK: Play and capture
