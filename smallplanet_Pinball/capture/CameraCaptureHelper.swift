@@ -126,7 +126,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     }
     
     func lockFocus() {
-        guard let captureDevice = captureDevice else {
+        guard let _ = captureDevice else {
             return
         }
         /*
@@ -140,7 +140,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     }
     
     func unlockFocus() {
-        guard let captureDevice = captureDevice else {
+        guard let _ = captureDevice else {
             return
         }
         
@@ -159,11 +159,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var playFrameNumber = 0
     var frameNumber = 0
     var fpsCounter:Int = 0
-    var fpsDisplay:Int = 0
+    var fpsDisplay = 0
     var lastDate = Date()
+    var frameIntervals = [Double]()
     
     let serialQueue = DispatchQueue(label: "frame_transformation_queue")
-    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
+    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .userInitiated)
     
     var motionBlurFrames:[CIImage] = []
     
@@ -192,50 +193,65 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             ballKicker = (self.pinball!.ballKickerPressed ? 1 : 0)
         }
         
-        serialQueue.async {
+        serialQueue.sync {
             var bufferCopy : CMSampleBuffer?
             guard CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy) == noErr, let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else {
                 return
             }
 
-            let image = CIImage(cvPixelBuffer: pixelBuffer)
-            let size = image.extent.size
-            let cropped = image.cropped(to: CGRect(x: (size.width-size.height)/2, y: 0, width: size.height, height: size.height))
-            
-            let rotation = CGFloat(-90)
-            let scale = CGFloat(240/size.height)
-            var transform = CGAffineTransform.identity
-            transform = transform.rotated(by: rotation.degreesToRadians)
-            transform = transform.scaledBy(x: scale, y: scale)
-            
-            let processedImage = cropped.transformed(by: transform)
+            func cropAndScale(_ image: CIImage) -> CIImage {
+                let rotation:CGFloat = -90
+                let scale = 240.0 / image.extent.height
+                var transform = CGAffineTransform.identity
+                transform = transform.rotated(by: rotation.degreesToRadians)
+                transform = transform.translatedBy(x: -380, y: 0)
+                transform = transform.scaledBy(x: scale, y: scale)
+                let rotatedImage = image.transformed(by: transform)
+                return rotatedImage.cropped(to: CGRect(x:0,y:0,width:240,height:240))
+            }
 
-            self.playQueue.sync {
-                self.delegate?.playCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-            }
+            let image = CIImage(cvPixelBuffer: pixelBuffer)
+            
+            let processedImage = cropAndScale(image)
+
+            self.delegate?.playCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             
             
-            if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-                self.delegate?.skippedCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-            } else {
-                self.extraFramesToCapture = self.extraFramesToCapture - 1
-                if self.extraFramesToCapture < 0 {
-                    self.extraFramesToCapture = 0
-                }
-                
-                self.delegate?.newCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-            }
+//            if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
+//                self.delegate?.skippedCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+//            } else {
+//                self.extraFramesToCapture = self.extraFramesToCapture - 1
+//                if self.extraFramesToCapture < 0 {
+//                    self.extraFramesToCapture = 0
+//                }
+//
+//                self.delegate?.newCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+//            }
         }
  
-        fpsCounter += 1
+//        let interval = -lastDate.timeIntervalSinceNow
+//        lastDate = Date()
+//        frameIntervals.append(interval)
+//        if frameIntervals.count > 30 {
+//            let totalInterval = frameIntervals.reduce(0, +)
+//            let actualFps = Double(frameIntervals.count) / totalInterval
+//            print("actualFps = \(actualFps) <- \(frameIntervals.count) / \(totalInterval)")
+//            fpsDisplay = Int(actualFps + 0.5)
+//            frameIntervals.removeAll(keepingCapacity: true)
+//        }
         
+        fpsCounter += 1
+
         // DEBUG code to let you print fps of camera capture
-        if abs(lastDate.timeIntervalSinceNow) > 1 {
-            fpsDisplay = fpsCounter
+//        print("elapsedTime: \(-lastDate.timeIntervalSinceNow)")
+//        print("current fps: \(Double(fpsCounter) / -lastDate.timeIntervalSinceNow) <- \(fpsCounter) / \(-lastDate.timeIntervalSinceNow)")
+        if abs(lastDate.timeIntervalSinceNow) > 5 {
+            let fps = Double(fpsCounter) / -lastDate.timeIntervalSinceNow
+            print("\(fps)")
+            fpsDisplay = Int(fps + 0.5)
             fpsCounter = 0
             lastDate = Date()
         }
-        
     }
 }
 

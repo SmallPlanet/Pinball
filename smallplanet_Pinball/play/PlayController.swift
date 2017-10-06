@@ -16,6 +16,14 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    // tng_delta_1f -> first video
+    // tng_delta_1i2a -> 44fps, nice play
+    
+    
+    func loadModel() -> VNCoreMLModel? {
+        return try? VNCoreMLModel(for: tng_delta_1i2a().model)
+    }
+    
     let prefix = "0_1"
     let session = String(Int(Date.timeIntervalSinceReferenceDate))
     
@@ -35,7 +43,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     let flipperDisabledColor = UIColor(gaxbString: "#1c2f42ff").cgColor
 
     var omegaEnabled: Bool {
-        return deadmanSwitch.switch_.isOn
+        var enabled = false
+        DispatchQueue.main.sync {
+            enabled = deadmanSwitch.switch_.isOn
+        }
+        return enabled
     }
     
     func requestHandler(request: VNRequest, error: Error?) {
@@ -77,7 +89,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             rightFlipperCounter = flipDelay/2
         }
         
-        print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
+//        print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
         
         let sendToMachine = omegaEnabled
         
@@ -140,7 +152,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print(error)
         }
         
-        if frameNumber % 5 == 0 {
+        if frameNumber % 2 == 0 {
             DispatchQueue.main.async {
                 self.preview.imageView.image = UIImage(data:imageData)
             }
@@ -166,17 +178,19 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegate = self
         
         UIApplication.shared.isIdleTimerDisabled = true
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
+        let noteUp = Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue)
+        observers.append(NotificationCenter.default.addObserver(forName:noteUp, object:nil, queue:nil) {_ in
             self.pinball.ballKickerEnd()
         })
         
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
+        let noteDown = Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue)
+
+        observers.append(NotificationCenter.default.addObserver(forName:noteDown, object:nil, queue:nil) {_ in
             self.pinball.ballKickerStart()
         })
         
         // Load the ML model through its generated class
-        model = try? VNCoreMLModel(for: tng_bravo_0c().model)
+        model = loadModel()
 
         captureHelper.pinball = pinball
     }
