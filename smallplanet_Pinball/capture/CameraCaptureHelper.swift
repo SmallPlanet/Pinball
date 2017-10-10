@@ -18,6 +18,8 @@ extension CGFloat {
 
 class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 {
+    var cropAndScale: ((CIImage) -> CIImage)
+    
     let captureSession = AVCaptureSession()
     
     let cameraPosition: AVCaptureDevice.Position
@@ -46,8 +48,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     weak var delegate: CameraCaptureHelperDelegate?
     
-    required init(cameraPosition: AVCaptureDevice.Position) {
+    required init(cameraPosition: AVCaptureDevice.Position, cropAndScale: @escaping (CIImage) -> CIImage) {
         self.cameraPosition = cameraPosition
+        self.cropAndScale = cropAndScale
         
         super.init()
         
@@ -153,8 +156,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         */
         isLocked = false
     }
-
-    
     
     var playFrameNumber = 0
     var frameNumber = 0
@@ -170,7 +171,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
-        let localFrameNumber = frameNumber
         let localPlayFrameNumber = playFrameNumber
         
         playFrameNumber = playFrameNumber + 1
@@ -187,10 +187,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         var ballKicker:Byte = 0
         
         if self.pinball != nil {
-            leftButton = (self.pinball!.leftButtonPressed ? 1 : 0)
-            rightButton = (self.pinball!.rightButtonPressed ? 1 : 0)
-            startButton = (self.pinball!.startButtonPressed ? 1 : 0)
-            ballKicker = (self.pinball!.ballKickerPressed ? 1 : 0)
+            leftButton = self.pinball!.leftButtonPressed ? 1 : 0
+            rightButton = self.pinball!.rightButtonPressed ? 1 : 0
+            startButton = self.pinball!.startButtonPressed ? 1 : 0
+            ballKicker = self.pinball!.ballKickerPressed ? 1 : 0
         }
         
         serialQueue.sync {
@@ -199,53 +199,15 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 return
             }
 
-            func cropAndScale(_ image: CIImage) -> CIImage {
-                let rotation:CGFloat = -90
-                let scale = 240.0 / image.extent.height
-                var transform = CGAffineTransform.identity
-                transform = transform.rotated(by: rotation.degreesToRadians)
-                transform = transform.translatedBy(x: -380, y: 0)
-                transform = transform.scaledBy(x: scale, y: scale)
-                let rotatedImage = image.transformed(by: transform)
-                return rotatedImage.cropped(to: CGRect(x:0,y:0,width:240,height:240))
-            }
-
             let image = CIImage(cvPixelBuffer: pixelBuffer)
-            
-            let processedImage = cropAndScale(image)
+            let processedImage = self.cropAndScale(image)
 
             self.delegate?.playCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             
-            
-//            if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-//                self.delegate?.skippedCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-//            } else {
-//                self.extraFramesToCapture = self.extraFramesToCapture - 1
-//                if self.extraFramesToCapture < 0 {
-//                    self.extraFramesToCapture = 0
-//                }
-//
-//                self.delegate?.newCameraImage(self, maskedImage: processedImage, image: processedImage, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-//            }
-        }
- 
-//        let interval = -lastDate.timeIntervalSinceNow
-//        lastDate = Date()
-//        frameIntervals.append(interval)
-//        if frameIntervals.count > 30 {
-//            let totalInterval = frameIntervals.reduce(0, +)
-//            let actualFps = Double(frameIntervals.count) / totalInterval
-//            print("actualFps = \(actualFps) <- \(frameIntervals.count) / \(totalInterval)")
-//            fpsDisplay = Int(actualFps + 0.5)
-//            frameIntervals.removeAll(keepingCapacity: true)
-//        }
+       }
         
         fpsCounter += 1
-
-        // DEBUG code to let you print fps of camera capture
-//        print("elapsedTime: \(-lastDate.timeIntervalSinceNow)")
-//        print("current fps: \(Double(fpsCounter) / -lastDate.timeIntervalSinceNow) <- \(fpsCounter) / \(-lastDate.timeIntervalSinceNow)")
-        if abs(lastDate.timeIntervalSinceNow) > 5 {
+        if abs(lastDate.timeIntervalSinceNow) > 2 {
             let fps = Double(fpsCounter) / -lastDate.timeIntervalSinceNow
             print("\(fps)")
             fpsDisplay = Int(fps + 0.5)

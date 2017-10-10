@@ -11,13 +11,6 @@ import PlanetSwift
 import Laba
 import Socket
 
-extension NSData {
-    func castToCPointer<T>() -> T {
-        let mem = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T.Type>.size)
-        self.getBytes(mem, length: MemoryLayout<T.Type>.size)
-        return mem.move()
-    }
-}
 
 class SkippedFrame {
     var jpegData:Data

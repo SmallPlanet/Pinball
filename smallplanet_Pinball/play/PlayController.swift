@@ -16,24 +16,15 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    // tng_delta_1f -> first video
-    // tng_delta_1i2a -> 44fps, nice play
-    
-    
-    func loadModel() -> VNCoreMLModel? {
-        return try? VNCoreMLModel(for: tng_delta_1i2a().model)
-    }
-    
-    let prefix = "0_1"
-    let session = String(Int(Date.timeIntervalSinceReferenceDate))
-    
+    let pinballModel = PinballModel.tngEcho_0b
+
     let playAndCapture = true
     
     let ciContext = CIContext(options: [:])
     
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
 
-    var captureHelper = CameraCaptureHelper(cameraPosition: .back)
+    var captureHelper: CameraCaptureHelper!
     var model: VNCoreMLModel? = nil
     
     var leftFlipperCounter = 0
@@ -173,10 +164,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             findCaptureServer()
         }
         
-        handleShouldFrameCapture()
-        
+        captureHelper = CameraCaptureHelper(cameraPosition: .back, cropAndScale: pinballModel.cropAndScale)
         captureHelper.delegate = self
         
+        handleShouldFrameCapture()
+
         UIApplication.shared.isIdleTimerDisabled = true
         let noteUp = Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue)
         observers.append(NotificationCenter.default.addObserver(forName:noteUp, object:nil, queue:nil) {_ in
@@ -190,7 +182,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         // Load the ML model through its generated class
-        model = loadModel()
+        model = pinballModel.loadModel()
 
         captureHelper.pinball = pinball
     }
@@ -223,54 +215,54 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var isConnectedToServer = false
     var serverSocket:Socket? = nil
 
-    var storedFrames:[SkippedFrame] = []
+//    var storedFrames:[SkippedFrame] = []
     func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        if playAndCapture == false {
-            return
-        }
-        
-        guard let imageData = ciContext.pinballData(maskedImage) else {
-            print("failed to make image data")
-            return
-        }
-
-        storedFrames.append(SkippedFrame(imageData, left, right, start, ballKicker))
-        
-        while storedFrames.count > 30 {
-            storedFrames.remove(at: 0)
-        }
+//        if playAndCapture == false {
+//            return
+//        }
+//
+//        guard let imageData = ciContext.pinballData(maskedImage) else {
+//            print("failed to make image data")
+//            return
+//        }
+//
+////        storedFrames.append(SkippedFrame(imageData, left, right, start, ballKicker))
+//
+//        while storedFrames.count > 30 {
+//            storedFrames.remove(at: 0)
+//        }
     }
     
     func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        if playAndCapture == false {
-            return
-        }
-        
-        if isConnectedToServer {
-            
-            // send all stored frames
-            while storedFrames.count > 0 {
-                
-                sendCameraFrame(storedFrames[0].jpegData,
-                                storedFrames[0].leftButton,
-                                storedFrames[0].rightButton,
-                                storedFrames[0].startButton,
-                                storedFrames[0].ballKickerButton)
-                
-                storedFrames.remove(at: 0)
-            }
-            
-            
-            // get the actual bytes out of the CIImage
-            guard let imageData = ciContext.pinballData(maskedImage) else {
-                print("failed to make image data")
-                return
-            }
-
-            sendCameraFrame(imageData, left, right, start, ballKicker)
-        }
+//        if playAndCapture == false {
+//            return
+//        }
+//
+//        if isConnectedToServer {
+//
+//            // send all stored frames
+//            while storedFrames.count > 0 {
+//
+//                sendCameraFrame(storedFrames[0].jpegData,
+//                                storedFrames[0].leftButton,
+//                                storedFrames[0].rightButton,
+//                                storedFrames[0].startButton,
+//                                storedFrames[0].ballKickerButton)
+//
+//                storedFrames.remove(at: 0)
+//            }
+//
+//
+//            // get the actual bytes out of the CIImage
+//            guard let imageData = ciContext.pinballData(maskedImage) else {
+//                print("failed to make image data")
+//                return
+//            }
+//
+//            sendCameraFrame(imageData, left, right, start, ballKicker)
+//        }
     }
     
     func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {

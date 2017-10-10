@@ -35,13 +35,13 @@ class MainController: PlanetViewController, NetServiceDelegate {
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
 		
-        captureModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(CaptureController(), animated: true)
-        }
-        
-        controlModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(ControlController(), animated: true)
-        }
+//        captureModeButton.button.add(for: .touchUpInside) {
+//            self.navigationController?.pushViewController(CaptureController(), animated: true)
+//        }
+//
+//        controlModeButton.button.add(for: .touchUpInside) {
+//            self.navigationController?.pushViewController(ControlController(), animated: true)
+//        }
         
         playModeButton.button.add(for: .touchUpInside) {
             if #available(iOS 11.0, *) {
@@ -51,23 +51,23 @@ class MainController: PlanetViewController, NetServiceDelegate {
             }
         }
         
-        remoteModeButton.button.add(for: .touchUpInside) {
-            // note: if we are the remote control we probably don't want to be a remote control server...
-            self.stopRemoteControlServer{
-                self.navigationController?.pushViewController(RemoteController(), animated: true)
-            }
-        }
+//        remoteModeButton.button.add(for: .touchUpInside) {
+//            // note: if we are the remote control we probably don't want to be a remote control server...
+//            self.stopRemoteControlServer{
+//                self.navigationController?.pushViewController(RemoteController(), animated: true)
+//            }
+//        }
         
         
         // handle remote control notifications
-        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginCaptureMode.rawValue), object:nil, queue:nil) {_ in
-            self.navigationController?.popToRootViewController(animated: true)
-            self.navigationController?.pushViewController(CaptureController(), animated: true)
-        }
+//        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginCaptureMode.rawValue), object:nil, queue:nil) {_ in
+//            self.navigationController?.popToRootViewController(animated: true)
+//            self.navigationController?.pushViewController(CaptureController(), animated: true)
+//        }
         
-        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndCaptureMode.rawValue), object:nil, queue:nil) {_ in
-            self.navigationController?.popToRootViewController(animated: true)
-        }
+//        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndCaptureMode.rawValue), object:nil, queue:nil) {_ in
+//            self.navigationController?.popToRootViewController(animated: true)
+//        }
         
         beginRemoteControlServer()
         
