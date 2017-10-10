@@ -66,6 +66,8 @@ extension PinballPlayer {
 
 class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    static let connectionNotification = "pinballInterfaceConnected"
+    
     enum ButtonType {
         case left(on: Bool)
         case right(on: Bool)
@@ -92,15 +94,22 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         do {
             try client.connect(to: hostname, port: port, timeout: 500)
             connected = true
+            sendConnectionNotification(connected: true)
             print("Connection successful 🎉")
         } catch (let error) {
             connected = false
+            sendConnectionNotification(connected: false)
             print("Connectioned failed 💩 \(error)")
         }
     }
     
     func disconnect() {
         client?.close()
+        sendConnectionNotification(connected: false)
+    }
+    
+    func sendConnectionNotification(connected: Bool) {
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: PinballInterface.connectionNotification), object: nil, userInfo: ["connected":connected])
     }
     
     @objc func leftButtonStart() {

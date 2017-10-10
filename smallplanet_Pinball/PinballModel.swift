@@ -10,7 +10,7 @@
 // tng_delta_1f -> first video
 // tng_delta_1i2a -> 44fps, nice play
 // tng_delta_2e -> super small, comparable play 7+
-
+// tng_echo_* -> includes upper playfield and upper right flipper activation
 
 
 import Foundation
@@ -18,7 +18,7 @@ import CoreImage
 import CoreML
 import Vision
 
-enum PinballModel {
+enum PinballModel: String {
     case tngDelta_1i2a
     case tngEcho_0b
     

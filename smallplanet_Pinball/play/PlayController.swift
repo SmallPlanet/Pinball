@@ -18,7 +18,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     let pinballModel = PinballModel.tngEcho_0b
 
-    let playAndCapture = true
+    var pinball = PinballInterface()
     
     let ciContext = CIContext(options: [:])
     
@@ -50,37 +50,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         let left = results.filter{ $0.identifier == "left" }.first!
         let right = results.filter{ $0.identifier == "right" }.first!
         
-        // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
-        // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
-        // (basically trying to handle small false positives)
-        var leftFlipperShouldBePressed = false
-        var rightFlipperShouldBePressed = false
-        
-        let leftFlipperConfidence:Float = left.confidence
-        let rightFlipperConfidence:Float = right.confidence
-        
-//        if leftFlipperCounter > 0 {
-//            leftFlipperConfidence = 0
-//        }
-//        if rightFlipperCounter > 0 {
-//            rightFlipperConfidence = 0
-//        }
-        
-        leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
-        rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
-        
-        //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
+        let leftFlipperShouldBePressed = left.confidence > 0.19
+        let rightFlipperShouldBePressed = right.confidence > 0.19
         
         let flipDelay = 12
         if leftFlipperShouldBePressed && leftFlipperCounter < -flipDelay {
             leftFlipperCounter = flipDelay/2
-            
         }
         if rightFlipperShouldBePressed && rightFlipperCounter < -flipDelay {
             rightFlipperCounter = flipDelay/2
         }
-        
-//        print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
         
         let sendToMachine = omegaEnabled
         
@@ -101,8 +80,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             pinball.rightButtonEnd()
             handleShouldFrameCapture()
         }
-        
-//        let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right.identifier), \(fps) fps"
         
         let labelValue = "\(fps) fps"
         DispatchQueue.main.async {
@@ -125,7 +102,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
-        
         
         guard let imageData = ciContext.pinballData(maskedImage) else {
             print("failed to make image data")
@@ -155,14 +131,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var currentValidationURL:URL?
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Play Mode"
+        title = "Play \(pinballModel.rawValue)"
         
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
-        
-        if playAndCapture {
-            findCaptureServer()
-        }
         
         captureHelper = CameraCaptureHelper(cameraPosition: .back, cropAndScale: pinballModel.cropAndScale)
         captureHelper.delegate = self
@@ -181,9 +153,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             self.pinball.ballKickerStart()
         })
         
+        observers.append(NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: PinballInterface.connectionNotification), object: nil, queue: nil) { notification in
+            let connected = (notification.userInfo?["connected"] as? Bool ?? false)
+            self.deadmanSwitch.switch_.thumbTintColor = connected ? UIColor(gaxbString: "#06c2fcff") : UIColor(gaxbString: "#fb16bbff")
+        })
+        
         // Load the ML model through its generated class
         model = pinballModel.loadModel()
-
+        
         captureHelper.pinball = pinball
     }
     
@@ -201,9 +178,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
     
-    // MARK: Hardware Controller
-    var pinball = PinballInterface()
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
@@ -215,55 +189,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var isConnectedToServer = false
     var serverSocket:Socket? = nil
 
-//    var storedFrames:[SkippedFrame] = []
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    {
-//        if playAndCapture == false {
-//            return
-//        }
-//
-//        guard let imageData = ciContext.pinballData(maskedImage) else {
-//            print("failed to make image data")
-//            return
-//        }
-//
-////        storedFrames.append(SkippedFrame(imageData, left, right, start, ballKicker))
-//
-//        while storedFrames.count > 30 {
-//            storedFrames.remove(at: 0)
-//        }
-    }
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) { }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    {
-//        if playAndCapture == false {
-//            return
-//        }
-//
-//        if isConnectedToServer {
-//
-//            // send all stored frames
-//            while storedFrames.count > 0 {
-//
-//                sendCameraFrame(storedFrames[0].jpegData,
-//                                storedFrames[0].leftButton,
-//                                storedFrames[0].rightButton,
-//                                storedFrames[0].startButton,
-//                                storedFrames[0].ballKickerButton)
-//
-//                storedFrames.remove(at: 0)
-//            }
-//
-//
-//            // get the actual bytes out of the CIImage
-//            guard let imageData = ciContext.pinballData(maskedImage) else {
-//                print("failed to make image data")
-//                return
-//            }
-//
-//            sendCameraFrame(imageData, left, right, start, ballKicker)
-//        }
-    }
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) { }
     
     func sendCameraFrame(_ jpegData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
         // send the size of the image data
