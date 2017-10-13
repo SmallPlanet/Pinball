@@ -34,11 +34,27 @@
     </View>
     <Constraint firstItem="leftFlipper" firstAttribute="left" secondItem="root" secondAttribute="left"/>
     <Constraint firstItem="leftFlipper" firstAttribute="bottom" secondItem="root" secondAttribute="bottom"/>
-    <Constraint firstItem="leftFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.25"/>
+    <Constraint firstItem="leftFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.2"/>
     <Constraint firstItem="leftFlipper" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80"/>
-    <Label id="leftLabel" styleId="LabelBld" text="Left Flipper" textAlignment="center" />
+    <Label id="leftLabel" styleId="LabelBld" text="Left" textAlignment="center" />
     <Constraint firstItem="leftLabel" firstAttribute="centerX" secondItem="leftFlipper" secondAttribute="centerX"/>
     <Constraint firstItem="leftLabel" firstAttribute="baseline" secondItem="leftFlipper" secondAttribute="top" constant="-8"/>
+
+
+    <View id="rightUpperFlipper" backgroundColor="#46586dff" borderColor="#1c2f42ff" borderWidth="8">
+        <View id="rightUpperPrediction" backgroundColor="#06c2fcff"/>
+        <Constraint firstItem="rightUpperPrediction" firstAttribute="right" secondItem="rightUpperFlipper" secondAttribute="right"/>
+        <Constraint firstItem="rightUpperPrediction" firstAttribute="width" secondItem="rightUpperFlipper" secondAttribute="width"/>
+        <Constraint firstItem="rightUpperPrediction" firstAttribute="bottom" secondItem="rightUpperFlipper" secondAttribute="bottom"/>
+        <Constraint id="rightUpperPredictionRatio" firstItem="rightUpperPrediction" firstAttribute="height"/>
+    </View>
+    <Constraint firstItem="rightUpperFlipper" firstAttribute="right" secondItem="rightFlipper" secondAttribute="left"/>
+    <Constraint firstItem="rightUpperFlipper" firstAttribute="bottom" secondItem="root" secondAttribute="bottom"/>
+    <Constraint firstItem="rightUpperFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.2"/>
+    <Constraint firstItem="rightUpperFlipper" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80"/>
+    <Label id="rightUpperLabel" styleId="LabelBld" text="Upper" textAlignment="center" />
+    <Constraint firstItem="rightUpperLabel" firstAttribute="centerX" secondItem="rightUpperFlipper" secondAttribute="centerX"/>
+    <Constraint firstItem="rightUpperLabel" firstAttribute="baseline" secondItem="rightUpperFlipper" secondAttribute="top" constant="-8"/>
 
 
     <View id="rightFlipper" backgroundColor="#46586dff" borderColor="#1c2f42ff" borderWidth="8">
@@ -50,9 +66,9 @@
     </View>
     <Constraint firstItem="rightFlipper" firstAttribute="right" secondItem="root" secondAttribute="right"/>
     <Constraint firstItem="rightFlipper" firstAttribute="bottom" secondItem="root" secondAttribute="bottom"/>
-    <Constraint firstItem="rightFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.25"/>
+    <Constraint firstItem="rightFlipper" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.2"/>
     <Constraint firstItem="rightFlipper" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80"/>
-    <Label id="rightLabel" styleId="LabelBld" text="Right Flipper" textAlignment="center" />
+    <Label id="rightLabel" styleId="LabelBld" text="Right" textAlignment="center" />
     <Constraint firstItem="rightLabel" firstAttribute="centerX" secondItem="rightFlipper" secondAttribute="centerX"/>
     <Constraint firstItem="rightLabel" firstAttribute="baseline" secondItem="rightFlipper" secondAttribute="top" constant="-8"/>
 

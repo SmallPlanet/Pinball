@@ -16,7 +16,7 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let pinballModel = PinballModel.tngEcho_0b
+    let pinballModel = PinballModel.tngEcho_2f
 
     var pinball = PinballInterface()
     
@@ -29,6 +29,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var leftFlipperCounter = 0
     var rightFlipperCounter = 0
+    var rightUpperFlipperCounter = 0
     var fps = 0
     let flipperEnabledColor = UIColor(gaxbString: "#ffed00ff").cgColor
     let flipperDisabledColor = UIColor(gaxbString: "#1c2f42ff").cgColor
@@ -49,10 +50,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         // find the results which match each flipper
         let left = results.filter{ $0.identifier == "left" }.first!
         let right = results.filter{ $0.identifier == "right" }.first!
-        
+        let upper = results.filter{ $0.identifier == "upper" }.first!
+
         let leftFlipperShouldBePressed = left.confidence > 0.19
         let rightFlipperShouldBePressed = right.confidence > 0.19
-        
+        let rightUpperFlipperShouldBePressed = upper.confidence > 0.19
+
         let flipDelay = 12
         if leftFlipperShouldBePressed && leftFlipperCounter < -flipDelay {
             leftFlipperCounter = flipDelay/2
@@ -60,7 +63,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         if rightFlipperShouldBePressed && rightFlipperCounter < -flipDelay {
             rightFlipperCounter = flipDelay/2
         }
-        
+        if rightUpperFlipperShouldBePressed && rightUpperFlipperCounter < -flipDelay {
+            rightUpperFlipperCounter = flipDelay/2
+        }
+
         let sendToMachine = omegaEnabled
         
         if sendToMachine && !pinball.leftButtonPressed && leftFlipperCounter > 0 {
@@ -81,6 +87,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             handleShouldFrameCapture()
         }
         
+        if sendToMachine && !pinball.rightUpperButtonPressed && rightUpperFlipperCounter > 0 {
+            pinball.rightUpperButtonStart()
+            handleShouldFrameCapture()
+        }
+        if pinball.rightUpperButtonPressed && rightUpperFlipperCounter < 0 {
+            pinball.rightUpperButtonEnd()
+            handleShouldFrameCapture()
+        }
+        
         let labelValue = "\(fps) fps"
         DispatchQueue.main.async {
             self.statusLabel.label.text = labelValue
@@ -88,6 +103,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             self.leftFlipper.view.layer.borderColor = left.confidence > 0.5 ? self.flipperEnabledColor : self.flipperDisabledColor
             self.rightPredictionRatio.constraint!.constant = CGFloat(right.confidence) * self.leftFlipper.view.frame.size.height
             self.rightFlipper.view.layer.borderColor = right.confidence > 0.5 ? self.flipperEnabledColor : self.flipperDisabledColor
+            self.rightUpperPredictionRatio.constraint!.constant = CGFloat(upper.confidence) * self.leftFlipper.view.frame.size.height
+            self.rightUpperFlipper.view.layer.borderColor = upper.confidence > 0.5 ? self.flipperEnabledColor : self.flipperDisabledColor
         }
     }
     
@@ -102,7 +119,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
-        
+        rightUpperFlipperCounter -= 1
+
         guard let imageData = ciContext.pinballData(maskedImage) else {
             print("failed to make image data")
             return
@@ -296,6 +314,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     }
     fileprivate var rightPredictionRatio: Constraint {
         return mainXmlView!.elementForId("rightPredictionRatio")!.asConstraint!
+    }
+    fileprivate var rightUpperFlipper: View {
+        return mainXmlView!.elementForId("rightUpperFlipper")!.asView!
+    }
+    fileprivate var rightUpperPredictionRatio: Constraint {
+        return mainXmlView!.elementForId("rightUpperPredictionRatio")!.asConstraint!
     }
     fileprivate var deadmanSwitch: Switch {
         return mainXmlView!.elementForId("deadman")!.asSwitch!

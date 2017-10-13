@@ -71,6 +71,7 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     enum ButtonType {
         case left(on: Bool)
         case right(on: Bool)
+        case rightUpper(on: Bool)
         case ballKicker(on: Bool)
         case startButton(on: Bool)
     }
@@ -82,6 +83,7 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     
     var leftButtonPressed = false
     var rightButtonPressed = false
+    var rightUpperButtonPressed = false
     var ballKickerPressed = false
     var startButtonPressed = false
     
@@ -128,6 +130,14 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         sendPress(forButton: .right(on: false))
     }
     
+    @objc func rightUpperButtonStart() {
+        sendPress(forButton: .rightUpper(on: true))
+    }
+    
+    @objc func rightUpperButtonEnd() {
+        sendPress(forButton: .rightUpper(on: false))
+    }
+    
     @objc func ballKickerStart() {
         sendPress(forButton: .ballKicker(on: true))
     }
@@ -150,6 +160,9 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         case .left(let on):
             data = "L" + (on ? "1" : "0")
             leftButtonPressed = on
+        case .rightUpper(let on):
+            data = "U" + (on ? "1" : "0")
+            rightUpperButtonPressed = on
         case .right(let on):
             data = "R" + (on ? "1" : "0")
             rightButtonPressed = on

@@ -24,9 +24,14 @@
 		46530BCA1F72BA1B00D9AB7A /* locking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46530BC91F72BA1B00D9AB7A /* locking.swift */; };
 		465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F737E1F493AF2002CFF71 /* PlayController.swift */; };
 		46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */; };
+		A954987E1F8EB31200C641C0 /* tng_echo_2c.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A954987D1F8EB31200C641C0 /* tng_echo_2c.mlmodel */; };
+		A95498821F8FA34600C641C0 /* tng_echo_2d1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A954987F1F8FA34500C641C0 /* tng_echo_2d1.mlmodel */; };
+		A95498831F8FA34600C641C0 /* tng_echo_2f.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A95498801F8FA34500C641C0 /* tng_echo_2f.mlmodel */; };
+		A95498841F8FA34600C641C0 /* tng_echo_2e.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A95498811F8FA34500C641C0 /* tng_echo_2e.mlmodel */; };
 		A96E2E171F87FC0A00DCE831 /* tng_delta_1i2a.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A96E2E161F87FC0900DCE831 /* tng_delta_1i2a.mlmodel */; };
 		A9B7CD171F8D24E000C93AC6 /* PinballModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B7CD161F8D24E000C93AC6 /* PinballModel.swift */; };
 		A9B7CD1D1F8D45C900C93AC6 /* tng_echo_0b.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A9B7CD1C1F8D45C800C93AC6 /* tng_echo_0b.mlmodel */; };
+		A9B7CD1F1F8D694B00C93AC6 /* tng_echo_0c.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A9B7CD1E1F8D694B00C93AC6 /* tng_echo_0c.mlmodel */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -69,9 +74,14 @@
 		46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Closures.swift"; sourceTree = "<group>"; };
 		46C402871F3CB54700C46E3C /* CaptureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureController.swift; sourceTree = "<group>"; };
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
+		A954987D1F8EB31200C641C0 /* tng_echo_2c.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_echo_2c.mlmodel; sourceTree = "<group>"; };
+		A954987F1F8FA34500C641C0 /* tng_echo_2d1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_echo_2d1.mlmodel; sourceTree = "<group>"; };
+		A95498801F8FA34500C641C0 /* tng_echo_2f.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_echo_2f.mlmodel; sourceTree = "<group>"; };
+		A95498811F8FA34500C641C0 /* tng_echo_2e.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_echo_2e.mlmodel; sourceTree = "<group>"; };
 		A96E2E161F87FC0900DCE831 /* tng_delta_1i2a.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_delta_1i2a.mlmodel; sourceTree = "<group>"; };
 		A9B7CD161F8D24E000C93AC6 /* PinballModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballModel.swift; sourceTree = "<group>"; };
 		A9B7CD1C1F8D45C800C93AC6 /* tng_echo_0b.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_echo_0b.mlmodel; sourceTree = "<group>"; };
+		A9B7CD1E1F8D694B00C93AC6 /* tng_echo_0c.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_echo_0c.mlmodel; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -153,8 +163,13 @@
 		465F737A1F493915002CFF71 /* PinballModels */ = {
 			isa = PBXGroup;
 			children = (
+				A954987F1F8FA34500C641C0 /* tng_echo_2d1.mlmodel */,
+				A95498811F8FA34500C641C0 /* tng_echo_2e.mlmodel */,
+				A95498801F8FA34500C641C0 /* tng_echo_2f.mlmodel */,
 				A9B7CD1C1F8D45C800C93AC6 /* tng_echo_0b.mlmodel */,
+				A954987D1F8EB31200C641C0 /* tng_echo_2c.mlmodel */,
 				A96E2E161F87FC0900DCE831 /* tng_delta_1i2a.mlmodel */,
+				A9B7CD1E1F8D694B00C93AC6 /* tng_echo_0c.mlmodel */,
 			);
 			path = PinballModels;
 			sourceTree = "<group>";
@@ -281,8 +296,13 @@
 				A9B7CD1D1F8D45C900C93AC6 /* tng_echo_0b.mlmodel in Sources */,
 				465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */,
 				A96E2E171F87FC0A00DCE831 /* tng_delta_1i2a.mlmodel in Sources */,
+				A954987E1F8EB31200C641C0 /* tng_echo_2c.mlmodel in Sources */,
 				461893391F3B58C300AA4599 /* MainController.swift in Sources */,
+				A95498831F8FA34600C641C0 /* tng_echo_2f.mlmodel in Sources */,
+				A9B7CD1F1F8D694B00C93AC6 /* tng_echo_0c.mlmodel in Sources */,
 				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
+				A95498841F8FA34600C641C0 /* tng_echo_2e.mlmodel in Sources */,
+				A95498821F8FA34600C641C0 /* tng_echo_2d1.mlmodel in Sources */,
 				A9B7CD171F8D24E000C93AC6 /* PinballModel.swift in Sources */,
 				46530BCA1F72BA1B00D9AB7A /* locking.swift in Sources */,
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
