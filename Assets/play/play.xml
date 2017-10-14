@@ -26,10 +26,5 @@
     <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="40" />
     
-    <Button id="validateNascarButton" title="Validate Nascar" styleId="ButtonStd" />
-    <Constraint firstItem="validateNascarButton" firstAttribute="width" constant="200"/>
-    <Constraint firstItem="validateNascarButton" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="validateNascarButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
-    <Constraint firstItem="validateNascarButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="40" />
 
 </Scene>
