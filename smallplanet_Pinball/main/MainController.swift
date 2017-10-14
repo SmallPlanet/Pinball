@@ -22,8 +22,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
         case StartButtonUp
         case BallKickerDown
         case BallKickerUp
-        case BeginCaptureMode
-        case EndCaptureMode
+        case BeginPlayMode
+        case EndPlayMode
         
     }
     
@@ -31,16 +31,25 @@ class MainController: PlanetViewController, NetServiceDelegate {
         super.viewDidLoad()
 
         title = "Pinball"
-
+        
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
-		
-        captureModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(CaptureController(), animated: true)
+        
+        if #available(iOS 11.0, *) {
+            
+        } else {
+            captureModeButton.button.alpha = 0.25
+            captureModeButton.button.isEnabled = false
+            playModeButton.button.alpha = 0.25
+            playModeButton.button.isEnabled = false
+        }
+		        
+        previewModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(PreviewController(), animated: true)
         }
         
-        controlModeButton.button.add(for: .touchUpInside) {
-            self.navigationController?.pushViewController(ControlController(), animated: true)
+        scoreModeButton.button.add(for: .touchUpInside) {
+            self.navigationController?.pushViewController(ScoreController(), animated: true)
         }
         
         playModeButton.button.add(for: .touchUpInside) {
@@ -60,12 +69,16 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         
         // handle remote control notifications
-        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginCaptureMode.rawValue), object:nil, queue:nil) {_ in
+        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginPlayMode.rawValue), object:nil, queue:nil) {_ in
             self.navigationController?.popToRootViewController(animated: true)
-            self.navigationController?.pushViewController(CaptureController(), animated: true)
+            if #available(iOS 11.0, *) {
+                self.navigationController?.pushViewController(PlayController(), animated: true)
+            } else {
+                
+            }
         }
         
-        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndCaptureMode.rawValue), object:nil, queue:nil) {_ in
+        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndPlayMode.rawValue), object:nil, queue:nil) {_ in
             self.navigationController?.popToRootViewController(animated: true)
         }
         
@@ -74,11 +87,19 @@ class MainController: PlanetViewController, NetServiceDelegate {
         /*
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(PlayController(), animated: true)
+                self.navigationController?.pushViewController(ScoreController(), animated: true)
             } else {
                 
             }
         })*/
+        
+        if #available(iOS 11.0, *) {
+            
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
+                self.navigationController?.pushViewController(ScoreController(), animated: true)
+            })
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -88,14 +109,17 @@ class MainController: PlanetViewController, NetServiceDelegate {
     fileprivate var captureModeButton: Button {
         return mainXmlView!.elementForId("captureModeButton")!.asButton!
     }
-    fileprivate var controlModeButton: Button {
-        return mainXmlView!.elementForId("controlModeButton")!.asButton!
+    fileprivate var previewModeButton: Button {
+        return mainXmlView!.elementForId("previewModeButton")!.asButton!
     }
     fileprivate var remoteModeButton: Button {
         return mainXmlView!.elementForId("remoteModeButton")!.asButton!
     }
     fileprivate var playModeButton: Button {
         return mainXmlView!.elementForId("playModeButton")!.asButton!
+    }
+    fileprivate var scoreModeButton: Button {
+        return mainXmlView!.elementForId("scoreModeButton")!.asButton!
     }
     
     
@@ -229,11 +253,11 @@ class MainController: PlanetViewController, NetServiceDelegate {
                     if captureModeEnabledState != captureModeEnabled {
                         if captureModeEnabled == 0 {
                             DispatchQueue.main.async {
-                                NotificationCenter.default.post(name:Notification.Name(Notifications.EndCaptureMode.rawValue), object: nil, userInfo: nil)
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.EndPlayMode.rawValue), object: nil, userInfo: nil)
                             }
                         } else if captureModeEnabled == 1 {
                             DispatchQueue.main.async {
-                                NotificationCenter.default.post(name:Notification.Name(Notifications.BeginCaptureMode.rawValue), object: nil, userInfo: nil)
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.BeginPlayMode.rawValue), object: nil, userInfo: nil)
                             }
                         }
                         captureModeEnabledState = captureModeEnabled

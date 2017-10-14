@@ -5,28 +5,28 @@
     <View id="background" backgroundColor="#EEEEEEFF" />
     <Constraint firstItem="background" ruleSet="fillSuperview" />
     
-    <Button id="controlModeButton" title="Control Mode" styleId="ButtonStd" />
-    <Constraint firstItem="controlModeButton" firstAttribute="width" constant="200"/>
-    <Constraint firstItem="controlModeButton" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="controlModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
-    <Constraint firstItem="controlModeButton" firstAttribute="top" secondItem="root" secondAttribute="top" constant="100" />
-    
-    <Button id="captureModeButton" title="Capture Mode" styleId="ButtonStd" />
-    <Constraint firstItem="captureModeButton" firstAttribute="width" constant="200"/>
-    <Constraint firstItem="captureModeButton" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="captureModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
-    <Constraint firstItem="captureModeButton" firstAttribute="top" secondItem="controlModeButton" secondAttribute="bottom" constant="20" />
+    <Button id="previewModeButton" title="Preview Mode" styleId="ButtonStd" />
+    <Constraint firstItem="previewModeButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="previewModeButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="previewModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="previewModeButton" firstAttribute="top" secondItem="root" secondAttribute="top" constant="100" />
     
     <Button id="remoteModeButton" title="Remote Control Mode" styleId="ButtonStd" />
     <Constraint firstItem="remoteModeButton" firstAttribute="width" constant="200"/>
     <Constraint firstItem="remoteModeButton" firstAttribute="height" constant="40"/>
     <Constraint firstItem="remoteModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
-    <Constraint firstItem="remoteModeButton" firstAttribute="top" secondItem="captureModeButton" secondAttribute="bottom" constant="20" />
+    <Constraint firstItem="remoteModeButton" firstAttribute="top" secondItem="previewModeButton" secondAttribute="bottom" constant="20" />
     
     <Button id="playModeButton" title="Play Mode" styleId="ButtonStd" />
     <Constraint firstItem="playModeButton" firstAttribute="width" constant="200"/>
     <Constraint firstItem="playModeButton" firstAttribute="height" constant="40"/>
     <Constraint firstItem="playModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
     <Constraint firstItem="playModeButton" firstAttribute="top" secondItem="remoteModeButton" secondAttribute="bottom" constant="40" />
+    
+    <Button id="scoreModeButton" title="Score Mode" styleId="ButtonStd" />
+    <Constraint firstItem="scoreModeButton" firstAttribute="width" constant="200"/>
+    <Constraint firstItem="scoreModeButton" firstAttribute="height" constant="40"/>
+    <Constraint firstItem="scoreModeButton" firstAttribute="left" secondItem="root" secondAttribute="left" constant="20" />
+    <Constraint firstItem="scoreModeButton" firstAttribute="top" secondItem="playModeButton" secondAttribute="bottom" constant="20" />
 
 </Scene>

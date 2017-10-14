@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scene id="root" xmlns="http://schema.smallplanet.com/PlanetUI">
+    <Constraint firstItem="root" ruleSet="fillSuperview" />
+	
+    <View id="background" backgroundColor="#EEEEEEFF" />
+    <Constraint firstItem="background" ruleSet="fillSuperview" />
+    
+    <ImageView id="preview" contentMode="scaleAspectFit" backgroundColor="#000000FF" cornerRadius="5" shadowRadius="4" shadowOffset="0,3" shadowColor="#000000FF" shadowOpacity="0.5">
+        <ImageView id="overlay" contentMode="scaleAspectFit" />
+        <Constraint firstItem="overlay" ruleSet="fillSuperview" />
+    </ImageView>
+    <Constraint firstItem="preview" ruleSet="fillSuperview" />
+    
+
+</Scene>

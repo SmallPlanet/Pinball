@@ -40,11 +40,11 @@ class EvaluationMonitor(Callback):
         
 
 
-train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/train/"
-validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/validation/"
+train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/train/"
+validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/validation/"
 
-train_max_size = 0
-validate_max_size = 0
+train_max_size = 5000
+validate_max_size = 500
 
 print("Preprocessing training images...")
 train_imgs = images.generate_image_array(train_path, train_max_size)
