@@ -1,0 +1,115 @@
+Install Ubuntu from scratch ML box:
+
+
+** install ubuntu 14.04
+
+** fix the screen rotation:
+	echo 2 | sudo tee /sys/class/graphics/fbcon/rotate
+	sudo vi /etc/default/grub
+		add this option: GRUB_CMDLINE_LINUX="fbcon=rotate:2"
+	sudo update-grub
+
+** set up wifi:
+	copy wpa_supplicant.conf to /etc/wpa_supplicant.conf
+	copy and run connect_wifi script
+	
+** connect to wifi automatically on boot
+	sudo vi /etc/init/connect_wifi.conf
+	start on startup
+	task
+	exec /home/rjbowli/connect_wifi
+	
+** set up openssh (or install when you install ubuntu):
+	sudo apt-get install openssh-server
+	sudo service ssh status (confirm working)
+	
+** install samba
+	sudo apt-get install samba
+	sudo smbpasswd -a rjbowli
+	sudo cp /etc/samba/smb.conf ~
+	sudo vi /etc/samba/smb.conf
+
+		(add the following lines at the end)
+		[rjbowli]
+		path = /home/rjbowli
+		valid users = rjbowli
+		read only = no
+	
+	sudo service smbd restart
+	testparm (confirm syntax of conf file is correct)
+
+** install git
+	sudo apt-get install git
+	git config --global user.name "Rocco Bowling"
+	git config --global user.email "rocco@chimerasw.com"
+
+** disable Nouveau driver (required before installing nvidia driver)
+	sudo apt-get remove nvidia* && sudo apt autoremove
+	sudo apt-get install dkms build-essential linux-headers-generic
+	sudo vim /etc/modprobe.d/blacklist.conf
+	
+		(add the following lines)
+		blacklist nouveau
+		blacklist lbm-nouveau
+		options nouveau modeset=0
+		alias nouveau off
+		alias lbm-nouveau off
+		
+	echo options nouveau modeset=0 | sudo tee -a /etc/modprobe.d/nouveau-kms.conf
+	sudo update-initramfs -u
+	sudo reboot
+
+** install nvidia driver
+	wget http://us.download.nvidia.com/XFree86/Linux-x86_64/384.90/NVIDIA-Linux-x86_64-384.90.run
+	chmod 755 NVIDIA-Linux-x86_64-384.90.run
+	sudo ./NVIDIA-Linux-x86_64-384.90.run --silent
+	nvidia-smi  (confirm it works)
+	rm NVIDIA-Linux-x86_64-384.90.run
+	
+** install prerequisites
+	sudo apt-get install libglu1-mesa libxi-dev libxmu-dev
+	sudo apt-get install build-essential
+	
+** install cuda (v8.0)
+	wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+	sudo chmod 755 cuda_8.0.61_375.26_linux-run
+	sudo ./cuda_8.0.61_375.26_linux-run --driver --silent
+	sudo ./cuda_8.0.61_375.26_linux-run --toolkit --silent
+	sudo ./cuda_8.0.61_375.26_linux-run --samples --silent
+	rm cuda_8.0.61_375.26_linux-run
+	
+	vi .profile
+	
+	export LD_LIBRARY_PATH="/usr/local/cuda-8.0/lib64"
+	export PATH="$PATH:/usr/local/cuda-8.0/bin:$LD_LIBRARY_PATH"
+
+** install cuDNN (v5.1)
+	wget http://developer2.download.nvidia.com/compute/machine-learning/cudnn/secure/v5.1/prod_20161129/8.0/cudnn-8.0-linux-x64-v5.1.tgz
+	tar -xzvf cudnn-8.0-linux-x64-v5.1.tgz
+	sudo cp cuda/lib64/* /usr/local/cuda/lib64/
+	sudo cp cuda/include/cudnn.h /usr/local/cuda/include/
+	rm cudnn-8.0-linux-x64-v5.1.tgz
+	rm -rf cuda/
+
+** install pip environment
+	sudo apt-get update
+	sudo apt-get install python-pip
+	
+	sudo pip install --upgrade pip
+	sudo pip install virtualenv
+	
+	virtualenv coreml
+	source coreml/bin/activate
+	
+** install tensorflow-gpu (v1.1.0)
+	pip install tensorflow-gpu==1.1.0
+	
+** install keras (v2.0.4)
+	pip install keras==2.0.4
+	
+** install coreml tools
+	pip install coremltools
+	
+	pip install pillow
+	pip install h5py
+	
