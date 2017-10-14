@@ -40,8 +40,8 @@ class EvaluationMonitor(Callback):
         
 
 
-train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/train/"
-validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/day7/validation/"
+train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/train/"
+validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/validation/"
 
 train_max_size = 5000
 validate_max_size = 500

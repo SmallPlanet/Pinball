@@ -16,12 +16,12 @@ import MKTween
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
     
-    static let scoreAddress = "239.1.1.234"
-    static let scorePort:UInt16 = 35687
+    static let gameUpdatesAddress = "239.1.1.234"
+    static let gameUpdatesPort:UInt16 = 35687
     
     var lastHighScore = 0
     
-    var scoreConnection: UDPMulticast!
+    var gameUpdatesConnection: UDPMulticast!
     
     let ciContext = CIContext(options: [:])
     
@@ -77,7 +77,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         mainBundlePath = "bundle://Assets/score/score.xml"
         loadView()
         
-        scoreConnection = UDPMulticast(ScoreController.scoreAddress, ScoreController.scorePort, nil)
+        gameUpdatesConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, nil)
         
         captureHelper.delegate = self
         captureHelper.pinball = nil
@@ -334,8 +334,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage))
         let (score, scoreWasFound) = self.ocrScore(dotmatrix)
         var screenText = ""
+        var updateType = ""
         
         if scoreWasFound {
+            updateType = "s"
             screenText = "\(score)"
             if score > lastHighScore {
                 lastHighScore = score
@@ -347,6 +349,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             // if this is not a score, check for other things...
             let gameover = self.ocrGameOver(dotmatrix)
             if gameover {
+                updateType = "x"
                 screenText = "GAME OVER"
                 lastHighScore = 0
             }
@@ -354,14 +357,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             let pushstart = self.ocrPushStart(dotmatrix)
             if pushstart {
+                updateType = "b"
                 screenText = "PUSH START"
                 lastHighScore = 0
             }
         }
         
         if screenText != "" {
-            self.scoreConnection.send(screenText)
-            print("screen: \(screenText)")
+            self.gameUpdatesConnection.send(updateType + ":" + screenText)
+            print(updateType + ":" + screenText)
         }
         
         return screenText

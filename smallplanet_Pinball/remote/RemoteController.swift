@@ -20,7 +20,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     var kickerButtonPressed:Byte = 0
     var leftButtonPressed:Byte = 0
     var rightButtonPressed:Byte = 0
-    var captureModeEnabled:Byte = 0
+    var playModeEnabled:Byte = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -85,19 +85,19 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         
         
         
-        captureButton.button.add(for: .touchUpInside) {
+        playButton.button.add(for: .touchUpInside) {
             if self.isConnectedToServer {
-                if self.captureModeEnabled == 1 {
-                    self.captureModeEnabled = 0
+                if self.playModeEnabled == 1 {
+                    self.playModeEnabled = 0
                 } else {
-                    self.captureModeEnabled = 1
+                    self.playModeEnabled = 1
                 }
                 self.sendButtonStatesToServer()
             }
         }
         
-        self.captureButton.button.titleLabel?.numberOfLines = 2
-        self.captureButton.button.titleLabel?.textAlignment = .center
+        self.playButton.button.titleLabel?.numberOfLines = 2
+        self.playButton.button.titleLabel?.textAlignment = .center
         
         UIApplication.shared.isIdleTimerDisabled = true
         
@@ -108,15 +108,15 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         var byteArray = [Byte]()
         byteArray.append(leftButtonPressed)
         byteArray.append(rightButtonPressed)
-        byteArray.append(captureModeEnabled)
+        byteArray.append(playModeEnabled)
         byteArray.append(kickerButtonPressed)
         byteArray.append(startButtonPressed)
         _ = try! serverSocket?.write(from: Data(byteArray))
         
-        if self.captureModeEnabled == 1 {
-            self.captureButton.button.setTitle("Capture\nOn", for:.normal)
+        if self.playModeEnabled == 1 {
+            self.playButton.button.setTitle("Play Mode\nOn", for:.normal)
         }else {
-            self.captureButton.button.setTitle("Capture\nOff", for:.normal)
+            self.playButton.button.setTitle("Play Mode\nOff", for:.normal)
         }
     }
     
@@ -197,8 +197,8 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     internal var rightButton: Button {
         return mainXmlView!.elementForId("rightButton")!.asButton!
     }
-    internal var captureButton: Button {
-        return mainXmlView!.elementForId("captureButton")!.asButton!
+    internal var playButton: Button {
+        return mainXmlView!.elementForId("playButton")!.asButton!
     }
     internal var kickerButton: Button {
         return mainXmlView!.elementForId("kickerButton")!.asButton!

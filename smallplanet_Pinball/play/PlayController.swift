@@ -16,6 +16,10 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
     
+    static let imageCaptureAddress = "239.1.1.234"
+    static let imageCapturePort:UInt16 = 45687
+    
+    var imageCaptureConnection: UDPMulticast!
     var scoreConnection: UDPMulticast!
 
     let playAndCapture = true
@@ -49,14 +53,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             
             // find the results which match each flipper
-            var left:VNClassificationObservation? = nil
-            var right:VNClassificationObservation? = nil
+            var leftObservation:VNClassificationObservation? = nil
+            var rightObservation:VNClassificationObservation? = nil
             
             for result in results {
                 if result.identifier == "left" {
-                    left = result
+                    leftObservation = result
                 } else if result.identifier == "right" {
-                    right = result
+                    rightObservation = result
                 }
             }
             
@@ -66,8 +70,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var leftFlipperShouldBePressed = false
             var rightFlipperShouldBePressed = false
             
-            var leftFlipperConfidence:Float = left!.confidence
-            var rightFlipperConfidence:Float = right!.confidence
+            var leftFlipperConfidence:Float = leftObservation!.confidence
+            var rightFlipperConfidence:Float = rightObservation!.confidence
             
             if self!.leftFlipperCounter > 0 {
                 leftFlipperConfidence = 0
@@ -93,25 +97,23 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
                 self?.pinball.leftButtonStart()
+                self?.sendCameraFrame(maskedImage, 1, right, start, ballKicker)
                 print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-                self?.HandleShouldFrameCapture()
             }
             if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
                 self?.pinball.leftButtonEnd()
-                self?.HandleShouldFrameCapture()
             }
             
             if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
                 self?.pinball.rightButtonStart()
+                self?.sendCameraFrame(maskedImage, left, 1, start, ballKicker)
                 print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-                self?.HandleShouldFrameCapture()
             }
             if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
                 self?.pinball.rightButtonEnd()
-                self?.HandleShouldFrameCapture()
             }
 
-            let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(left!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(right!.identifier), \(fps) fps"
+            let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(leftObservation!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(rightObservation!.identifier), \(fps) fps"
             DispatchQueue.main.async {
                 self?.statusLabel.label.text = confidence
             }
@@ -132,6 +134,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
         }
     }
+    
+    func sendCameraFrame(_ maskedImage: CIImage, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
+        
+        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
+            return
+        }
+        
+        var dataPacket = Data()
+        
+        var sizeAsInt = UInt32(jpegData.count)
+        let sizeAsData = Data(bytes: &sizeAsInt,
+                              count: MemoryLayout.size(ofValue: sizeAsInt))
+        
+        dataPacket.append(sizeAsData)
+        
+        dataPacket.append(jpegData)
+        
+        dataPacket.append(leftButton)
+        dataPacket.append(rightButton)
+        dataPacket.append(startButton)
+        dataPacket.append(ballKicker)
+        
+        imageCaptureConnection.send(dataPacket)
+    }
+    
+    
 
     var currentValidationURL:URL?
     override func viewDidLoad() {
@@ -141,18 +169,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
         
-        if playAndCapture {
-            findCaptureServer()
-        }
-        
-        HandleShouldFrameCapture()
-        
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         
-        scoreConnection = UDPMulticast(ScoreController.scoreAddress, ScoreController.scorePort, { (data) in
+        imageCaptureConnection = UDPMulticast(PlayController.imageCaptureAddress, PlayController.imageCapturePort, nil)
+        
+        scoreConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, { (data) in
             let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
             print("play controller received: \(dataAsString!)")
         })
@@ -182,108 +206,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
         maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
         
-        validateNascarButton.button.add(for: .touchUpInside) {
-            
-            // run through all of the images in bundle://Assets/play/validate_nascar/, run them through CoreML, calculate total
-            // validation accuracy.  I've read that the ordering of channels in the images (RGBA vs ARGB for example) might not
-            // match between how the model was trained and how it is fed in through CoreML. Is the accuracy does not match
-            // the keras validation accuracy that will confirm or deny the image is being processed correctly.
-            
-            self.captureHelper.stop()
-            
-            DispatchQueue.global(qos: .background).async {
-                do {
-                    let imagesPath = String(bundlePath: "bundle://Assets/play/validate_nascar/")
-                    let directoryContents = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath:imagesPath), includingPropertiesForKeys: nil, options: [])
-                    
-                    var allFiles = directoryContents.filter{ $0.pathExtension == "jpg" }
-                    
-                    allFiles.shuffle()
-                    
-                    guard let model = self.model else {
-                        return
-                    }
-                    
-                    var numberOfCorrectFiles:Float = 0
-                    var numberOfProcessedFiles:Float = 0
-                    var fileNumber:Int = 0
-                    let totalFiles:Int = allFiles.count
-                    
-                    let request = VNCoreMLRequest(model: model) { [weak self] request, error in
-                        guard let results = request.results as? [VNClassificationObservation] else {
-                            return
-                        }
-                        
-                        // TODO: compare returned accuracy to the accuracy recorded in the file's name
-                        var leftIsPressed:Int = 0
-                        var rightIsPressed:Int = 0
-                        
-                        for result in results {
-                            if result.identifier == "left" {
-                                leftIsPressed = (result.confidence > 0.5 ? 1 : 0)
-                            } else if result.identifier == "right" {
-                                rightIsPressed = (result.confidence > 0.5 ? 1 : 0)
-                            }
-                        }
-                        
-                        numberOfProcessedFiles += 1
-                        if (self?.currentValidationURL?.lastPathComponent.hasPrefix("\(leftIsPressed)_\(rightIsPressed)_"))! {
-                            numberOfCorrectFiles += 1
-                        }else{
-                            print("wrong: \(self!.currentValidationURL!.lastPathComponent), guessed: \(leftIsPressed)_\(rightIsPressed)_")
-                        }
-                        
-                    }
-
-                    for file in allFiles {
-                        autoreleasepool {
-                            let ciImage = CIImage(contentsOf: file)!
-                            
-                            //let r = CGFloat(Float(arc4random()) / Float(UINT32_MAX) * 6.0 - 3.0)
-                            //ciImage = ciImage.transformed(by: CGAffineTransform(rotationAngle: r.degreesToRadians))
-                            
-                            let handler = VNImageRequestHandler(ciImage: ciImage)
-                            
-                            DispatchQueue.main.async {
-                                
-                                self.preview.imageView.image = UIImage(ciImage: ciImage)
-                                
-                                fileNumber += 1
-                                self.statusLabel.label.text = "\(fileNumber) of \(totalFiles) \(roundf(numberOfCorrectFiles / numberOfProcessedFiles * 100.0))%"
-                            }
-                            
-                            do {
-                                request.imageCropAndScaleOption = .scaleFill
-                                self.currentValidationURL = file
-                                try handler.perform([request])
-                            } catch {
-                                print(error)
-                            }
-                        }
-                    }
-                    
-                    sleep(5000)
-
-                } catch let error as NSError {
-                    print(error.localizedDescription)
-                }
-                
-                self.captureHelper.start()
-            }
-            
-        }
-        
         captureHelper.pinball = pinball
     }
-    
-    func HandleShouldFrameCapture() {
-        if pinball.rightButtonPressed || pinball.leftButtonPressed {
-            captureHelper.shouldProcessFrames = true
-        } else {
-            captureHelper.shouldProcessFrames = false
-        }
-    }
-    
+        
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
         captureHelper.stop()
@@ -301,142 +226,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         super.viewWillAppear(animated)
         pinball.connect()
     }
-
-    
-    // MARK: Play and capture
-    var isCapturing = false
-    var isConnectedToServer = false
-    var serverSocket:Socket? = nil
-
-    var storedFrames:[SkippedFrame] = []
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    {
-        if playAndCapture == false {
-            return
-        }
-        
-        guard let jpgData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else {
-            return
-        }
-        
-        storedFrames.append(SkippedFrame(jpgData, left, right, start, ballKicker))
-        
-        while storedFrames.count > 30 {
-            storedFrames.remove(at: 0)
-        }
-    }
-    
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    {
-        if playAndCapture == false {
-            return
-        }
-        
-        if isConnectedToServer {
-            
-            // send all stored frames
-            while storedFrames.count > 0 {
-                
-                sendCameraFrame(storedFrames[0].jpgData,
-                                storedFrames[0].leftButton,
-                                storedFrames[0].rightButton,
-                                storedFrames[0].startButton,
-                                storedFrames[0].ballKickerButton)
-                
-                storedFrames.remove(at: 0)
-            }
-            
-            
-            // get the actual bytes out of the CIImage
-            guard let jpgData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else {
-                return
-            }
-            
-            sendCameraFrame(jpgData, left, right, start, ballKicker)
-        }
-    }
-    
-    func sendCameraFrame(_ jpgData:Data, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
-        // send the size of the image data
-        var sizeAsInt = UInt32(jpgData.count)
-        let sizeAsData = Data(bytes: &sizeAsInt,
-                              count: MemoryLayout.size(ofValue: sizeAsInt))
-        
-        do {
-            _ = try serverSocket?.write(from: sizeAsData)
-            
-            var byteArray = [Byte]()
-            byteArray.append(leftButton)
-            byteArray.append(rightButton)
-            byteArray.append(startButton)
-            byteArray.append(ballKicker)
-            _ = try serverSocket?.write(from: Data(byteArray))
-            
-            _ = try serverSocket?.write(from: jpgData)
-        } catch (let error) {
-            self.disconnectedFromServer()
-            print(error)
-        }
-    }
-    
-    // MARK: Autodiscovery of capture server
-    var bonjour = NetServiceBrowser()
-    var services = [NetService]()
-    func findCaptureServer() {
-        bonjour.delegate = self
-        bonjour.searchForServices(ofType: "_pinball._tcp.", inDomain: "local.")
-        
-        statusLabel.label.text = "Searching for capture server..."
-    }
-    
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        print("found service, resolving addresses")
-        services.append(service)
-        service.delegate = self
-        service.resolve(withTimeout: 15)
-        
-        statusLabel.label.text = "Capture server found!"
-    }
-    
-    func netServiceDidResolveAddress(_ sender: NetService) {
-        print("did resolve service \(sender.addresses![0]) \(sender.port)")
-        
-        services.remove(at: services.index(of: sender)!)
-        
-        print("connecting to capture server at \(sender.hostName!):\(sender.port)")
-        serverSocket = try? Socket.create(family: .inet)
-        do {
-            try serverSocket!.connect(to: sender.hostName!, port: Int32(sender.port))
-            print("connected to capture server")
-            
-            lastVisibleFrameNumber = 0
-            isConnectedToServer = true
-            bonjour.stop()
-            
-            statusLabel.label.text = "Connected to capture server!"
-        } catch (let error) {
-            disconnectedFromServer()
-            print(error)
-        }
-    }
-    
-    func disconnectedFromServer() {
-        DispatchQueue.main.async {
-            self.lastVisibleFrameNumber = 0
-            self.serverSocket = nil
-            self.isConnectedToServer = false
-            
-            self.findCaptureServer()
-            self.statusLabel.label.text = "Connection lost, searching..."
-            print("disconnected from server")
-        }
-    }
-    
-    func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
-        print("did NOT resolve service \(sender)")
-        services.remove(at: services.index(of: sender)!)
-    }
-    
     
     fileprivate var preview: ImageView {
         return mainXmlView!.elementForId("preview")!.asImageView!

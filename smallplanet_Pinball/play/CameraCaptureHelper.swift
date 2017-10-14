@@ -16,6 +16,14 @@ extension CGFloat {
     var radiansToDegrees: CGFloat { return self * 180 / .pi }
 }
 
+extension NSData {
+    func castToCPointer<T>() -> T {
+        let mem = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T.Type>.size)
+        self.getBytes(mem, length: MemoryLayout<T.Type>.size)
+        return mem.move()
+    }
+}
+
 class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 {
     let captureSession = AVCaptureSession()
@@ -28,25 +36,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var isLocked = false
     
-    var extraFramesToCapture:Int = 0
-    var _shouldProcessFrames:Bool = false
-    var shouldProcessFrames:Bool {
-        get {
-            return _shouldProcessFrames
-        }
-        set {
-            // if we're turning off capture frames when we are on, make sure we snag a few extra frames
-            if _shouldProcessFrames == true && newValue == false {
-                self.extraFramesToCapture = 30
-            }
-            _shouldProcessFrames = newValue
-        }
-    }
-    
     
     var delegateWantsPlayImages = false
-    var delegateWantsSkippedImages = false
-    var delegateWantsProcessedImages = false
     
     var delegateWantsScaledImages = true
     var delegateWantsCroppedImages = true
@@ -161,12 +152,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     }
     
     func stop() {
-        frameNumber = 0
+        playFrameNumber = 0
         captureSession.stopRunning()
     }
     
     func start() {
-        frameNumber = 0
+        playFrameNumber = 0
         captureSession.startRunning()
     }
     
@@ -202,7 +193,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     
     var playFrameNumber = 0
-    var frameNumber = 0
     var fpsCounter:Int = 0
     var fpsDisplay:Int = 0
     var lastDate = Date()
@@ -214,16 +204,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
-        let localFrameNumber = frameNumber
         let localPlayFrameNumber = playFrameNumber
         
         playFrameNumber = playFrameNumber + 1
-        
-        if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-            
-        } else {
-            frameNumber = frameNumber + 1
-        }
                 
         var leftButton:Byte = 0
         var rightButton:Byte = 0
@@ -315,21 +298,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 }
             }
             
-            
-            if self._shouldProcessFrames == false && self.extraFramesToCapture <= 0 {
-                if self.delegateWantsSkippedImages {
-                    self.delegate?.skippedCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-                }
-            } else {
-                self.extraFramesToCapture = self.extraFramesToCapture - 1
-                if self.extraFramesToCapture < 0 {
-                    self.extraFramesToCapture = 0
-                }
-                
-                if self.delegateWantsProcessedImages {
-                    self.delegate?.newCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-                }
-            }
         }
  
         fpsCounter += 1
@@ -346,8 +314,5 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
 protocol CameraCaptureHelperDelegate: class
 {
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
-    
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
 }

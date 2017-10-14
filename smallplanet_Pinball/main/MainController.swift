@@ -22,8 +22,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
         case StartButtonUp
         case BallKickerDown
         case BallKickerUp
-        case BeginCaptureMode
-        case EndCaptureMode
+        case BeginPlayMode
+        case EndPlayMode
         
     }
     
@@ -43,15 +43,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
             playModeButton.button.alpha = 0.25
             playModeButton.button.isEnabled = false
         }
-		
-        captureModeButton.button.add(for: .touchUpInside) {
-            if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(CaptureController(), animated: true)
-            } else {
-                
-            }
-        }
-        
+		        
         previewModeButton.button.add(for: .touchUpInside) {
             self.navigationController?.pushViewController(PreviewController(), animated: true)
         }
@@ -77,16 +69,16 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         
         // handle remote control notifications
-        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginCaptureMode.rawValue), object:nil, queue:nil) {_ in
+        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginPlayMode.rawValue), object:nil, queue:nil) {_ in
             self.navigationController?.popToRootViewController(animated: true)
             if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(CaptureController(), animated: true)
+                self.navigationController?.pushViewController(PlayController(), animated: true)
             } else {
                 
             }
         }
         
-        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndCaptureMode.rawValue), object:nil, queue:nil) {_ in
+        NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.EndPlayMode.rawValue), object:nil, queue:nil) {_ in
             self.navigationController?.popToRootViewController(animated: true)
         }
         
@@ -261,11 +253,11 @@ class MainController: PlanetViewController, NetServiceDelegate {
                     if captureModeEnabledState != captureModeEnabled {
                         if captureModeEnabled == 0 {
                             DispatchQueue.main.async {
-                                NotificationCenter.default.post(name:Notification.Name(Notifications.EndCaptureMode.rawValue), object: nil, userInfo: nil)
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.EndPlayMode.rawValue), object: nil, userInfo: nil)
                             }
                         } else if captureModeEnabled == 1 {
                             DispatchQueue.main.async {
-                                NotificationCenter.default.post(name:Notification.Name(Notifications.BeginCaptureMode.rawValue), object: nil, userInfo: nil)
+                                NotificationCenter.default.post(name:Notification.Name(Notifications.BeginPlayMode.rawValue), object: nil, userInfo: nil)
                             }
                         }
                         captureModeEnabledState = captureModeEnabled
