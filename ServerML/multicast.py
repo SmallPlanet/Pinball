@@ -1,3 +1,5 @@
+import io
+
 import socket
 import struct
 import sys
@@ -60,4 +62,43 @@ def UpdateListenForGameUpdates():
 
 
 # SOCKET CODE TO LISTEN TO ML APP
-# images of the play field when buttons are activated
+# images of the play field when buttons get activated
+
+imageUpdatesSocket = connectToMulticastUDP('239.1.1.234', 45687)
+
+def UpdateListenForGameImages():
+    
+    try:
+        msg = imageUpdatesSocket.recv(65536)
+    except socket.error, e:
+        # Something else happened, handle error, exit, etc.
+        # Could also be as simple as "there's no data to read because we're non-blocking"
+        
+        # 'Resource temporarily unavailable'
+        if e.args[0] == 11:
+            return (None, None, None, None, None)
+        
+        print("error: ", e)
+        sys.exit(1)
+    else:        
+        # format is:
+        # 32 bit int for size of jpeg data
+        # ^^ amount of jpeg data bytes
+        # byte for left button is activated
+        # byte for right button is activated
+        # byte for start button is activated
+        # byte for ball kicker button is activated
+        sizeOfJPEG = struct.unpack("<L", msg[:4])[0]
+        jpegBytes = msg[4:4+sizeOfJPEG]
+        
+        s = 4+sizeOfJPEG
+        
+        left = struct.unpack("B", msg[s+0:s+1])[0]
+        right = struct.unpack("B", msg[s+1:s+2])[0]
+        start = struct.unpack("B", msg[s+2:s+3])[0]
+        ballKicker = struct.unpack("B", msg[s+3:s+4])[0]
+        
+        return (jpegBytes, left, right, start, ballKicker)
+        
+    return (None, None, None, None, None)
+
