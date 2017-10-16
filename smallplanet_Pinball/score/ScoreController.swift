@@ -22,7 +22,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     static let gameUpdatesAddress = "239.1.1.234"
     static let gameUpdatesPort:UInt16 = 35687
     
-    var lastHighScore = 0
+    var lastHighScoreByPlayer = [0,0,0,0,0]
+    var currentPlayer = 0
     
     var gameUpdatesConnection: UDPMulticast!
     
@@ -34,38 +35,23 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        if frameNumber > 0 {
-            return
-        }
-        
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
-        let x1:CGFloat = 1331.0 / 2448.0
-        let y1:CGFloat = 186.0 / 3264.0
-        let w1:CGFloat = 310.0 / 2448.0
-        let h1:CGFloat = 1274.0 / 3264.0
-        
-        
-        let croppedImage = (image.extent.size.width != 310 ?
-            image.cropped(to: CGRect(x:x1 * image.extent.size.width,
-                                     y:y1 * image.extent.size.height,
-                                     width:w1 * image.extent.size.width,
-                                     height:h1 * image.extent.size.height)) : maskedImage)
-        
+
         let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: 5, y: 1262),
-            "inputTopRight":CIVector(x: 290, y: 1265),
-            "inputBottomLeft":CIVector(x: 7, y: 10),
-            "inputBottomRight":CIVector(x: 301, y: 34)
+            "inputTopLeft":CIVector(x: 1464, y: 1125),
+            "inputTopRight":CIVector(x: 1468, y: 836),
+            "inputBottomLeft":CIVector(x: 200, y: 1117),
+            "inputBottomRight":CIVector(x: 228, y: 823)
         ]
-        let alignedImage = croppedImage.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
+        let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
         let uiImage = UIImage(ciImage: alignedImage)
         
         _ = ocrReadScreen(alignedImage)
         
         DispatchQueue.main.async {
-            self.statusLabel.label.text = "score: \(self.lastHighScore)"
+            self.statusLabel.label.text = "P \(self.currentPlayer+1): \(self.lastHighScoreByPlayer[self.currentPlayer])"
             self.preview.imageView.image = uiImage
         }
     }
@@ -88,6 +74,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsCroppedImages = false
         captureHelper.delegateWantsBlurredImages = false
+        captureHelper.delegateWantsLockedCamera = true
+        captureHelper.delegateWantsRotatedImage = false
         
         UIApplication.shared.isIdleTimerDisabled = true
         
@@ -344,10 +332,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         var updateType = ""
         
         if scoreWasFound {
-            updateType = "s"
-            screenText = "\(score)"
-            if score > lastHighScore {
-                lastHighScore = score
+            if score > lastHighScoreByPlayer[currentPlayer] {
+                updateType = "s"
+                screenText = "\(score)"
+                
+                lastHighScoreByPlayer[currentPlayer] = score
             } else if score > 0 {
                 
             }
@@ -358,7 +347,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             if gameover {
                 updateType = "x"
                 screenText = "GAME OVER"
-                lastHighScore = 0
+                
+                currentPlayer = 0
+                for i in 1...lastHighScoreByPlayer.count {
+                    lastHighScoreByPlayer[i] = 0
+                }
             }
             
             
@@ -366,7 +359,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             if pushstart {
                 updateType = "b"
                 screenText = "PUSH START"
-                lastHighScore = 0
+                
+                currentPlayer = 0
+                for i in 1...lastHighScoreByPlayer.count {
+                    lastHighScoreByPlayer[i] = 0
+                }
             }
         }
         
@@ -399,7 +396,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
 
             let x_margin = 0.0
-            let y_margin = 4.0
+            let y_margin = 0.0
             
             let x_step = Double(image.size.width) / Double(dotwidth)
             let y_step = Double(image.size.height) / Double(dotheight)
@@ -449,7 +446,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     avg = Int(rgbBytes[intensity_i0b])
                     
-                    printValue(avg)
+                    //printValue(avg)
                     
                     if avg > cutoff {
                         dotmatrix[dot_i] = 1
@@ -463,7 +460,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 print("  y: \(intensity_y)")
                  */
                 
-                print("")
+                //print("")
             }
         }
         

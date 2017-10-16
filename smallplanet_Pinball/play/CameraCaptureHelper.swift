@@ -39,9 +39,11 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var delegateWantsPlayImages = false
     
+    var delegateWantsRotatedImage = true
     var delegateWantsScaledImages = true
     var delegateWantsCroppedImages = true
     var delegateWantsBlurredImages = true
+    var delegateWantsLockedCamera = false
     
     weak var delegate: CameraCaptureHelperDelegate?
     
@@ -165,13 +167,15 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         guard let captureDevice = captureDevice else {
             return
         }
-        /*
-        try! captureDevice.lockForConfiguration()
-        captureDevice.focusMode = .locked
-        captureDevice.exposureMode = .locked
-        captureDevice.whiteBalanceMode = .locked
-        captureDevice.unlockForConfiguration()
-        */
+        
+        if delegateWantsLockedCamera {
+            try! captureDevice.lockForConfiguration()
+            captureDevice.focusMode = .locked
+            captureDevice.exposureMode = .locked
+            captureDevice.whiteBalanceMode = .locked
+            captureDevice.unlockForConfiguration()
+        }
+        
         isLocked = true
     }
     
@@ -180,13 +184,14 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             return
         }
         
-        /*
-        try! captureDevice.lockForConfiguration()
-        captureDevice.focusMode = .continuousAutoFocus
-        captureDevice.exposureMode = .continuousAutoExposure
-        captureDevice.whiteBalanceMode = .continuousAutoWhiteBalance
-        captureDevice.unlockForConfiguration()
-        */
+        if delegateWantsLockedCamera {
+            try! captureDevice.lockForConfiguration()
+            captureDevice.focusMode = .continuousAutoFocus
+            captureDevice.exposureMode = .continuousAutoExposure
+            captureDevice.whiteBalanceMode = .continuousAutoWhiteBalance
+            captureDevice.unlockForConfiguration()
+        }
+        
         isLocked = false
     }
 
@@ -250,10 +255,16 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             var transform = CGAffineTransform.identity
             
-            transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
-            transform = transform.rotated(by: rotation.degreesToRadians)
-            transform = transform.scaledBy(x: scaleW, y: scaleH)
-            transform = transform.translatedBy(x: -hw, y: -hh)
+            if self.delegateWantsRotatedImage || self.delegateWantsScaledImages {
+                transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
+                if self.delegateWantsRotatedImage {
+                    transform = transform.rotated(by: rotation.degreesToRadians)
+                }
+                if self.delegateWantsScaledImages {
+                    transform = transform.scaledBy(x: scaleW, y: scaleH)
+                }
+                transform = transform.translatedBy(x: -hw, y: -hh)
+            }
             
             var rotatedImage = image.transformed(by: transform)
             
