@@ -25,7 +25,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     // 0 = no prints
     // 1 = matched letters
     // 2 = dot matrix conversion
-    let verbose = 2
+    let verbose = 0
     
     var lastHighScoreByPlayer = [0,0,0,0,0]
     var currentPlayer = 0
@@ -53,10 +53,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let scale = image.extent.height / 2448.0
 
         let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: round(1464 * scale), y: round(1125 * scale)),
-            "inputTopRight":CIVector(x: round(1468 * scale), y: round(836 * scale)),
-            "inputBottomLeft":CIVector(x: round(200 * scale), y: round(1117 * scale)),
-            "inputBottomRight":CIVector(x: round(228 * scale), y: round(823 * scale))
+            "inputTopLeft":CIVector(x: round(1469 * scale), y: round(1123 * scale)),
+            "inputTopRight":CIVector(x: round(1472 * scale), y: round(835 * scale)),
+            "inputBottomLeft":CIVector(x: round(210 * scale), y: round(1114 * scale)),
+            "inputBottomRight":CIVector(x: round(237 * scale), y: round(822 * scale))
         ]
         let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
@@ -88,7 +88,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsCroppedImages = false
         captureHelper.delegateWantsBlurredImages = false
-        captureHelper.delegateWantsLockedCamera = false
+        captureHelper.delegateWantsLockedCamera = true
         captureHelper.delegateWantsRotatedImage = false
         
         UIApplication.shared.isIdleTimerDisabled = true
@@ -110,9 +110,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             ac.addAction(UIAlertAction(title: "OK", style: .default))
             present(ac, animated: true)
         } else {
-            let ac = UIAlertController(title: "Saved!", message: "Your image has been saved to your photos.", preferredStyle: .alert)
-            ac.addAction(UIAlertAction(title: "OK", style: .default))
-            present(ac, animated: true)
+            //let ac = UIAlertController(title: "Saved!", message: "Your image has been saved to your photos.", preferredStyle: .alert)
+            //ac.addAction(UIAlertAction(title: "OK", style: .default))
+            //present(ac, animated: true)
         }
     }
     
@@ -130,18 +130,34 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         let testImages = [
-            "bundle://Assets/score/sample/IMG_0064.JPG",
-            "bundle://Assets/score/sample/IMG_0071.JPG",
-            "bundle://Assets/score/sample/IMG_0070.JPG",
+            "bundle://Assets/score/sample/IMG_0081.JPG",
+            "bundle://Assets/score/sample/IMG_0083.JPG",
+            "bundle://Assets/score/sample/IMG_0084.JPG",
+            "bundle://Assets/score/sample/IMG_0085.JPG",
+            "bundle://Assets/score/sample/IMG_0087.JPG",
+            "bundle://Assets/score/sample/IMG_0088.JPG",
+            "bundle://Assets/score/sample/IMG_0089.JPG",
+            "bundle://Assets/score/sample/IMG_0092.JPG",
+            "bundle://Assets/score/sample/IMG_0093.JPG",
+            "bundle://Assets/score/sample/IMG_0094.JPG",
         ]
         
         let testResults = [
-            "2948670",
-            "8618490",
-            "1457350",
+            "PUSH START",
+            "0",
+            "4040",
+            "424320",
+            "626070",
+            "INFIELD",
+            "1669770",
+            "1872560",
+            "1872560",
+            "1872560",
         ]
         
         for i in 0..<testImages.count {
+            ResetGame()
+            
             let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
             
             let result = ocrReadScreen(testImage!)
@@ -156,6 +172,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         
         ResetGame()
+        
+        //sleep(3)
+        //exit(0)
     }
     
     // MARK: "OCR" code
@@ -395,7 +414,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let x_step = Double(image.size.width) / Double(dotwidth)
             let y_step = Double(image.size.height) / Double(dotheight)
             
-            let cutoff = 175
+            let cutoff = 125
             
             for y in 0..<dotheight {
                 
@@ -480,9 +499,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         } else if v < 25*5 {
             print("4-", terminator:"")
         } else if v < 25*6 {
-            print("5-", terminator:"")
+            print("5@", terminator:"")
         } else if v < 25*7 {
-            print("6-", terminator:"")
+            print("6@", terminator:"")
         } else if v < 25*8 {
             print("7@", terminator:"")
         } else if v < 25*9 {
