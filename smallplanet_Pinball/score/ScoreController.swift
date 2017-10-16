@@ -14,6 +14,9 @@ import CoreML
 import Vision
 import MKTween
 
+// TODO: It would be nice if we could dynamically identify the edges of the LED screen and use those points when deciding to
+// dynamically crop the image for sending to the OCR (thus making the OCR app less susceptible to positioning changes)
+
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
     
     static let gameUpdatesAddress = "239.1.1.234"
@@ -328,6 +331,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
     func ocrReadScreen(_ croppedImage:CIImage) -> String {
+        // TODO: Add support for score tally during game specific mode screens (like party in the infield)
+        // TODO: Add support for changing of the current player
+        // TODO: Add support for when the ball number changes
+        
         guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
             return ""
         }
