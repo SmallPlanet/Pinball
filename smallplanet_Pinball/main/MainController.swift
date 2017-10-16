@@ -38,8 +38,6 @@ class MainController: PlanetViewController, NetServiceDelegate {
         if #available(iOS 11.0, *) {
             
         } else {
-            captureModeButton.button.alpha = 0.25
-            captureModeButton.button.isEnabled = false
             playModeButton.button.alpha = 0.25
             playModeButton.button.isEnabled = false
         }
@@ -84,31 +82,19 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         beginRemoteControlServer()
         
-        /*
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(ScoreController(), animated: true)
+                self.navigationController?.pushViewController(PlayController(), animated: true)
             } else {
-                
-            }
-        })*/
-        
-        if #available(iOS 11.0, *) {
-            
-        } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
                 self.navigationController?.pushViewController(ScoreController(), animated: true)
-            })
-        }
+            }
+        })
     }
     
     override func viewDidAppear(_ animated: Bool) {
         resumeRemoteControlServer()
     }
     
-    fileprivate var captureModeButton: Button {
-        return mainXmlView!.elementForId("captureModeButton")!.asButton!
-    }
     fileprivate var previewModeButton: Button {
         return mainXmlView!.elementForId("previewModeButton")!.asButton!
     }
