@@ -22,8 +22,20 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     static let gameUpdatesAddress = "239.1.1.234"
     static let gameUpdatesPort:UInt16 = 35687
     
+    // 0 = no prints
+    // 1 = matched letters
+    // 2 = dot matrix conversion
+    let verbose = 2
+    
     var lastHighScoreByPlayer = [0,0,0,0,0]
     var currentPlayer = 0
+    
+    func ResetGame() {
+        currentPlayer = 0
+        for i in 0..<lastHighScoreByPlayer.count {
+            lastHighScoreByPlayer[i] = 0
+        }
+    }
     
     var gameUpdatesConnection: UDPMulticast!
     
@@ -37,12 +49,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
+        
+        let scale = image.extent.height / 2448.0
 
         let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: 1464, y: 1125),
-            "inputTopRight":CIVector(x: 1468, y: 836),
-            "inputBottomLeft":CIVector(x: 200, y: 1117),
-            "inputBottomRight":CIVector(x: 228, y: 823)
+            "inputTopLeft":CIVector(x: round(1464 * scale), y: round(1125 * scale)),
+            "inputTopRight":CIVector(x: round(1468 * scale), y: round(836 * scale)),
+            "inputBottomLeft":CIVector(x: round(200 * scale), y: round(1117 * scale)),
+            "inputBottomRight":CIVector(x: round(228 * scale), y: round(823 * scale))
         ]
         let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
@@ -74,7 +88,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsCroppedImages = false
         captureHelper.delegateWantsBlurredImages = false
-        captureHelper.delegateWantsLockedCamera = true
+        captureHelper.delegateWantsLockedCamera = false
         captureHelper.delegateWantsRotatedImage = false
         
         UIApplication.shared.isIdleTimerDisabled = true
@@ -116,46 +130,32 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         let testImages = [
-            "bundle://Assets/score/sample/IMG_0040.JPG",
-            "bundle://Assets/score/sample/IMG_0041.JPG",
-            "bundle://Assets/score/sample/IMG_0042.JPG",
-            "bundle://Assets/score/sample/IMG_0043.JPG",
-            "bundle://Assets/score/sample/IMG_0044.JPG",
-            "bundle://Assets/score/sample/IMG_0045.JPG",
-            "bundle://Assets/score/sample/IMG_0046.JPG",
+            "bundle://Assets/score/sample/IMG_0064.JPG",
+            "bundle://Assets/score/sample/IMG_0071.JPG",
+            "bundle://Assets/score/sample/IMG_0070.JPG",
         ]
         
         let testResults = [
-            "PUSH START",
-            "0",
-            "0",
-            "3030",
-            "79040",
-            "894910",
-            "GAME OVER",
+            "2948670",
+            "8618490",
+            "1457350",
         ]
         
         for i in 0..<testImages.count {
-            var testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
-            
-            let rectCoords:[String:Any] = [
-                "inputTopLeft":CIVector(x: 5, y: 1262),
-                "inputTopRight":CIVector(x: 290, y: 1265),
-                "inputBottomLeft":CIVector(x: 7, y: 10),
-                "inputBottomRight":CIVector(x: 301, y: 34)
-            ]
-            testImage = testImage?.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
+            let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
             
             let result = ocrReadScreen(testImage!)
             
             if result != testResults[i] {
-                print("OCR UNIT TEST FAILED: \(result) should be \(testResults[i])")
+                if (verbose > 0) { print("OCR UNIT TEST FAILED: \(result) should be \(testResults[i])") }
             }
             
             //let cgImage = self.ciContext.createCGImage(testImage!, from: testImage!.extent)
             //UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
             //break
         }
+        
+        ResetGame()
     }
     
     // MARK: "OCR" code
@@ -166,7 +166,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         for y in 29..<33 {
             for x in 8..<10 {
                 if ocrMatch(game_over, 0.9, x, y, 66, 12, dotmatrix) {
-                    print("matched GAME OVER at \(x),\(y)")
+                    if (verbose >= 1) { print("matched GAME OVER at \(x),\(y)") }
                     return true
                 }
             }
@@ -180,7 +180,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         for y in 2..<5 {
             for x in 3..<6 {
                 if ocrMatch(push_start, 0.9, x, y, 49, 24, dotmatrix) {
-                    print("matched PUSH START at \(x),\(y)")
+                    if (verbose >= 1) { print("matched PUSH START at \(x),\(y)") }
                     return true
                 }
             }
@@ -209,70 +209,70 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             //for x in 0..<dotwidth {
             for x in 8..<11 {
                 if ocrMatch(score0, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 0 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score1, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 1 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
                     score = score * 10 + 1
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score2, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 2 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
                     score = score * 10 + 2
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score3, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 3 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
                     score = score * 10 + 3
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score4, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 4 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
                     score = score * 10 + 4
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score5, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 5 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
                     score = score * 10 + 5
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score6, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 6 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
                     score = score * 10 + 6
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score7, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 7 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
                     score = score * 10 + 7
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score8, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 8 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
                     score = score * 10 + 8
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
                 if ocrMatch(score9, accuracy, x, y, 14, 21, dotmatrix) {
-                    print("matched 9 at \(x),\(y)")
+                    if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
@@ -348,10 +348,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 updateType = "x"
                 screenText = "GAME OVER"
                 
-                currentPlayer = 0
-                for i in 1...lastHighScoreByPlayer.count {
-                    lastHighScoreByPlayer[i] = 0
-                }
+                ResetGame()
             }
             
             
@@ -360,10 +357,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 updateType = "b"
                 screenText = "PUSH START"
                 
-                currentPlayer = 0
-                for i in 1...lastHighScoreByPlayer.count {
-                    lastHighScoreByPlayer[i] = 0
-                }
+                ResetGame()
             }
         }
         
@@ -376,7 +370,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
     let dotwidth = 31
-    let dotheight = 126
+    let dotheight = 127
     
     func getDotMatrix(_ image:UIImage) -> [UInt8] {
         var dotmatrix = [UInt8](repeating: 0, count: dotwidth * dotheight)
@@ -401,7 +395,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let x_step = Double(image.size.width) / Double(dotwidth)
             let y_step = Double(image.size.height) / Double(dotheight)
             
-            let cutoff = 100
+            let cutoff = 175
             
             for y in 0..<dotheight {
                 
@@ -409,11 +403,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     let intensity_x = round(Double(x) * x_step + x_margin)
                     let intensity_y = round(Double(y) * y_step + y_margin)
-                    
-                    /*
-                    if y == 0 {
-                        print("  x: \(intensity_x)")
-                    }*/
                     
                     let intensity_i0 = Int(intensity_y) * rowBytes + (Int(intensity_x) * 4)
                     let intensity_i1 = intensity_i0 + 4
@@ -428,6 +417,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         intensity_i4 = 0
                     }
                     
+                    let intensity_i0g = intensity_i0 + 1
+                    let intensity_i1g = intensity_i1 + 1
+                    let intensity_i2g = intensity_i2 + 1
+                    let intensity_i3g = intensity_i3 + 1
+                    let intensity_i4g = intensity_i4 + 1
                     let intensity_i0b = intensity_i0 + 2
                     let intensity_i1b = intensity_i1 + 2
                     let intensity_i2b = intensity_i2 + 2
@@ -437,30 +431,37 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     let dot_i = y * dotwidth + x
                     
                     var avg:Int = 0
-                    avg += Int(rgbBytes[intensity_i0b])
+                    avg += Int(rgbBytes[intensity_i0g]) * 6
+                    avg += Int(rgbBytes[intensity_i1g])
+                    avg += Int(rgbBytes[intensity_i2g])
+                    avg += Int(rgbBytes[intensity_i3g])
+                    avg += Int(rgbBytes[intensity_i4g])
+                    
+                    avg += Int(rgbBytes[intensity_i0b]) * 6
                     avg += Int(rgbBytes[intensity_i1b])
                     avg += Int(rgbBytes[intensity_i2b])
                     avg += Int(rgbBytes[intensity_i3b])
                     avg += Int(rgbBytes[intensity_i4b])
-                    avg /= 5
+                    avg /= 20
                     
-                    avg = Int(rgbBytes[intensity_i0b])
+                    //avg = Int(rgbBytes[intensity_i0b])
                     
-                    //printValue(avg)
+                    if (verbose >= 2) {
+                        printValue(avg)
+                    }
                     
-                    if avg > cutoff {
+                    if avg >= cutoff {
                         dotmatrix[dot_i] = 1
                     } else {
                         dotmatrix[dot_i] = 0
                     }
                 }
                 
-                /*
-                let intensity_y = round(Double(y) * y_step + y_margin)
-                print("  y: \(intensity_y)")
-                 */
+                if (verbose >= 2) {
+                    print("")
+                }
                 
-                //print("")
+                
             }
         }
         
@@ -477,11 +478,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         } else if v < 25*4 {
             print("3-", terminator:"")
         } else if v < 25*5 {
-            print("4@", terminator:"")
+            print("4-", terminator:"")
         } else if v < 25*6 {
-            print("5@", terminator:"")
+            print("5-", terminator:"")
         } else if v < 25*7 {
-            print("6@", terminator:"")
+            print("6-", terminator:"")
         } else if v < 25*8 {
             print("7@", terminator:"")
         } else if v < 25*9 {

@@ -72,7 +72,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         var bestFormat:AVCaptureDevice.Format? = nil
         var bestFrameRateRange:AVFrameRateRange? = nil
-        var bestReolution:CGFloat = 0.0
+        var bestResolution:CGFloat = 0.0
         
         if delegateWantsScaledImages == true {
             // choose the highest framerate
@@ -94,11 +94,15 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 let resolution = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
                 
                 let area = resolution.width * resolution.height
-                if area > bestReolution {
-                    bestReolution = area
+                print("\(resolution.width) x \(resolution.height) aspect \(Float(resolution.width/resolution.height))")
+                if area > bestResolution {
+                    bestResolution = area
                     bestFormat = format
                 }
             }
+            
+            
+            
         }
         
         print(bestFormat)
@@ -156,11 +160,19 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     func stop() {
         playFrameNumber = 0
         captureSession.stopRunning()
+        
+        if delegateWantsLockedCamera {
+            unlockFocus()
+        }
     }
     
     func start() {
         playFrameNumber = 0
         captureSession.startRunning()
+        
+        if delegateWantsLockedCamera {
+            lockFocus()
+        }
     }
     
     func lockFocus() {
@@ -225,7 +237,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             ballKicker = (self.pinball!.ballKickerPressed ? 1 : 0)
         }
         
-        serialQueue.async {
+        serialQueue.sync {
             var bufferCopy : CMSampleBuffer?
             let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
             if err != noErr {
