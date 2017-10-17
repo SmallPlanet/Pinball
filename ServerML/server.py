@@ -6,12 +6,19 @@ import random
 import forwarder
 import struct
 
-
 shortTermMemoryDuration = 3
 longTermMemoryMaxSize = 100
 
-currentPlayer = 0
-scoreByPlayer = [0,0,0,0,0]
+class GameStateInfo:
+    currentPlayer = 0
+    scoreByPlayer = [-1,-1,-1,-1]
+    
+    def Reset(self):
+        currentPlayer = 0
+        scoreByPlayer = [-1,-1,-1,-1]
+
+
+gameState = GameStateInfo()
 
 shortTermMemory = []
 
@@ -19,7 +26,7 @@ class Memory:
         
     def __init__(self, jpeg, left, right, start, ballKicker):
         self.startEpoc = time.time()
-        self.startScore = scoreByPlayer[currentPlayer]
+        self.startScore = gameState.scoreByPlayer[gameState.currentPlayer]
         self.jpeg = jpeg
         self.left = left
         self.right = right
@@ -28,7 +35,7 @@ class Memory:
     
     def CommitMemory(self):
         
-        actualScore = scoreByPlayer[currentPlayer] - self.startScore
+        actualScore = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
         
         # TODO: make this smarter, we want to remember the top X high scoring memories?
         if actualScore > 0:
@@ -41,16 +48,12 @@ class Memory:
             f.write(x.jpeg)
             f.close()
 
-def ResetGame():
-    currentPlayer = 0
-    scoreByPlayer = [0,0,0,0,0]
-
 def SimulateGameplay():
     if random.random() < 0.01:
         
         # randomly increase our score
-        scoreByPlayer[currentPlayer] += random.random() * 100
-        print("  Simulated scores: ", scoreByPlayer)
+        gameState.scoreByPlayer[gameState.currentPlayer] += random.random() * 100
+        print("  Simulated scores: ", gameState.scoreByPlayer)
         
         # randomly lose our ball...
 
@@ -58,20 +61,26 @@ def SimulateGameplay():
 
 
 # messages from OCR app
-def HandleGameInfo(msg):
+def HandleGameInfo(msg):   
+    #print(msg) 
     parts = msg.split(":")
     if len(parts) == 2:
         if parts[0] == 's':
-            scoreByPlayer[currentPlayer] = int(parts[1])
-            print("  Received scores: ", scoreByPlayer)
+            gameState.scoreByPlayer[gameState.currentPlayer] = int(parts[1])
+            print("  Received scores: ", gameState.scoreByPlayer)
+        if parts[0] == 'm':
+            parts2 = parts[1].split(",")
+            gameState.currentPlayer = int(parts2[0])-1
+            gameState.scoreByPlayer[gameState.currentPlayer] = int(parts2[1])
+            print("  Received scores: ", gameState.scoreByPlayer)
         if parts[0] == 'p':
-            currentPlayer = int(parts[1])
+            gameState.currentPlayer = int(parts[1])-1
             print("  Player " + parts[1] + " is up!")
         if parts[0] == 'x':
-            ResetGame()
+            gameState.Reset()
             print("  Received game over")
         if parts[0] == 'b':
-            ResetGame()
+            gameState.Reset()
             print("  Received begin new game")
 
 comm.subscriber(comm.endpoint_sub_GameInfo, HandleGameInfo)
