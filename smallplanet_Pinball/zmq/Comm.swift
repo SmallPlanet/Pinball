@@ -8,8 +8,10 @@
 import Foundation
 
 struct Endpoints {
-    let GameInfo = "tcp://\(Comm.brokerAddress):40000"
-    let TrainingImages = "tcp://\(Comm.brokerAddress):40001"
+    let pub_GameInfo = "tcp://\(Comm.brokerAddress):60002"
+    let sub_GameInfo = "tcp://\(Comm.brokerAddress):60001"
+    let pub_TrainingImages = "tcp://\(Comm.brokerAddress):60012"
+    let sub_TrainingImages = "tcp://\(Comm.brokerAddress):60011"
 }
 
 class Comm {
@@ -19,7 +21,7 @@ class Comm {
     static let shared = Comm()
     static let endpoints = Endpoints()
     
-    static let brokerAddress = "127.0.0.1"
+    static let brokerAddress = "192.168.1.133"
     
     // the main 0MQ context, controls all sockets, etc
     var context:SwiftyZeroMQ.Context
@@ -64,7 +66,9 @@ class Comm {
     func publisher(_ endpoint:String) -> SwiftyZeroMQ.Socket? {
         do {
             let socket = try context.socket(.publish)
-            try socket.bind(endpoint)
+            
+            // Note: we're connecting to a forwarder, we are not the bind-er itself
+            try socket.connect(endpoint)
             return socket
         } catch {
             print("Comm error: \(error)")
