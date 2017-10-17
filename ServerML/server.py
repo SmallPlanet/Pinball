@@ -64,9 +64,14 @@ def HandleGameInfo(msg):
         if parts[0] == 's':
             scoreByPlayer[currentPlayer] = int(parts[1])
             print("  Received scores: ", scoreByPlayer)
+        if parts[0] == 'p':
+            currentPlayer = int(parts[1])
+            print("  Player " + parts[1] + " is up!")
         if parts[0] == 'x':
+            ResetGame()
             print("  Received game over")
         if parts[0] == 'b':
+            ResetGame()
             print("  Received begin new game")
 
 comm.subscriber(comm.endpoint_sub_GameInfo, HandleGameInfo)
@@ -127,7 +132,7 @@ while True:
     
     
     # NOTE: Gameplay simulator, useful for self-testing when not near the pinball machine
-    SimulateGameplay()
+    #SimulateGameplay()
 
 
 
