@@ -54,9 +54,6 @@ def SimulateGameplay():
         # randomly increase our score
         gameState.scoreByPlayer[gameState.currentPlayer] += random.random() * 100
         print("  Simulated scores: ", gameState.scoreByPlayer)
-        
-        # randomly lose our ball...
-
 
 
 

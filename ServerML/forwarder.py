@@ -37,4 +37,5 @@ def forwarder(endpoint):
 # Spawna process to handle the forwarder
 Process(target=forwarder, args=(comm.endpoint_GameInfo,)).start()
 Process(target=forwarder, args=(comm.endpoint_TrainingImages,)).start()
+Process(target=forwarder, args=(comm.endpoint_RemoteControl,)).start()
 

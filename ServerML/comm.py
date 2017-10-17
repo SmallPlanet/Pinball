@@ -18,6 +18,10 @@ endpoint_TrainingImages = "tcp://*:6001"
 endpoint_pub_TrainingImages = endpoint_TrainingImages.replace("*", serverName)+"2"
 endpoint_sub_TrainingImages = endpoint_TrainingImages.replace("*", serverName)+"1"
 
+endpoint_RemoteControl = "tcp://*:6002"
+endpoint_pub_RemoteControl = endpoint_RemoteControl.replace("*", serverName)+"2"
+endpoint_sub_RemoteControl = endpoint_RemoteControl.replace("*", serverName)+"1"
+
 
 
 
