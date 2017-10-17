@@ -125,29 +125,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         let testImages = [
-            "bundle://Assets/score/sample/IMG_0081.JPG",
-            "bundle://Assets/score/sample/IMG_0083.JPG",
-            "bundle://Assets/score/sample/IMG_0084.JPG",
-            "bundle://Assets/score/sample/IMG_0085.JPG",
-            "bundle://Assets/score/sample/IMG_0087.JPG",
-            "bundle://Assets/score/sample/IMG_0088.JPG",
-            "bundle://Assets/score/sample/IMG_0089.JPG",
-            "bundle://Assets/score/sample/IMG_0092.JPG",
-            "bundle://Assets/score/sample/IMG_0093.JPG",
-            "bundle://Assets/score/sample/IMG_0094.JPG",
+            "bundle://Assets/score/sample/IMG_0112.JPG",
         ]
         
         let testResults = [
-            "PUSH START",
-            "0",
-            "4040",
-            "424320",
-            "626070",
-            "INFIELD",
-            "1669770",
-            "1872560",
-            "1872560",
-            "1872560",
+            "4",
         ]
         
         for i in 0..<testImages.count {
@@ -179,7 +161,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         for y in 29..<33 {
             for x in 8..<10 {
-                if ocrMatch(game_over, 0.9, x, y, 66, 12, dotmatrix) {
+                if ocrMatch(game_over, 0.9, x, y, 12, dotmatrix) {
                     if (verbose >= 1) { print("matched GAME OVER at \(x),\(y)") }
                     return true
                 }
@@ -193,8 +175,40 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         for y in 2..<5 {
             for x in 3..<6 {
-                if ocrMatch(push_start, 0.9, x, y, 49, 24, dotmatrix) {
+                if ocrMatch(push_start, 0.9, x, y, 24, dotmatrix) {
                     if (verbose >= 1) { print("matched PUSH START at \(x),\(y)") }
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
+    func ocrPlayerUp(_ dotmatrix:[UInt8]) -> Int {
+        
+        for y in 24..<26 {
+            for x in 12..<14 {
+                if ocrMatch(player_up, 0.9, x, y, 8, dotmatrix) {
+                    // once we match "Player Up", we need to match the right number...
+                    if ocrPlayerUpNumber(dotmatrix, player_4_up) {
+                        if (verbose >= 1) { print("matched PLAYER 4 UP at \(x),\(y)") }
+                        return 4
+                    }
+                    
+                    
+                    return 0
+                }
+            }
+        }
+        
+        return 0
+    }
+    
+    func ocrPlayerUpNumber(_ dotmatrix:[UInt8], _ number:[UInt8]) -> Bool {
+        for y in 0..<dotheight {
+            for x in 12..<14 {
+                if ocrMatch(number, 0.9, x, y, 8, dotmatrix) {
                     return true
                 }
             }
@@ -222,70 +236,70 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             //for x in 0..<dotwidth {
             for x in 8..<11 {
-                if ocrMatch(score0, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score0, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score1, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score1, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
                     score = score * 10 + 1
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score2, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score2, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
                     score = score * 10 + 2
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score3, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score3, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
                     score = score * 10 + 3
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score4, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score4, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
                     score = score * 10 + 4
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score5, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score5, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
                     score = score * 10 + 5
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score6, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score6, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
                     score = score * 10 + 6
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score7, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score7, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
                     score = score * 10 + 7
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score8, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score8, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
                     score = score * 10 + 8
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score9, accuracy, x, y, 14, 21, dotmatrix) {
+                if ocrMatch(score9, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
@@ -298,7 +312,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return (score,didMatchSomething)
     }
     
-    func ocrMatch(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ width:Int, _ height:Int, _ dotmatrix:[UInt8]) -> Bool {
+    func ocrMatch(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ height:Int, _ dotmatrix:[UInt8]) -> Bool {
+        let width = letter.count / height
         var bad:Double = 0
         let total:Double = Double(width * height)
         let inv_accuracy = 1.0 - accuracy
@@ -372,6 +387,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 screenText = "PUSH START"
                 
                 ResetGame()
+            }
+            
+            let playerup = self.ocrPlayerUp(dotmatrix)
+            if playerup >= 1 {
+                updateType = "p"
+                screenText = "\(playerup)"
+                
+                currentPlayer = playerup
             }
         }
         
@@ -827,5 +850,97 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         ]
+    
+    
+    fileprivate var player_4_up: [UInt8] = [
+        0,0,0,1,1,1,1,1,
+        0,0,0,1,1,1,1,1,
+        0,0,0,1,1,0,0,0,
+        0,0,0,1,1,0,0,0,
+        0,0,0,1,1,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+    ]
+    
+    fileprivate var player_up: [UInt8] = [
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,1,1,1,
+        0,0,0,0,1,1,1,0,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,0,
+        1,1,0,0,0,0,0,0,
+        1,1,0,0,0,0,0,0,
+        1,1,0,0,0,0,0,0,
+        1,1,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,1,1,1,1,
+        0,0,0,1,1,1,1,1,
+        1,1,1,1,1,0,0,0,
+        1,1,1,1,1,0,0,0,
+        0,0,0,1,1,1,1,1,
+        0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,0,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,0,
+        1,1,0,0,0,0,0,0,
+        1,1,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,0,1,1,
+        0,0,0,1,1,1,1,1,
+        ]
+    
 }
 
