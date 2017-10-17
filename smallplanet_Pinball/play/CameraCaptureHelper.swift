@@ -94,7 +94,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 let resolution = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
                 
                 let area = resolution.width * resolution.height
-                print("\(resolution.width) x \(resolution.height) aspect \(Float(resolution.width/resolution.height))")
+                //print("\(resolution.width) x \(resolution.height) aspect \(Float(resolution.width/resolution.height))")
                 if area > bestResolution {
                     bestResolution = area
                     bestFormat = format
