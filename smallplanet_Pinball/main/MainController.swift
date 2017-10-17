@@ -85,21 +85,29 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         
         // test zeroMQ...
-        guard let publisher = Comm.shared.publisher(Comm.endpoints.GameInfo) else {
+        guard let publisher = Comm.shared.publisher(Comm.endpoints.pub_GameInfo) else {
             return
         }
         
-        guard let subscriber1 = Comm.shared.subscriber(Comm.endpoints.GameInfo, { (data) in
+        guard let subscriber1 = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
             print("recv: \(data)")
         }) else {
             return
         }
         
-        usleep(1000)
+        sleep(1)
         
         try! publisher.send(string: "Hello world")
+        try! publisher.send(string: "Hello world")
+        try! publisher.send(string: "Hello world")
+        try! publisher.send(string: "Hello world")
+        try! publisher.send(string: "Hello world")
         
-        usleep(5000)
+        sleep(1)
+        
+        try! publisher.send(string: "Hello world")
+        try! publisher.send(string: "Hello world")
+        try! publisher.send(string: "Hello world")
         
         /*
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
