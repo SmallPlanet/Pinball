@@ -11,10 +11,114 @@ import PlanetSwift
 import Laba
 import Socket
 
+
+
+class RemoteControlServer {
+    static let shared = RemoteControlServer()
+    
+    // MARK: - Remote control server
+    var ignoreRemoteControlEvents = false
+    var leftButtonState:Byte = 0
+    var rightButtonState:Byte = 0
+    var kickerButtonState:Byte = 0
+    var startButtonState:Byte = 0
+    var captureModeEnabledState:Byte = 0
+    
+    var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
+        
+    func begin() {
+        if remoteControlSubscriber != nil {
+            return
+        }
+        
+        remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_RemoteControl, { (data) in
+            
+            if self.ignoreRemoteControlEvents {
+                return;
+            }
+            
+            let leftButton:Byte = data[0]
+            let rightButton:Byte = data[1]
+            let captureModeEnabled:Byte = data[2]
+            let kickerButton:Byte = data[3]
+            let startButton:Byte = data[4]
+            
+            
+            if self.startButtonState != startButton {
+                if startButton == 0 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.StartButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
+                } else if startButton == 1 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.StartButtonDown.rawValue), object: nil, userInfo: nil)
+                    }
+                }
+                self.startButtonState = startButton
+            }
+            
+            if self.kickerButtonState != kickerButton {
+                if kickerButton == 0 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
+                    }
+                } else if kickerButton == 1 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
+                    }
+                }
+                self.kickerButtonState = kickerButton
+            }
+            
+            if self.captureModeEnabledState != captureModeEnabled {
+                if captureModeEnabled == 0 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.EndPlayMode.rawValue), object: nil, userInfo: nil)
+                    }
+                } else if captureModeEnabled == 1 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BeginPlayMode.rawValue), object: nil, userInfo: nil)
+                    }
+                }
+                self.captureModeEnabledState = captureModeEnabled
+            }
+            
+            if self.leftButtonState != leftButton {
+                if leftButton == 0 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
+                } else if leftButton == 1 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
+                    }
+                }
+                self.leftButtonState = leftButton
+            }
+            
+            if self.rightButtonState != rightButton {
+                if rightButton == 0 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
+                } else if rightButton == 1 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
+                    }
+                }
+                self.rightButtonState = rightButton
+            }
+        })
+    }
+}
+
+
+
+
 class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    var isConnectedToServer = false
-    var serverSocket:Socket? = nil
+    let remoteControlPublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_RemoteControl)
+
 
     var startButtonPressed:Byte = 0
     var kickerButtonPressed:Byte = 0
@@ -30,78 +134,58 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         loadView()
         
         leftButton.button.add(for: .touchUpInside) {
-            if self.isConnectedToServer {
-                self.leftButtonPressed = 0
-                self.sendButtonStatesToServer()
-            }
+            self.leftButtonPressed = 0
+            self.sendButtonStatesToServer()
         }
         leftButton.button.add(for: .touchDown) {
-            if self.isConnectedToServer {
-                self.leftButtonPressed = 1
-                self.sendButtonStatesToServer()
-            }
+            self.leftButtonPressed = 1
+            self.sendButtonStatesToServer()
         }
         
         rightButton.button.add(for: .touchUpInside) {
-            if self.isConnectedToServer {
-                self.rightButtonPressed = 0
-                self.sendButtonStatesToServer()
-            }
+            self.rightButtonPressed = 0
+            self.sendButtonStatesToServer()
         }
         rightButton.button.add(for: .touchDown) {
-            if self.isConnectedToServer {
-                self.rightButtonPressed = 1
-                self.sendButtonStatesToServer()
-            }
+            self.rightButtonPressed = 1
+            self.sendButtonStatesToServer()
         }
         
         
         startButton.button.add(for: .touchUpInside) {
-            if self.isConnectedToServer {
-                self.startButtonPressed = 0
-                self.sendButtonStatesToServer()
-            }
+            self.startButtonPressed = 0
+            self.sendButtonStatesToServer()
         }
         startButton.button.add(for: .touchDown) {
-            if self.isConnectedToServer {
-                self.startButtonPressed = 1
-                self.sendButtonStatesToServer()
-            }
+            self.startButtonPressed = 1
+            self.sendButtonStatesToServer()
         }
         
         
         kickerButton.button.add(for: .touchUpInside) {
-            if self.isConnectedToServer {
-                self.kickerButtonPressed = 0
-                self.sendButtonStatesToServer()
-            }
+            self.kickerButtonPressed = 0
+            self.sendButtonStatesToServer()
         }
         kickerButton.button.add(for: .touchDown) {
-            if self.isConnectedToServer {
-                self.kickerButtonPressed = 1
-                self.sendButtonStatesToServer()
-            }
+            self.kickerButtonPressed = 1
+            self.sendButtonStatesToServer()
         }
         
         
         
         playButton.button.add(for: .touchUpInside) {
-            if self.isConnectedToServer {
-                if self.playModeEnabled == 1 {
-                    self.playModeEnabled = 0
-                } else {
-                    self.playModeEnabled = 1
-                }
-                self.sendButtonStatesToServer()
+            if self.playModeEnabled == 1 {
+                self.playModeEnabled = 0
+            } else {
+                self.playModeEnabled = 1
             }
+            self.sendButtonStatesToServer()
         }
         
         self.playButton.button.titleLabel?.numberOfLines = 2
         self.playButton.button.titleLabel?.textAlignment = .center
         
         UIApplication.shared.isIdleTimerDisabled = true
-        
-        findRemoteControlServer()
     }
     
     func sendButtonStatesToServer() {
@@ -111,7 +195,8 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         byteArray.append(playModeEnabled)
         byteArray.append(kickerButtonPressed)
         byteArray.append(startButtonPressed)
-        _ = try! serverSocket?.write(from: Data(byteArray))
+        
+        try! remoteControlPublisher!.send(data:Data(byteArray))
         
         if self.playModeEnabled == 1 {
             self.playButton.button.setTitle("Play Mode\nOn", for:.normal)
@@ -125,69 +210,6 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         UIApplication.shared.isIdleTimerDisabled = false
     }
     
-    // MARK: Autodiscovery of remote app
-    var bonjour = NetServiceBrowser()
-    var services = [NetService]()
-    func findRemoteControlServer() {
-        bonjour.delegate = self
-        bonjour.searchForServices(ofType: "_pinball_remote._tcp.", inDomain: "local.")
-        
-        statusLabel.label.text = "Searching for control server..."
-    }
-    
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        print("found service, resolving addresses")
-        services.append(service)
-        service.delegate = self
-        service.resolve(withTimeout: 15)
-    }
-    
-    func netServiceDidResolveAddress(_ sender: NetService) {
-        print("did resolve service \(sender.addresses![0]) \(sender.port)")
-        
-        // do not connect to myself, i know this is hacky
-        let hostname = UIDevice.current.name.replacingOccurrences(of: "(", with: "").replacingOccurrences(of: ")", with: "").replacingOccurrences(of: " ", with: "-").replacingOccurrences(of: "'", with: "").appending(".local.")
-        print(hostname)
-        print("-----")
-
-        if hostname != sender.hostName! {
-            services.remove(at: services.index(of: sender)!)
-            
-            statusLabel.label.text = "Remote control server found!"
-            
-            do {
-                serverSocket = try Socket.create()
-                try serverSocket?.connect(to: sender.hostName!, port: Int32(sender.port), timeout: 500)
-                print("connected to remote control server \(sender.hostName!)")
-                
-                isConnectedToServer = true
-                bonjour.stop()
-                
-                statusLabel.label.text = "Connected to remote control server!"
-                
-                // send initial button states to the server
-                self.sendButtonStatesToServer()
-            } catch (let error) {
-                disconnectedFromServer()
-                
-                print(error)
-            }
-        }
-    }
-    
-    func disconnectedFromServer() {
-        serverSocket = nil
-        isConnectedToServer = false
-        findRemoteControlServer()
-        
-        statusLabel.label.text = "Connection lost, searching..."
-    }
-    
-    func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
-        print("did NOT resolve service \(sender)")
-        services.remove(at: services.index(of: sender)!)
-    }
-
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
