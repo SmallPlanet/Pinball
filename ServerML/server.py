@@ -1,8 +1,11 @@
-import multicast
+import comm
 import time
 import train
 import uuid
 import random
+import forwarder
+
+
 
 shortTermMemoryDuration = 3
 longTermMemoryMaxSize = 100
@@ -52,11 +55,24 @@ def SimulateGameplay():
         # randomly lose our ball...
 
 
+
+
+
+def HandleGameInfo(msg):
+    print "Received message ... ", msg
+    
+comm.subscriber(comm.endpoint_sub_GameInfo, HandleGameInfo)
+
+
+
 print("Begin server main loop...")
 while True:
     
     didProcessMessage = False
     
+    comm.PollSockets()
+    
+    '''
     # messages from OCR app
     key,value = multicast.UpdateListenForGameUpdates()
     if key is not None:
@@ -96,7 +112,7 @@ while True:
     
     # TODO: When current player changes, or when current player ball changes, we should
     # manually complete all short term memories
-    
+    '''
     
     if didProcessMessage == False:
         time.sleep(0.001)

@@ -113,3 +113,5 @@ Install Ubuntu from scratch ML box:
 	pip install pillow
 	pip install h5py
 	
+** install zmq
+	pip install pyzmq-static
