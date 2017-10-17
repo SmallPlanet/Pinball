@@ -14,13 +14,13 @@ import CoreML
 import Vision
 
 @available(iOS 11.0, *)
-class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
+class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    static let imageCaptureAddress = "239.1.1.234"
-    static let imageCapturePort:UInt16 = 45687
-    
-    var imageCaptureConnection: UDPMulticast!
-    var scoreConnection: UDPMulticast!
+    // TODO: Replace with Comm class
+    //static let imageCaptureAddress = "239.1.1.234"
+    //static let imageCapturePort:UInt16 = 45687
+    //var imageCaptureConnection: UDPMulticast!
+    //var scoreConnection: UDPMulticast!
 
     let playAndCapture = true
     
@@ -160,7 +160,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         dataPacket.append(startButton)
         dataPacket.append(ballKicker)
         
-        imageCaptureConnection.send(dataPacket)
+        // TODO: Replace with Comm class
+        //imageCaptureConnection.send(dataPacket)
         
         print("send image: \(leftButton), \(rightButton), \(startButton), \(ballKicker)")
     }
@@ -191,12 +192,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         UIApplication.shared.isIdleTimerDisabled = true
         
-        imageCaptureConnection = UDPMulticast(PlayController.imageCaptureAddress, PlayController.imageCapturePort, nil)
-        
-        scoreConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, { (data) in
-            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
-            print("play controller received: \(dataAsString!)")
-        })
+        // TODO: Replace with Comm class
+        //imageCaptureConnection = UDPMulticast(PlayController.imageCaptureAddress, PlayController.imageCapturePort, nil)
+        //scoreConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, { (data) in
+        //    let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+        //    print("play controller received: \(dataAsString!)")
+        //})
         
         
         // We allow remote control of gameplay to help "manually" train the AI
