@@ -82,41 +82,13 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         beginRemoteControlServer()
         
-        
-        
-        // test zeroMQ...
-        guard let publisher = Comm.shared.publisher(Comm.endpoints.pub_GameInfo) else {
-            return
-        }
-        
-        guard let subscriber1 = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
-            print("recv: \(data)")
-        }) else {
-            return
-        }
-        
-        sleep(1)
-        
-        try! publisher.send(string: "Hello world")
-        try! publisher.send(string: "Hello world")
-        try! publisher.send(string: "Hello world")
-        try! publisher.send(string: "Hello world")
-        try! publisher.send(string: "Hello world")
-        
-        sleep(1)
-        
-        try! publisher.send(string: "Hello world")
-        try! publisher.send(string: "Hello world")
-        try! publisher.send(string: "Hello world")
-        
-        /*
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             if #available(iOS 11.0, *) {
                 self.navigationController?.pushViewController(PlayController(), animated: true)
             } else {
                 self.navigationController?.pushViewController(ScoreController(), animated: true)
             }
-        })*/
+        })
     }
     
     override func viewDidAppear(_ animated: Bool) {

@@ -19,9 +19,7 @@ import MKTween
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    // TODO: Replace with Comm class
-    //static let gameUpdatesAddress = "239.1.1.234"
-    //static let gameUpdatesPort:UInt16 = 35687
+    let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
     // 0 = no prints
     // 1 = matched letters
@@ -37,9 +35,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             lastHighScoreByPlayer[i] = 0
         }
     }
-    
-    // TODO: Replace with Comm class
-    //var gameUpdatesConnection: UDPMulticast!
     
     let ciContext = CIContext(options: [:])
     
@@ -81,9 +76,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         mainBundlePath = "bundle://Assets/score/score.xml"
         loadView()
-        
-        // TODO: Replace with Comm class
-        //gameUpdatesConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, nil)
         
         captureHelper.delegate = self
         captureHelper.pinball = nil
@@ -384,8 +376,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         
         if screenText != "" {
-            // TODO: Replace with Comm class
-            //self.gameUpdatesConnection.send(updateType + ":" + screenText)
+            try! scorePublisher?.send(string: updateType + ":" + screenText)
             print(updateType + ":" + screenText)
         }
         
