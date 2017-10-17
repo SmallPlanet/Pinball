@@ -57,10 +57,18 @@ def SimulateGameplay():
 
 
 
-
+# messages from OCR app
 def HandleGameInfo(msg):
-    print "Received message ... ", msg
-    
+    parts = msg.split(":")
+    if len(parts) == 2:
+        if parts[0] == 's':
+            scoreByPlayer[currentPlayer] = int(parts[1])
+            print("  Received scores: ", scoreByPlayer)
+        if parts[0] == 'x':
+            print("  Received game over")
+        if parts[0] == 'b':
+            print("  Received begin new game")
+
 comm.subscriber(comm.endpoint_sub_GameInfo, HandleGameInfo)
 
 
@@ -69,25 +77,9 @@ print("Begin server main loop...")
 while True:
     
     didProcessMessage = False
+    didProcessMessage |= comm.PollSockets()
     
-    comm.PollSockets()
-    
-    '''
-    # messages from OCR app
-    key,value = multicast.UpdateListenForGameUpdates()
-    if key is not None:
-        didProcessMessage = True
-        if key == 's':
-            scoreByPlayer[currentPlayer] = int(value)
-            print("  Received scores: ", scoreByPlayer)
-    
-        if key == 'x':
-            print("  Received game over")
-    
-        if key == 'b':
-            print("  Received begin new game")
-        
-    
+    '''    
     # messages from ML app
     jpeg,left,right,start,ballKicker = multicast.UpdateListenForGameImages()
     if jpeg is not None:

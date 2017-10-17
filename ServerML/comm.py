@@ -51,11 +51,14 @@ def subscriber(endpoint, func):
     return socket
 
 def PollSockets():
+    didProcessMessage = False
     socks = dict(poller.poll())
     for socket in socks:
         if socks[socket] == zmq.POLLIN:
             msg = socket.recv()
             socket2callback[socket](msg)
+            didProcessMessage = True
+    return didProcessMessage
     
 
 
