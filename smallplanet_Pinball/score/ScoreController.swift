@@ -17,10 +17,11 @@ import MKTween
 // TODO: It would be nice if we could dynamically identify the edges of the LED screen and use those points when deciding to
 // dynamically crop the image for sending to the OCR (thus making the OCR app less susceptible to positioning changes)
 
-class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate, GCDAsyncUdpSocketDelegate {
+class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    static let gameUpdatesAddress = "239.1.1.234"
-    static let gameUpdatesPort:UInt16 = 35687
+    // TODO: Replace with Comm class
+    //static let gameUpdatesAddress = "239.1.1.234"
+    //static let gameUpdatesPort:UInt16 = 35687
     
     // 0 = no prints
     // 1 = matched letters
@@ -37,7 +38,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
     }
     
-    var gameUpdatesConnection: UDPMulticast!
+    // TODO: Replace with Comm class
+    //var gameUpdatesConnection: UDPMulticast!
     
     let ciContext = CIContext(options: [:])
     
@@ -80,7 +82,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         mainBundlePath = "bundle://Assets/score/score.xml"
         loadView()
         
-        gameUpdatesConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, nil)
+        // TODO: Replace with Comm class
+        //gameUpdatesConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, nil)
         
         captureHelper.delegate = self
         captureHelper.pinball = nil
@@ -381,7 +384,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         
         if screenText != "" {
-            self.gameUpdatesConnection.send(updateType + ":" + screenText)
+            // TODO: Replace with Comm class
+            //self.gameUpdatesConnection.send(updateType + ":" + screenText)
             print(updateType + ":" + screenText)
         }
         
