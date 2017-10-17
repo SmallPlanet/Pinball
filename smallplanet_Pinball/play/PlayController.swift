@@ -16,11 +16,11 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    // TODO: Replace with Comm class
-    //static let imageCaptureAddress = "239.1.1.234"
-    //static let imageCapturePort:UInt16 = 45687
-    //var imageCaptureConnection: UDPMulticast!
-    //var scoreConnection: UDPMulticast!
+    let scoreSubscriber:SwiftyZeroMQ.Socket? = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
+        let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+        print("play controller received: \(dataAsString!)")
+    })
+    let trainingImagesPublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_TrainingImages)
 
     let playAndCapture = true
     
@@ -160,8 +160,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         dataPacket.append(startButton)
         dataPacket.append(ballKicker)
         
-        // TODO: Replace with Comm class
-        //imageCaptureConnection.send(dataPacket)
+        try! trainingImagesPublisher?.send(data: dataPacket)
         
         print("send image: \(leftButton), \(rightButton), \(startButton), \(ballKicker)")
     }
@@ -191,14 +190,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegateWantsPlayImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
-        
-        // TODO: Replace with Comm class
-        //imageCaptureConnection = UDPMulticast(PlayController.imageCaptureAddress, PlayController.imageCapturePort, nil)
-        //scoreConnection = UDPMulticast(ScoreController.gameUpdatesAddress, ScoreController.gameUpdatesPort, { (data) in
-        //    let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
-        //    print("play controller received: \(dataAsString!)")
-        //})
-        
         
         // We allow remote control of gameplay to help "manually" train the AI
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
