@@ -16,6 +16,9 @@ struct Endpoints {
     
     let pub_RemoteControl = "tcp://\(Comm.brokerAddress):60022"
     let sub_RemoteControl = "tcp://\(Comm.brokerAddress):60021"
+    
+    let pub_CoreMLUpdates = "tcp://\(Comm.brokerAddress):60032"
+    let sub_CoreMLUpdates = "tcp://\(Comm.brokerAddress):60031"
 }
 
 class Comm {

@@ -16,11 +16,43 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let scoreSubscriber:SwiftyZeroMQ.Socket? = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
-        let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
-        print("play controller received: \(dataAsString!)")
-    })
+    var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
+    var scoreSubscriber:SwiftyZeroMQ.Socket? = nil
+    
     let trainingImagesPublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_TrainingImages)
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
+            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            print("play controller received: \(dataAsString!)")
+        })
+        
+        remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_CoreMLUpdates, { (data) in
+            let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).appendingPathComponent("pinball.mlmodel")
+            do {
+                try data.write(to: fileURL)
+                
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    self.model = try? VNCoreMLModel(for: pinballModel(contentsOf: fileURL).model)
+                }
+                print("******* UPDATED TO NEW COREML MODEL *******")
+            } catch {
+                print(error)
+            }
+        })
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        try! remoteControlSubscriber?.close()
+        try! scoreSubscriber?.close()
+    }
 
     let playAndCapture = true
     
@@ -233,7 +265,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         // Load the ML model through its generated class
-        model = try? VNCoreMLModel(for: nascar_9190_9288().model)
+        model = try? VNCoreMLModel(for: pinballModel().model)
         
         
         // load the overlay so we can manmually line up the flippers
