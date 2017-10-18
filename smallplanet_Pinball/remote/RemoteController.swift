@@ -15,6 +15,7 @@ import Socket
 
 class RemoteControlServer {
     static let shared = RemoteControlServer()
+    private init() {}
     
     // MARK: - Remote control server
     var ignoreRemoteControlEvents = false

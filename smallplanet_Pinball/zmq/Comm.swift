@@ -33,7 +33,7 @@ class Comm {
     // a poller is a unified interface for checking whether sockets have any information to read, etc
     var poller:SwiftyZeroMQ.Poller
     
-    init() {
+    private init() {
         context = try! SwiftyZeroMQ.Context()
         poller = SwiftyZeroMQ.Poller()
         
