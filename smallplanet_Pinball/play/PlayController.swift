@@ -36,9 +36,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 try data.write(to: fileURL)
                 
                 if FileManager.default.fileExists(atPath: fileURL.path) {
-                    self.model = try? VNCoreMLModel(for: pinballModel(contentsOf: fileURL).model)
+                    let compiledUrl = try MLModel.compileModel(at: fileURL)
+                    let model = try MLModel(contentsOf: compiledUrl)
+                    self.model = try? VNCoreMLModel(for: model)
                 }
-                print("******* UPDATED TO NEW COREML MODEL *******")
             } catch {
                 print(error)
             }
