@@ -28,8 +28,10 @@ def forwarder(endpoint):
         print "forwarder closing..."
     finally:
         pass
-        subscribers.close()
-        publishers.close()
+        if subscribers != None:
+            subscribers.close()
+        if publishers != None:
+            publishers.close()
         context.term()
 
 
@@ -38,4 +40,5 @@ def forwarder(endpoint):
 Process(target=forwarder, args=(comm.endpoint_GameInfo,)).start()
 Process(target=forwarder, args=(comm.endpoint_TrainingImages,)).start()
 Process(target=forwarder, args=(comm.endpoint_RemoteControl,)).start()
+Process(target=forwarder, args=(comm.endpoint_CoreMLUpdates,)).start()
 
