@@ -8,7 +8,7 @@ import zmq
 #
 # Example: the base port number for GameInfo updates is 60000; subscribers connec to 60001 and publishers connect to 60002
 
-serverName = "ServerML"
+serverName = "127.0.0.1"
 
 endpoint_GameInfo = "tcp://*:6000"
 endpoint_pub_GameInfo = endpoint_GameInfo.replace("*", serverName)+"2"
@@ -22,7 +22,9 @@ endpoint_RemoteControl = "tcp://*:6002"
 endpoint_pub_RemoteControl = endpoint_RemoteControl.replace("*", serverName)+"2"
 endpoint_sub_RemoteControl = endpoint_RemoteControl.replace("*", serverName)+"1"
 
-
+endpoint_CoreMLUpdates = "tcp://*:6003"
+endpoint_pub_CoreMLUpdates = endpoint_CoreMLUpdates.replace("*", serverName)+"2"
+endpoint_sub_CoreMLUpdates = endpoint_CoreMLUpdates.replace("*", serverName)+"1"
 
 
 
@@ -30,10 +32,9 @@ context = zmq.Context()
 poller = zmq.Poller()
 socket2callback = {}
 
-
 def publisher(endpoint):
     socket = context.socket(zmq.PUB)
-    socket.bind(endpoint)
+    socket.connect(endpoint)
     return socket
 
 def subscriber(endpoint, func):

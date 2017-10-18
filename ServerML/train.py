@@ -10,12 +10,17 @@ import images
 import numpy as np
 import os
 import gc
+import comm
 
-batch_size = 64
-epochs = 3
+import coremltools   
+import h5py
+
+
+batch_size = 10
+epochs = 1
 
 train_path = "./memory/"
-train_max_size = 0
+train_max_size = 50
 
 # create the model
 print("Generating the CNN model...")
@@ -37,46 +42,69 @@ datagen = ImageDataGenerator(featurewise_center=False,
                              height_shift_range=0.02,
                              )
 
+coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
+
+def read_file(path):
+    with open(path, 'rb') as f:
+        return f.read()
+
 def Learn():
 
-    print("Load random selection of memories...")
+    print("Load random selection of long term memories...")
     train_imgs = images.generate_image_array(train_path, train_max_size)
     train_labels = []
     
-    # cyclic learning rate
-    clr = CyclicLR(base_lr=0.001, max_lr=0.006,
-                            step_size=(len(train_imgs) // batch_size * 4), mode='exp_range',
-                            gamma=0.99994)
-    
     images.load_images(train_imgs, train_labels, train_path, train_max_size)
-
-    # free up whatever memory we can before training
-    gc.collect()
-
-    # first let's train the network on high accuracy on our unaltered images
-    print("Training the network stage 1...")
-    model.fit_generator(datagen.flow(train_imgs, train_labels, batch_size=batch_size),
-                        steps_per_epoch=len(train_imgs) // batch_size,
-                        epochs=epochs,
-                        callbacks=[clr,
-                                   ModelCheckpoint('model.h5', save_best_only=True)]
-                        )
-    #model.{epoch:02d}-{val_loss:.2f}.h5
-
-
-    # then let's train the network on the altered images
-    print("Training the network stage 2...")
-    model.fit(train_imgs, train_labels,
-              batch_size=batch_size,
-              epochs=epochs,
-              shuffle=True,
-              verbose=1,
-              callbacks=[clr,
-                         ModelCheckpoint('model.h5', save_best_only=True)],
-              )
     
-    print("Training finished.")
+    if len(train_imgs) > batch_size:
+        
+        # cyclic learning rate
+        clr = CyclicLR(base_lr=0.001, max_lr=0.006,
+                                step_size=(len(train_imgs) // batch_size * 4), mode='exp_range',
+                                gamma=0.99994)
 
+        # free up whatever memory we can before training
+        gc.collect()
+
+        # first let's train the network on high accuracy on our unaltered images
+        #print("Training the network stage 1...")
+        #model.fit_generator(datagen.flow(train_imgs, train_labels, batch_size=batch_size),
+        #                    steps_per_epoch=len(train_imgs) // batch_size,
+        #                    epochs=epochs,
+        #                    callbacks=[clr,
+        #                               ModelCheckpoint('model.h5', save_best_only=True)]
+        #                    )
+
+        # then let's train the network on the altered images
+        print("Training the network stage 2...")
+        model.fit(train_imgs, train_labels,
+                  batch_size=batch_size,
+                  epochs=epochs,
+                  shuffle=True,
+                  verbose=1,
+                  callbacks=[clr],
+                  )
+        
+        model.save("model.h5")
+        
+        print("Training finished...")
+        
+        output_labels = ['left','right','start','ballkicker'] 
+        coreml_model = coremltools.converters.keras.convert('model.h5',input_names='image',image_input_names = 'image',class_labels = output_labels)   
+        coreml_model.author = 'Rocco Bowling'   
+        coreml_model.short_description = 'RL Pinball model'
+        coreml_model.input_description['image'] = 'Image of the play area of the pinball machine'
+        coreml_model.save('pinballModel.mlmodel')
+
+        print("Conversion to coreml finished...")
+        
+        
+        modelBytes = read_file("pinballModel.mlmodel")        
+        coreMLPublisher.send(modelBytes)
+        
+        print("Published new coreml model")
+        
+        
 
 
 

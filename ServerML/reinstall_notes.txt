@@ -104,8 +104,8 @@ Install Ubuntu from scratch ML box:
 ** install tensorflow-gpu (v1.1.0)
 	pip install tensorflow-gpu==1.1.0
 	
-** install keras (v2.0.4)
-	pip install keras==2.0.4
+** install keras (v2.0.6)
+	pip install keras==2.0.6
 	
 ** install coreml tools
 	pip install coremltools

@@ -1,11 +1,11 @@
 from __future__ import division
 
 import comm
+import forwarder
 import time
 import train
 import uuid
 import random
-import forwarder
 import images
 import struct
 import os
@@ -75,14 +75,14 @@ class Memory:
         
         
         # sort the long term memory such that the lowest diff score memory is first
-        longTermMemory.sort(reverse=False, key=getMemoryKey)
+        longTermMemory.sort(reverse=False, key=GetMemoryKey)
         
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
         if len(longTermMemory) == 0 or self.differentialScore > longTermMemory[0].differentialScore:
             print("  -> long term memory:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
             
             longTermMemory.append(self)
-            longTermMemory.sort(reverse=False, key=getMemoryKey)
+            longTermMemory.sort(reverse=False, key=GetMemoryKey)
             
             self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, self.differentialScore, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
             print (self.filePath)
@@ -101,7 +101,7 @@ class Memory:
             longTermMemory.remove(memory)
         
 
-def getMemoryKey(item):
+def GetMemoryKey(item):
     return item.differentialScore
 
 def LoadLongTermMemory():
@@ -112,7 +112,7 @@ def LoadLongTermMemory():
         
         longTermMemory.append(Memory(img_path, None, labels[0], labels[1], labels[2], labels[3], labels[4]))
     
-    longTermMemory.sort(reverse=True, key=getMemoryKey)
+    longTermMemory.sort(reverse=True, key=GetMemoryKey)
     print("loaded " + str(len(longTermMemory)) + " memories from disk")
     print(longTermMemory)
         
@@ -139,6 +139,8 @@ def SimulateGameplay():
         else:
             gameState.currentPlayer = 0
         print("  Player changed: ", gameState.currentPlayer, gameState.scoreByPlayer)
+        
+        train.Learn()
 
 
 
