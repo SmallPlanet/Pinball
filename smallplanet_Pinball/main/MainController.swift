@@ -85,7 +85,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(ScoreController(), animated: true)
+                self.navigationController?.pushViewController(PlayController(), animated: true)
             } else {
                 self.navigationController?.pushViewController(ScoreController(), animated: true)
             }
