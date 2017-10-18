@@ -125,6 +125,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         let testImages = [
+            "bundle://Assets/score/sample/IMG_0116.JPG",
+            "bundle://Assets/score/sample/IMG_0118.JPG",
+            "bundle://Assets/score/sample/IMG_0121.JPG",
+            "bundle://Assets/score/sample/IMG_0123.JPG",
             "bundle://Assets/score/sample/IMG_0081.JPG",
             "bundle://Assets/score/sample/IMG_0089.JPG",
             "bundle://Assets/score/sample/IMG_0094.JPG",
@@ -134,11 +138,17 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             "bundle://Assets/score/sample/IMG_0102.JPG",
             "bundle://Assets/score/sample/IMG_0103.JPG",
             "bundle://Assets/score/sample/IMG_0106.JPG",
-            "bundle://Assets/score/sample/IMG_0112.JPG",
             "bundle://Assets/score/sample/IMG_0115.JPG",
+            "bundle://Assets/score/sample/IMG_0124.JPG",
+            "bundle://Assets/score/sample/IMG_0125.JPG",
+            "bundle://Assets/score/sample/IMG_0126.JPG",
         ]
         
         let testResults = [
+            "1,5130",
+            "1,726840",
+            "1,2089420",
+            "2,391970",
             "PUSH START",
             "1669770",
             "1872560",
@@ -148,8 +158,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             "2,445570",
             "3,0",
             "3,79040",
-            "4",
             "1,354440",
+            "2,239450",
+            "3,84170",
+            "2,1764740",
         ]
         
         var numCorrect = 0
@@ -244,7 +256,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
     func ocrScore(_ dotmatrix:[UInt8]) -> (Int,Bool) {
-        var score = 0
+        var score:Int = 0
         
         
         // scan from left to right, top to bottom and try and
@@ -339,16 +351,161 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
     
-    // multiplayer score is interesting; the current player's score has bigger text then the not current player,
+    
+    
+    // two player score is interesting, its for 2 players only; the current player's score has bigger text then the not current player,
     // and the x,y location of the score match will tell which player is the current player
-    func ocrMPScore(_ dotmatrix:[UInt8]) -> (Int,Int,Bool) {
-        var score = 0
+    func ocrTPScore(_ dotmatrix:[UInt8]) -> (Int,Int,Bool) {
+        var score:Int = 0
         
         
         // scan from left to right, top to bottom and try and
         // identify score numbers of 90%+ accuracy
         var next_valid_y = 0
-        let accuracy = 0.96
+        let accuracy = 0.98
+        var didMatchSomething = false
+        var matchX = 0, matchY = 0
+        var playerMatched = 0
+        
+        for y in 0..<dotheight {
+            
+            if y < next_valid_y {
+                continue
+            }
+            
+            for x in 0..<dotwidth {
+                if ocrMatch(tp_score0, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
+                    score = score * 10 + 0
+                    next_valid_y = y + tp_score0.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score1, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
+                    score = score * 10 + 1
+                    next_valid_y = y + tp_score1.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score2, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
+                    score = score * 10 + 2
+                    next_valid_y = y + tp_score2.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score3, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
+                    score = score * 10 + 3
+                    next_valid_y = y + tp_score3.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score4, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
+                    score = score * 10 + 4
+                    next_valid_y = y + tp_score4.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score5, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
+                    score = score * 10 + 5
+                    next_valid_y = y + tp_score5.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score6, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
+                    score = score * 10 + 6
+                    next_valid_y = y + tp_score6.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score7, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
+                    score = score * 10 + 7
+                    next_valid_y = y + tp_score7.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score8, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
+                    score = score * 10 + 8
+                    next_valid_y = y + tp_score8.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(tp_score9, accuracy, x, y, 15, dotmatrix) {
+                    if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
+                    score = score * 10 + 9
+                    next_valid_y = y + tp_score9.count / 15
+                    if didMatchSomething == false {
+                        matchX = x
+                        matchY = y
+                    }
+                    didMatchSomething = true
+                    break
+                }
+            }
+        }
+        
+        if matchX >= 15 {
+            playerMatched = 1
+        } else {
+            playerMatched = 2
+        }
+        
+        return (playerMatched,score,didMatchSomething)
+    }
+    
+    // multiplayer score is interesting, its for 3-4 players only; the current player's score has bigger text then the not current player,
+    // and the x,y location of the score match will tell which player is the current player
+    func ocrMPScore(_ dotmatrix:[UInt8]) -> (Int,Int,Bool) {
+        var score:Int = 0
+        
+        
+        // scan from left to right, top to bottom and try and
+        // identify score numbers of 90%+ accuracy
+        var next_valid_y = 0
+        let accuracy = 0.98
         var didMatchSomething = false
         var matchX = 0, matchY = 0
         var playerMatched = 0
@@ -549,42 +706,55 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
         } else {
             
-            let (mpPlayer, mpScore, scoreWasFound) = self.ocrMPScore(dotmatrix)
+            let (tpPlayer, tpScore, scoreWasFound) = self.ocrTPScore(dotmatrix)
             if scoreWasFound {
-                currentPlayer = mpPlayer
-                if mpScore > lastHighScoreByPlayer[currentPlayer] {
+                currentPlayer = tpPlayer-1
+                if tpScore > lastHighScoreByPlayer[currentPlayer] {
                     updateType = "m"
-                    screenText = "\(currentPlayer),\(mpScore)"
+                    screenText = "\(currentPlayer+1),\(tpScore)"
                     
-                    lastHighScoreByPlayer[currentPlayer] = mpScore
+                    lastHighScoreByPlayer[currentPlayer] = tpScore
                 }
-                
             } else {
-            
-                // if this is not a score, check for other things...
-                let gameover = self.ocrGameOver(dotmatrix)
-                if gameover {
-                    updateType = "x"
-                    screenText = "GAME OVER"
-                    
-                    ResetGame()
-                }
                 
-                
-                let pushstart = self.ocrPushStart(dotmatrix)
-                if pushstart {
-                    updateType = "b"
-                    screenText = "PUSH START"
+                let (mpPlayer, mpScore, scoreWasFound) = self.ocrMPScore(dotmatrix)
+                if scoreWasFound {
+                    currentPlayer = mpPlayer-1
+                    if mpScore > lastHighScoreByPlayer[currentPlayer] {
+                        updateType = "m"
+                        screenText = "\(currentPlayer+1),\(mpScore)"
+                        
+                        lastHighScoreByPlayer[currentPlayer] = mpScore
+                    }
                     
-                    ResetGame()
-                }
-                
-                let playerup = self.ocrPlayerUp(dotmatrix)
-                if playerup >= 1 {
-                    updateType = "p"
-                    screenText = "\(playerup)"
+                } else {
+ 
+                    // if this is not a score, check for other things...
+                    let gameover = self.ocrGameOver(dotmatrix)
+                    if gameover {
+                        updateType = "x"
+                        screenText = "GAME OVER"
+                        
+                        ResetGame()
+                    }
                     
-                    currentPlayer = playerup
+                    
+                    let pushstart = self.ocrPushStart(dotmatrix)
+                    if pushstart {
+                        updateType = "b"
+                        screenText = "PUSH START"
+                        
+                        ResetGame()
+                    }
+                    
+                    /*
+                    let playerup = self.ocrPlayerUp(dotmatrix)
+                    if playerup >= 1 {
+                        updateType = "p"
+                        screenText = "\(playerup)"
+                     
+                        currentPlayer = playerup-1
+                    }*/
                 }
             }
         }
@@ -751,6 +921,117 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
     
     
+    fileprivate var tp_score0: [UInt8] = [
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,
+        1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        ]
+    
+    fileprivate var tp_score1: [UInt8] = [
+        1,1,1,0,0,0,0,0,0,0,0,0,1,0,0,
+        1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+        ]
+    
+    fileprivate var tp_score2: [UInt8] = [
+        1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,1,1,1,1,1,1,1,0,
+        ]
+    
+    fileprivate var tp_score3: [UInt8] = [
+        0,1,1,1,1,0,0,0,0,0,1,1,1,1,0,
+        1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,
+        1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,
+        ]
+    
+    fileprivate var tp_score4: [UInt8] = [
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+        0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        ]
+    
+    fileprivate var tp_score5: [UInt8] = [
+        1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,
+        0,1,1,1,1,1,1,1,0,0,0,0,1,1,1,
+        ]
+    
+    fileprivate var tp_score6: [UInt8] = [
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,0,0,1,1,1,1,0,
+        ]
+    
+    fileprivate var tp_score7: [UInt8] = [
+        1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,
+        0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,
+        0,0,0,0,1,1,1,1,1,1,1,0,1,1,1,
+        0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,
+        ]
+    
+    fileprivate var tp_score8: [UInt8] = [
+        0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,
+        ]
+    
+    fileprivate var tp_score9: [UInt8] = [
+        0,1,1,1,1,0,0,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+        ]
+    
+    
+    
     fileprivate var mp_score0: [UInt8] = [
         0,1,1,1,1,1,1,1,1,1,1,0,
         1,1,1,1,1,1,1,1,1,1,1,1,
@@ -769,13 +1050,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         ]
     
     fileprivate var mp_score2: [UInt8] = [
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,0,0,0,1,1,1,0,
+        1,1,1,1,1,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,0,0,0,0,1,1,
+        1,1,0,0,1,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,1,0,0,1,1,
+        1,1,0,0,0,0,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,1,1,1,1,0,
         ]
     
     fileprivate var mp_score3: [UInt8] = [
@@ -809,13 +1090,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         ]
     
     fileprivate var mp_score6: [UInt8] = [
+        0,1,1,1,1,1,1,1,1,1,1,0,
         1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,
         ]
     
     fileprivate var mp_score7: [UInt8] = [
@@ -829,13 +1110,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         ]
     
     fileprivate var mp_score8: [UInt8] = [
+        0,1,1,1,1,1,0,1,1,1,1,0,
         1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
+        1,1,0,0,0,1,1,0,0,0,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,1,1,1,1,0,
         ]
     
     fileprivate var mp_score9: [UInt8] = [
