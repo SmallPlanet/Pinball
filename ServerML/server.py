@@ -1,3 +1,5 @@
+from __future__ import division
+
 import comm
 import time
 import train
@@ -9,16 +11,28 @@ import struct
 import os
 import glob
 
+# The goal here is to distribute the points earned fairly to the actions taken. As such,
+# we need to assign only the point earned and not amny more. For example, if 5 actions
+# were take in quick succession and over the next N seconds that resulted in a score
+# increase of 500 pts, then that 500 pts needs to be distrubted somehow across those
+# 5 actions, and NOT each action gets 500 pts
+#
+# This can be accomplished but the scoreDrainByPlayer; each time some points are assigned
+# to an action, this value increases by the same so we can calculate the amount of 
+# unassigned points there are left to assign
+
 shortTermMemoryDuration = 3
 longTermMemoryMaxSize = 100
 
 class GameStateInfo:
     currentPlayer = 0
     scoreByPlayer = [-1,-1,-1,-1]
+    scoreDrainByPlayer = [0,0,0,0]
     
     def Reset(self):
         currentPlayer = 0
         scoreByPlayer = [-1,-1,-1,-1]
+        scoreDrainByPlayer = [0,0,0,0]
 
 
 gameState = GameStateInfo()
@@ -43,16 +57,29 @@ class Memory:
         self.filePath = filePath
     
     
-    def CommitMemory(self):
+    def CommitMemory(self, pointScale):
         
-        self.differentialScore = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
+        # calculate the total number of points scored during this memory's unique time frame
+        totalPointsPossible = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
+        
+        # multiply the total points possible by the pointScale, this helps ensure one memory does not
+        # hog all of the points
+        totalPointsPossible = totalPointsPossible * pointScale
+        
+        # drain points from the point pool up to totalPointsPossible, without exceeding the pool limits
+        self.differentialScore = 0
+        while self.differentialScore < totalPointsPossible and gameState.scoreDrainByPlayer[gameState.currentPlayer] < gameState.scoreByPlayer[gameState.currentPlayer]:
+            self.differentialScore += 1
+            gameState.scoreDrainByPlayer[gameState.currentPlayer] += 1
+        
+        
         
         # sort the long term memory such that the lowest diff score memory is first
         longTermMemory.sort(reverse=False, key=getMemoryKey)
         
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if self.differentialScore > longTermMemory[0].differentialScore:
-            print("  -> long term memory:", len(self.jpeg), self.left, self.right, self.start, self.ballKicker)
+        if len(longTermMemory) == 0 or self.differentialScore > longTermMemory[0].differentialScore:
+            print("  -> long term memory:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
             
             longTermMemory.append(self)
             longTermMemory.sort(reverse=False, key=getMemoryKey)
@@ -63,8 +90,11 @@ class Memory:
             f = open(self.filePath, 'wb')
             f.write(x.jpeg)
             f.close()
+        else:
+            print("  -> waste bin:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
         
-        # Now we need to ensure our long term memory does not exceed our established maximum
+        # Now we need to ensure our long term memory does not exceed our established maximum, so forget
+        # the least valuable memories until we are under the maximum
         while len(longTermMemory) > longTermMemoryMaxSize:
             memory = longTermMemory[0]
             os.remove(memory.filePath)
@@ -88,12 +118,27 @@ def LoadLongTermMemory():
         
 LoadLongTermMemory()
 
+
+def CommitMemoryArray(array):
+    n = len(array)
+    while len(array) > 0:
+        array[0].CommitMemory(1/n)
+        del array[0]
+
 def SimulateGameplay():
-    if random.random() < 0.01:
-        
+    if random.random() < 0.05:
         # randomly increase our score
         gameState.scoreByPlayer[gameState.currentPlayer] += random.random() * 100
         print("  Simulated scores: ", gameState.scoreByPlayer)
+    
+    if random.random() < 0.01:
+        # randomly change the player
+        CommitMemoryArray(shortTermMemory)
+        if gameState.currentPlayer == 0:
+            gameState.currentPlayer = 1
+        else:
+            gameState.currentPlayer = 0
+        print("  Player changed: ", gameState.currentPlayer, gameState.scoreByPlayer)
 
 
 
@@ -102,20 +147,33 @@ def HandleGameInfo(msg):
     #print(msg) 
     parts = msg.split(":")
     if len(parts) == 2:
+        # single player score
         if parts[0] == 's':
             gameState.scoreByPlayer[gameState.currentPlayer] = int(parts[1])
             print("  Received scores: ", gameState.scoreByPlayer)
+            
+        # multiplayer scoring, includes current player as the first item and score as second item
         if parts[0] == 'm':
             parts2 = parts[1].split(",")
-            gameState.currentPlayer = int(parts2[0])-1
+            newPlayer = int(parts2[0])-1
+            if newPlayer != gameState.currentPlayer:
+                CommitMemoryArray(shortTermMemory)
+                gameState.currentPlayer = newPlayer
             gameState.scoreByPlayer[gameState.currentPlayer] = int(parts2[1])
             print("  Received scores: ", gameState.scoreByPlayer)
+            
+        # start of new player turn
         if parts[0] == 'p':
+            CommitMemoryArray(shortTermMemory)
             gameState.currentPlayer = int(parts[1])-1
             print("  Player " + parts[1] + " is up!")
+            
+        # game over
         if parts[0] == 'x':
             gameState.Reset()
             print("  Received game over")
+        
+        # push start
         if parts[0] == 'b':
             gameState.Reset()
             print("  Received begin new game")
@@ -160,14 +218,15 @@ while True:
     currentEpoc = time.time()
     
     # 1) gather all of the elapsed memories into one array
+    elapsedShortTermMemories = []
     for i in xrange(len(shortTermMemory) - 1, -1, -1):
         x = shortTermMemory[i]
         if x.startEpoc + shortTermMemoryDuration < currentEpoc:
-            x.CommitMemory()
+            elapsedShortTermMemories.append(x)
             del shortTermMemory[i]
     
     #2) for all of the elapsed memories, commit them with the evenly distributed score gains
-    
+    CommitMemoryArray(elapsedShortTermMemories)
     
     
     # TODO: When current player changes, or when current player ball changes, we should
@@ -178,7 +237,7 @@ while True:
     
     
     # NOTE: Gameplay simulator, useful for self-testing when not near the pinball machine
-    #SimulateGameplay()
+    SimulateGameplay()
 
 
 
