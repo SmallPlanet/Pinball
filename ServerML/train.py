@@ -59,7 +59,6 @@ def Learn():
                         steps_per_epoch=len(train_imgs) // batch_size,
                         epochs=epochs,
                         callbacks=[clr,
-                                    em,
                                    ModelCheckpoint('model.h5', save_best_only=True)]
                         )
     #model.{epoch:02d}-{val_loss:.2f}.h5
@@ -73,7 +72,6 @@ def Learn():
               shuffle=True,
               verbose=1,
               callbacks=[clr,
-                         em,
                          ModelCheckpoint('model.h5', save_best_only=True)],
               )
     

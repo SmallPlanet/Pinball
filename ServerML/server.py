@@ -4,7 +4,10 @@ import train
 import uuid
 import random
 import forwarder
+import images
 import struct
+import os
+import glob
 
 shortTermMemoryDuration = 3
 longTermMemoryMaxSize = 100
@@ -21,32 +24,69 @@ class GameStateInfo:
 gameState = GameStateInfo()
 
 shortTermMemory = []
+longTermMemory = []
 
 class Memory:
+    
+    def __repr__(self):
+        return '%d:%d,%d,%d,%d' % (self.differentialScore, self.left, self.right, self.start, self.ballKicker)
         
-    def __init__(self, jpeg, left, right, start, ballKicker):
+    def __init__(self, filePath=None, jpeg=None, diffScore=0, left=None, right=None, start=None, ballKicker=None):
         self.startEpoc = time.time()
         self.startScore = gameState.scoreByPlayer[gameState.currentPlayer]
+        self.differentialScore = diffScore
         self.jpeg = jpeg
         self.left = left
         self.right = right
         self.start = start
         self.ballKicker = ballKicker
+        self.filePath = filePath
+    
     
     def CommitMemory(self):
         
-        actualScore = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
+        self.differentialScore = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
         
-        # TODO: make this smarter, we want to remember the top X high scoring memories?
-        if actualScore > 0:
+        # sort the long term memory such that the lowest diff score memory is first
+        longTermMemory.sort(reverse=False, key=getMemoryKey)
+        
+        # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
+        if self.differentialScore > longTermMemory[0].differentialScore:
             print("  -> long term memory:", len(self.jpeg), self.left, self.right, self.start, self.ballKicker)
             
-            savePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, actualScore, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
-            print (savePath)
+            longTermMemory.append(self)
+            longTermMemory.sort(reverse=False, key=getMemoryKey)
+            
+            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, self.differentialScore, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
+            print (self.filePath)
         
-            f = open(savePath, 'wb')
+            f = open(self.filePath, 'wb')
             f.write(x.jpeg)
             f.close()
+        
+        # Now we need to ensure our long term memory does not exceed our established maximum
+        while len(longTermMemory) > longTermMemoryMaxSize:
+            memory = longTermMemory[0]
+            os.remove(memory.filePath)
+            longTermMemory.remove(memory)
+        
+
+def getMemoryKey(item):
+    return item.differentialScore
+
+def LoadLongTermMemory():
+    all_img_paths = glob.glob(os.path.join(train.train_path, '*.jpg'))
+    
+    for img_path in all_img_paths:
+        labels = images.get_labels_and_score(img_path)
+        
+        longTermMemory.append(Memory(img_path, None, labels[0], labels[1], labels[2], labels[3], labels[4]))
+    
+    longTermMemory.sort(reverse=True, key=getMemoryKey)
+    print("loaded " + str(len(longTermMemory)) + " memories from disk")
+    print(longTermMemory)
+        
+LoadLongTermMemory()
 
 def SimulateGameplay():
     if random.random() < 0.01:
@@ -105,7 +145,7 @@ def HandleTrainingImages(msg):
     # save this in memory for x number of seconds, after which tag it with how much the
     # score changed and then save it to long term memory if it good enough to do so
     print("  -> short term memory:", len(jpeg), left, right, start, ballKicker)
-    shortTermMemory.append(Memory(jpeg, left, right, start, ballKicker))
+    shortTermMemory.append(Memory(None, jpeg, 0, left, right, start, ballKicker))
     
 comm.subscriber(comm.endpoint_sub_TrainingImages, HandleTrainingImages)
 
