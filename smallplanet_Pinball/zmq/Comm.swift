@@ -28,7 +28,7 @@ class Comm {
     static let shared = Comm()
     static let endpoints = Endpoints()
     
-    static let brokerAddress = "192.168.1.133"
+    static let brokerAddress = "ServerML"
     
     // the main 0MQ context, controls all sockets, etc
     var context:SwiftyZeroMQ.Context

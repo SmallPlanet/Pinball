@@ -90,15 +90,22 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // find the results which match each flipper
             var leftObservation:VNClassificationObservation? = nil
             var rightObservation:VNClassificationObservation? = nil
+            var ballkickerObservation:VNClassificationObservation? = nil
             
             for result in results {
                 if result.identifier == "left" {
                     leftObservation = result
                 } else if result.identifier == "right" {
                     rightObservation = result
+                } else if result.identifier == "ballkicker" {
+                    ballkickerObservation = result
                 }
             }
             
+            // TODO: For now we're neutered the ability for the AI to affect the machine
+            
+            
+            /*
             // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
             // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
             // (basically trying to handle small false positives)
@@ -153,7 +160,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(leftObservation!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(rightObservation!.identifier), \(fps) fps"
             DispatchQueue.main.async {
                 self?.statusLabel.label.text = confidence
-            }
+            }*/
         }
         
         // Run the Core ML classifier on global dispatch queue
