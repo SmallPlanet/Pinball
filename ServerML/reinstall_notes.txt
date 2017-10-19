@@ -115,3 +115,47 @@ Install Ubuntu from scratch ML box:
 	
 ** install zmq
 	pip install pyzmq-static
+
+** install zeroconf hostname advertiser
+	sudo apt-get install avahi-daemon
+
+** set up network bonding:
+	sudo apt-get install ifenslave
+	
+	sudo vi /etc/modules
+		(make sure line "bonding" exists)
+	
+	
+	sudo vi /etc/network/interfaces
+	
+		(make the file look liks this)
+		auto lo
+		iface lo inet loopback
+
+		auto bond0
+		iface bond0 inet manual
+		  post-up ifenslave bond0 eth0 wlan0
+		  post-up dhclient3 -e IF_METRIC=100 -pf /var/run/dhclient.bond0.pid -lf /var/lib/dhcp3/dhclient.bond0.leases bond0
+		  pre-down ifenslave -d bond0 eth0 wlan0
+		# Bonding
+		bond-slaves none
+		bond-primary eth0
+		bond-mode active-backup
+		bond-miimon 100
+		bond-downdelay 200
+		bond-updelay 200
+
+		auto wlan0
+		#allow-hotplug wlan0
+		iface wlan0 inet dhcp
+		# Bonding
+		bond-master bond0
+		bond-primary eth0
+		bond-mode active-backup
+
+		auto eth0
+		iface eth0 inet dhcp
+		# Bonding
+		bond-master bond0
+		bond-primary eth0
+		bond-mode active-backup

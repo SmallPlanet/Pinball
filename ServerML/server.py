@@ -146,7 +146,7 @@ def SimulateGameplay():
 
 # messages from OCR app
 def HandleGameInfo(msg):   
-    #print(msg) 
+    print(msg) 
     parts = msg.split(":")
     if len(parts) == 2:
         # single player score
@@ -161,6 +161,8 @@ def HandleGameInfo(msg):
             if newPlayer != gameState.currentPlayer:
                 CommitMemoryArray(shortTermMemory)
                 gameState.currentPlayer = newPlayer
+                train.Learn()
+                
             gameState.scoreByPlayer[gameState.currentPlayer] = int(parts2[1])
             print("  Received scores: ", gameState.scoreByPlayer)
             
@@ -239,7 +241,7 @@ while True:
     
     
     # NOTE: Gameplay simulator, useful for self-testing when not near the pinball machine
-    SimulateGameplay()
+    #SimulateGameplay()
 
 
 
