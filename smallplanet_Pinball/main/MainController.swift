@@ -50,6 +50,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
         }
         
         scoreModeButton.button.add(for: .touchUpInside) {
+            RemoteControlServer.shared.ignoreRemoteControlEvents = true
             self.navigationController?.pushViewController(ScoreController(), animated: true)
         }
         
@@ -85,8 +86,13 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(PlayController(), animated: true)
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    self.navigationController?.pushViewController(PlayController(), animated: true)
+                } else {
+                    self.navigationController?.pushViewController(RemoteController(), animated: true)
+                }
             } else {
+                RemoteControlServer.shared.ignoreRemoteControlEvents = true
                 self.navigationController?.pushViewController(ScoreController(), animated: true)
             }
         })

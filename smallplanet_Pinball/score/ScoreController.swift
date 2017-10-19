@@ -124,72 +124,75 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         super.viewWillAppear(animated)
         
         
-        let testImages = [
-            "bundle://Assets/score/sample/IMG_0116.JPG",
-            "bundle://Assets/score/sample/IMG_0118.JPG",
-            "bundle://Assets/score/sample/IMG_0121.JPG",
-            "bundle://Assets/score/sample/IMG_0123.JPG",
-            "bundle://Assets/score/sample/IMG_0081.JPG",
-            "bundle://Assets/score/sample/IMG_0089.JPG",
-            "bundle://Assets/score/sample/IMG_0094.JPG",
-            "bundle://Assets/score/sample/IMG_0098.JPG",
-            "bundle://Assets/score/sample/IMG_0099.JPG",
-            "bundle://Assets/score/sample/IMG_0100.JPG",
-            "bundle://Assets/score/sample/IMG_0102.JPG",
-            "bundle://Assets/score/sample/IMG_0103.JPG",
-            "bundle://Assets/score/sample/IMG_0106.JPG",
-            "bundle://Assets/score/sample/IMG_0115.JPG",
-            "bundle://Assets/score/sample/IMG_0124.JPG",
-            "bundle://Assets/score/sample/IMG_0125.JPG",
-            "bundle://Assets/score/sample/IMG_0126.JPG",
-        ]
+        if false {
         
-        let testResults = [
-            "1,5130",
-            "1,726840",
-            "1,2089420",
-            "2,391970",
-            "PUSH START",
-            "1669770",
-            "1872560",
-            "1,5130",
-            "1,154440",
-            "2,0",
-            "2,445570",
-            "3,0",
-            "3,79040",
-            "1,354440",
-            "2,239450",
-            "3,84170",
-            "2,1764740",
-        ]
-        
-        var numCorrect = 0
-        
-        for i in 0..<testImages.count {
-            ResetGame()
+            let testImages = [
+                "bundle://Assets/score/sample/IMG_0116.JPG",
+                "bundle://Assets/score/sample/IMG_0118.JPG",
+                "bundle://Assets/score/sample/IMG_0121.JPG",
+                "bundle://Assets/score/sample/IMG_0123.JPG",
+                "bundle://Assets/score/sample/IMG_0081.JPG",
+                "bundle://Assets/score/sample/IMG_0089.JPG",
+                "bundle://Assets/score/sample/IMG_0094.JPG",
+                "bundle://Assets/score/sample/IMG_0098.JPG",
+                "bundle://Assets/score/sample/IMG_0099.JPG",
+                "bundle://Assets/score/sample/IMG_0100.JPG",
+                "bundle://Assets/score/sample/IMG_0102.JPG",
+                "bundle://Assets/score/sample/IMG_0103.JPG",
+                "bundle://Assets/score/sample/IMG_0106.JPG",
+                "bundle://Assets/score/sample/IMG_0115.JPG",
+                "bundle://Assets/score/sample/IMG_0124.JPG",
+                "bundle://Assets/score/sample/IMG_0125.JPG",
+                "bundle://Assets/score/sample/IMG_0126.JPG",
+            ]
             
-            let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
+            let testResults = [
+                "1,5130",
+                "1,726840",
+                "1,2089420",
+                "2,391970",
+                "PUSH START",
+                "1669770",
+                "1872560",
+                "1,5130",
+                "1,154440",
+                "2,0",
+                "2,445570",
+                "3,0",
+                "3,79040",
+                "1,354440",
+                "2,239450",
+                "3,84170",
+                "2,1764740",
+            ]
             
-            let result = ocrReadScreen(testImage!)
+            var numCorrect = 0
             
-            if result != testResults[i] {
-                print("OCR UNIT TEST FAILED: \(result) should be \(testResults[i])")
-            } else {
-                numCorrect = numCorrect + 1
+            for i in 0..<testImages.count {
+                ResetGame()
+                
+                let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
+                
+                let result = ocrReadScreen(testImage!)
+                
+                if result != testResults[i] {
+                    print("OCR UNIT TEST FAILED: \(result) should be \(testResults[i])")
+                } else {
+                    numCorrect = numCorrect + 1
+                }
+                
+                //let cgImage = self.ciContext.createCGImage(testImage!, from: testImage!.extent)
+                //UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
+                //break
             }
             
-            //let cgImage = self.ciContext.createCGImage(testImage!, from: testImage!.extent)
-            //UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
-            //break
+            print("\(numCorrect) correct out of \(testImages.count)")
+            
+            sleep(3)
+            exit(0)
         }
         
-        print("\(numCorrect) correct out of \(testImages.count)")
-        
         ResetGame()
-        
-        //sleep(3)
-        //exit(0)
     }
     
     // MARK: "OCR" code

@@ -35,7 +35,7 @@ class RemoteControlServer {
         remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_RemoteControl, { (data) in
             
             if self.ignoreRemoteControlEvents {
-                return;
+                return
             }
             
             let leftButton:Byte = data[0]

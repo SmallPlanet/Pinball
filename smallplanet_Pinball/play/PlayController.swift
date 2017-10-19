@@ -90,7 +90,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // find the results which match each flipper
             var leftObservation:VNClassificationObservation? = nil
             var rightObservation:VNClassificationObservation? = nil
-            var ballkickerObservation:VNClassificationObservation? = nil
+            var ballKickerObservation:VNClassificationObservation? = nil
             
             for result in results {
                 if result.identifier == "left" {
@@ -98,11 +98,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 } else if result.identifier == "right" {
                     rightObservation = result
                 } else if result.identifier == "ballkicker" {
-                    ballkickerObservation = result
+                    ballKickerObservation = result
                 }
             }
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
+            if leftObservation!.confidence > 0.8 {
+                print("********* FLIP LEFT FLIPPER *********")
+            }
+            if rightObservation!.confidence > 0.8 {
+                print("********* FLIP RIGHT FLIPPER *********")
+            }
+            if ballKickerObservation!.confidence > 0.8 {
+                print("********* BALL KICKER FLIPPER *********")
+            }
+            
             
             
             /*
@@ -234,7 +244,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         // We allow remote control of gameplay to help "manually" train the AI
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonEnd()
-            self.sendCameraFrame()
+            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
@@ -244,7 +254,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.leftButtonEnd()
-            self.sendCameraFrame()
+            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
@@ -254,7 +264,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.startButtonEnd()
-            self.sendCameraFrame()
+            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonDown.rawValue), object:nil, queue:nil) {_ in
@@ -264,7 +274,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerEnd()
-            self.sendCameraFrame()
+            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
