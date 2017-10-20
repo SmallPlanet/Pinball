@@ -114,7 +114,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
             return
         }
         
-        sleep(1)
+        usleep(1000000/3)
         
         try! publisher.send(string: heartbeatString)
 

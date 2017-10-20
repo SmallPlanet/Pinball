@@ -77,7 +77,7 @@ class Comm {
             // Note: we're connecting to a forwarder, we are not the bind-er itself
             try socket.connect(endpoint)
             
-            sleep(1)
+            usleep(1000000/3)
             
             return socket
         } catch {
@@ -93,7 +93,7 @@ class Comm {
             try socket.connect(endpoint)
             try socket.setSubscribe(nil)
             
-            sleep(1)
+            usleep(1000000/3)
             
             // save our did receive data callback on the socket so we now how to call it later
             socket.userInfo["didReceive"] = didReceive
