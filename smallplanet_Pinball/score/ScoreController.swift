@@ -156,6 +156,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0125.JPG",
                 "bundle://Assets/score/sample/IMG_0126.JPG",
                 "bundle://Assets/score/sample/IMG_0129.JPG",
+                "bundle://Assets/score/sample/IMG_0131.JPG",
             ]
             
             let testResults = [
@@ -177,6 +178,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "3,84170",
                 "2,1764740",
                 "1,559170",
+                "GAME OVER",
             ]
             
             var numCorrect = 0
@@ -213,9 +215,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func ocrGameOver(_ dotmatrix:[UInt8]) -> Bool {
         
-        for y in 29..<33 {
-            for x in 8..<10 {
-                if ocrMatch(game_over, 0.9, x, y, 12, dotmatrix) {
+        for y in 27..<30 {
+            for x in 8..<11 {
+                if ocrMatch(game_over, 0.86, x, y, 12, dotmatrix) {
                     if (verbose >= 1) { print("matched GAME OVER at \(x),\(y)") }
                     return true
                 }
@@ -709,19 +711,35 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             return ""
         }
         let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage))
-        let (score, scoreWasFound) = self.ocrScore(dotmatrix)
         var screenText = ""
         var updateType = ""
         
-        if scoreWasFound {
-            if score > lastHighScoreByPlayer[currentPlayer] {
+        // if this is not a score, check for other things...
+        if screenText == "" &&  self.ocrGameOver(dotmatrix){
+            updateType = "x"
+            screenText = "GAME OVER"
+            
+            ResetGame()
+        }
+        
+        if screenText == "" && self.ocrPushStart(dotmatrix) {
+            updateType = "b"
+            screenText = "PUSH START"
+            
+            ResetGame()
+        }
+        
+        if screenText == "" {
+            let (score, scoreWasFound) = self.ocrScore(dotmatrix)
+            if scoreWasFound && score > lastHighScoreByPlayer[currentPlayer] {
                 updateType = "s"
                 screenText = "\(score)"
                 
                 lastHighScoreByPlayer[currentPlayer] = score
             }
-        } else {
-            
+        }
+        
+        if screenText == "" {
             let (tpPlayer, tpScore, scoreWasFound) = self.ocrTPScore(dotmatrix)
             if scoreWasFound {
                 currentPlayer = tpPlayer-1
@@ -731,51 +749,27 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     lastHighScoreByPlayer[currentPlayer] = tpScore
                 }
-            } else {
-                
-                let (mpPlayer, mpScore, scoreWasFound) = self.ocrMPScore(dotmatrix)
-                if scoreWasFound {
-                    currentPlayer = mpPlayer-1
-                    if mpScore > lastHighScoreByPlayer[currentPlayer] {
-                        updateType = "m"
-                        screenText = "\(currentPlayer+1),\(mpScore)"
-                        
-                        lastHighScoreByPlayer[currentPlayer] = mpScore
-                    }
+            }
+        }
+        
+        if screenText == "" {
+            let (mpPlayer, mpScore, scoreWasFound) = self.ocrMPScore(dotmatrix)
+            if scoreWasFound {
+                currentPlayer = mpPlayer-1
+                if mpScore > lastHighScoreByPlayer[currentPlayer] {
+                    updateType = "m"
+                    screenText = "\(currentPlayer+1),\(mpScore)"
                     
-                } else {
- 
-                    // if this is not a score, check for other things...
-                    let gameover = self.ocrGameOver(dotmatrix)
-                    if gameover {
-                        updateType = "x"
-                        screenText = "GAME OVER"
-                        
-                        ResetGame()
-                    }
-                    
-                    
-                    let pushstart = self.ocrPushStart(dotmatrix)
-                    if pushstart {
-                        updateType = "b"
-                        screenText = "PUSH START"
-                        
-                        ResetGame()
-                    }
-                    
-                    /*
-                    let playerup = self.ocrPlayerUp(dotmatrix)
-                    if playerup >= 1 {
-                        updateType = "p"
-                        screenText = "\(playerup)"
-                     
-                        currentPlayer = playerup-1
-                    }*/
+                    lastHighScoreByPlayer[currentPlayer] = mpScore
                 }
             }
         }
         
         if screenText != "" {
+            
+            let r = Int(arc4random_uniform(4))
+            Sound.play(url: URL(fileURLWithPath:String(bundlePath:"bundle://Assets/sounds/chirp\(r).caf")))
+            
             try! scorePublisher?.send(string: updateType + ":" + screenText)
             print(updateType + ":" + screenText)
         }

@@ -30,6 +30,7 @@
 		464FFE111F96117600790173 /* SocketType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464FFE081F96116700790173 /* SocketType.swift */; };
 		464FFE121F96117600790173 /* SwiftyZeroMQ.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464FFE0A1F96116700790173 /* SwiftyZeroMQ.swift */; };
 		464FFE131F96117600790173 /* ZeroMQError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464FFE0B1F96116700790173 /* ZeroMQError.swift */; };
+		46555A121F9A6AAC0092C20A /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46555A111F9A6AAC0092C20A /* Sound.swift */; };
 		4657149C1F9611CF0021D893 /* libzmq-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 464FFDFE1F96116700790173 /* libzmq-ios.a */; };
 		4657149F1F9611ED0021D893 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4657149E1F9611ED0021D893 /* libc++.tbd */; };
 		465714A21F96156F0021D893 /* Comm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465714A11F9612580021D893 /* Comm.swift */; };
@@ -89,6 +90,7 @@
 		464FFE0A1F96116700790173 /* SwiftyZeroMQ.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftyZeroMQ.swift; sourceTree = "<group>"; };
 		464FFE0B1F96116700790173 /* ZeroMQError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZeroMQError.swift; sourceTree = "<group>"; };
 		464FFE0C1F96116700790173 /* zmq.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = zmq.h; sourceTree = "<group>"; };
+		46555A111F9A6AAC0092C20A /* Sound.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sound.swift; sourceTree = "<group>"; };
 		4657149E1F9611ED0021D893 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		465714A01F96121F0021D893 /* smallplanet_Pinball-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "smallplanet_Pinball-Bridging-Header.h"; sourceTree = "<group>"; };
 		465714A11F9612580021D893 /* Comm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Comm.swift; sourceTree = "<group>"; };
@@ -164,6 +166,7 @@
 				46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */,
 				4632CB101F3B53BE00359AA3 /* AppDelegate.swift */,
 				4632CB141F3B53BE00359AA3 /* Main.storyboard */,
+				46555A111F9A6AAC0092C20A /* Sound.swift */,
 				4632CB171F3B53BE00359AA3 /* Assets.xcassets */,
 				4632CB191F3B53BE00359AA3 /* LaunchScreen.storyboard */,
 				4632CB1C1F3B53BE00359AA3 /* Info.plist */,
@@ -367,6 +370,7 @@
 				465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */,
 				464FFE0E1F96117600790173 /* Poller.swift in Sources */,
 				4637FD601F41E99800A2BC55 /* RemoteController.swift in Sources */,
+				46555A121F9A6AAC0092C20A /* Sound.swift in Sources */,
 				46F0E9DF1F97A5A100288F48 /* pinballModel.mlmodel in Sources */,
 				464FFE121F96117600790173 /* SwiftyZeroMQ.swift in Sources */,
 				46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */,
