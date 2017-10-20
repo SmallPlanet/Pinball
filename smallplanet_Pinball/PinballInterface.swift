@@ -184,34 +184,20 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         findFlipperServer()
     }
     
-    var bonjour = NetServiceBrowser()
-    var services = [NetService]()
-    
     func findFlipperServer() {
-        bonjour.delegate = self
-        bonjour.searchForServices(ofType: "_flipper._tcp.", inDomain: "local.")
+        // Note: hardcoding this for now as
+        // 1) bonjour does not appear to be working with my new Omega network setup
+        // 2) it is now always going to be a well know IP address
+        
+        if client == nil {
+            client = try? Socket.create(family: .inet)
+            hostname = "192.168.3.1"
+            port = Int32(8000)
+            print("attempting to connect to pinball service \(hostname):\(port)")
+            connect()
+        }
     }
     
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        print("found service, resolving addresses")
-        service.delegate = self
-        service.resolve(withTimeout: 2)
-        services.append(service)
-    }
-    
-    func netServiceDidResolveAddress(_ service: NetService) {
-        services.remove(at: services.index(of: service)!)
-        client = try? Socket.create(family: .inet)
-        hostname = service.hostName!
-//        hostname = service.addressStrings.first ?? service.hostName!
-        port = Int32(service.port)
-        print("did resolve service \(hostname):\(port)")
-        connect()
-    }
-    
-    func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
-        print("did not resolve service \(errorDict)")
-    }
     
 }
 

@@ -42,10 +42,21 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     
+    
+    
+    // skip every 3rd(?) frame to try and combat overheating issues
+    var skippedFrame = 0
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
+        
+        skippedFrame -= 1
+        if skippedFrame >= 0 {
+            return
+        }
+        
+        skippedFrame = 3
         
         let scale = image.extent.height / 2448.0
 
@@ -144,6 +155,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0124.JPG",
                 "bundle://Assets/score/sample/IMG_0125.JPG",
                 "bundle://Assets/score/sample/IMG_0126.JPG",
+                "bundle://Assets/score/sample/IMG_0129.JPG",
             ]
             
             let testResults = [
@@ -164,6 +176,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "2,239450",
                 "3,84170",
                 "2,1764740",
+                "1,559170",
             ]
             
             var numCorrect = 0
@@ -368,7 +381,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let accuracy = 0.98
         var didMatchSomething = false
         var matchX = 0, matchY = 0
-        var playerMatched = 0
+        var playerMatched = 1
         
         for y in 0..<dotheight {
             
@@ -511,7 +524,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let accuracy = 0.98
         var didMatchSomething = false
         var matchX = 0, matchY = 0
-        var playerMatched = 0
+        var playerMatched = 1
         
         for y in 0..<dotheight {
             

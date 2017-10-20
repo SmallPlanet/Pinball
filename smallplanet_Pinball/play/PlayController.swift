@@ -104,13 +104,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
             if leftObservation!.confidence > 0.8 {
-                print("********* FLIP LEFT FLIPPER *********")
+                //print("********* FLIP LEFT FLIPPER *********")
             }
             if rightObservation!.confidence > 0.8 {
-                print("********* FLIP RIGHT FLIPPER *********")
+                //print("********* FLIP RIGHT FLIPPER *********")
             }
             if ballKickerObservation!.confidence > 0.8 {
-                print("********* BALL KICKER FLIPPER *********")
+                //print("********* BALL KICKER FLIPPER *********")
             }
             
             
