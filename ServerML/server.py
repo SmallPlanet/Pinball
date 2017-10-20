@@ -143,6 +143,15 @@ def SimulateGameplay():
         train.Learn()
 
 
+# messages from CoreML updates, adding just for debugging
+#def HandleCoreMLUpdate(msg):   
+#    print("HandleCoreMLUpdate: ")
+#comm.subscriber(comm.endpoint_sub_CoreMLUpdates, HandleCoreMLUpdate)
+
+# messages from Remote control app, adding just for debugging
+#def HandleRemoteControlInfo(msg):   
+#    print("HandleRemoteControlInfo: ")
+#comm.subscriber(comm.endpoint_sub_RemoteControl, HandleRemoteControlInfo)
 
 # messages from OCR app
 def HandleGameInfo(msg):   

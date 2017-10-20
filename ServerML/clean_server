@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm -f ./memory/*.jpg
+rm -f pinballModel.mlmodel
+rm -f model.h5
