@@ -14,8 +14,8 @@ struct Endpoints {
     let pub_TrainingImages = "tcp://\(Comm.brokerAddress):60012"
     let sub_TrainingImages = "tcp://\(Comm.brokerAddress):60011"
     
-    let pub_RemoteControl = "tcp://\(Comm.brokerAddress):60022"
-    let sub_RemoteControl = "tcp://\(Comm.brokerAddress):60021"
+    let pub_RemoteControl = "tcp://\(Comm.brokerAddress):60042"
+    let sub_RemoteControl = "tcp://\(Comm.brokerAddress):60041"
     
     let pub_CoreMLUpdates = "tcp://\(Comm.brokerAddress):60032"
     let sub_CoreMLUpdates = "tcp://\(Comm.brokerAddress):60031"
@@ -28,7 +28,7 @@ class Comm {
     static let shared = Comm()
     static let endpoints = Endpoints()
     
-    static let brokerAddress = "192.168.1.133"
+    static let brokerAddress = "RLServer"
     
     // the main 0MQ context, controls all sockets, etc
     var context:SwiftyZeroMQ.Context
@@ -76,6 +76,9 @@ class Comm {
             
             // Note: we're connecting to a forwarder, we are not the bind-er itself
             try socket.connect(endpoint)
+            
+            sleep(1)
+            
             return socket
         } catch {
             print("Comm error: \(error)")
@@ -89,6 +92,8 @@ class Comm {
             let socket = try context.socket(.subscribe)
             try socket.connect(endpoint)
             try socket.setSubscribe(nil)
+            
+            sleep(1)
             
             // save our did receive data callback on the socket so we now how to call it later
             socket.userInfo["didReceive"] = didReceive

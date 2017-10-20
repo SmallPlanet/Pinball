@@ -23,7 +23,7 @@ class RemoteControlServer {
     var rightButtonState:Byte = 0
     var kickerButtonState:Byte = 0
     var startButtonState:Byte = 0
-    var captureModeEnabledState:Byte = 0
+    var playModeEnabledState:Byte = 0
     
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
         
@@ -35,17 +35,18 @@ class RemoteControlServer {
         remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_RemoteControl, { (data) in
             
             if self.ignoreRemoteControlEvents {
-                return;
+                return
             }
             
             let leftButton:Byte = data[0]
             let rightButton:Byte = data[1]
-            let captureModeEnabled:Byte = data[2]
+            let playModeEnabled:Byte = data[2]
             let kickerButton:Byte = data[3]
             let startButton:Byte = data[4]
+            let resetAllStates:Byte = data[5]
             
             
-            if self.startButtonState != startButton {
+            if self.startButtonState != startButton || resetAllStates == 1 {
                 if startButton == 0 {
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.StartButtonUp.rawValue), object: nil, userInfo: nil)
@@ -58,7 +59,7 @@ class RemoteControlServer {
                 self.startButtonState = startButton
             }
             
-            if self.kickerButtonState != kickerButton {
+            if self.kickerButtonState != kickerButton || resetAllStates == 1 {
                 if kickerButton == 0 {
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
@@ -71,20 +72,20 @@ class RemoteControlServer {
                 self.kickerButtonState = kickerButton
             }
             
-            if self.captureModeEnabledState != captureModeEnabled {
-                if captureModeEnabled == 0 {
+            if self.playModeEnabledState != playModeEnabled || resetAllStates == 1 {
+                if playModeEnabled == 0 {
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.EndPlayMode.rawValue), object: nil, userInfo: nil)
                     }
-                } else if captureModeEnabled == 1 {
+                } else if playModeEnabled == 1 {
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BeginPlayMode.rawValue), object: nil, userInfo: nil)
                     }
                 }
-                self.captureModeEnabledState = captureModeEnabled
+                self.playModeEnabledState = playModeEnabled
             }
             
-            if self.leftButtonState != leftButton {
+            if self.leftButtonState != leftButton || resetAllStates == 1 {
                 if leftButton == 0 {
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
@@ -97,7 +98,7 @@ class RemoteControlServer {
                 self.leftButtonState = leftButton
             }
             
-            if self.rightButtonState != rightButton {
+            if self.rightButtonState != rightButton || resetAllStates == 1 {
                 if rightButton == 0 {
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
@@ -187,6 +188,9 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         self.playButton.button.titleLabel?.textAlignment = .center
         
         UIApplication.shared.isIdleTimerDisabled = true
+        
+        
+        self.resetAllStatesToServer()
     }
     
     func sendButtonStatesToServer() {
@@ -196,6 +200,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         byteArray.append(playModeEnabled)
         byteArray.append(kickerButtonPressed)
         byteArray.append(startButtonPressed)
+        byteArray.append(0)
         
         try! remoteControlPublisher!.send(data:Data(byteArray))
         
@@ -206,6 +211,30 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         }
     }
     
+    func resetAllStatesToServer() {
+        
+        self.leftButtonPressed = 0
+        self.rightButtonPressed = 0
+        self.playModeEnabled = 0
+        self.kickerButtonPressed = 0
+        self.startButtonPressed = 0
+        
+        var byteArray = [Byte]()
+        byteArray.append(0)
+        byteArray.append(0)
+        byteArray.append(0)
+        byteArray.append(0)
+        byteArray.append(0)
+        byteArray.append(1)
+        
+        try! remoteControlPublisher!.send(data:Data(byteArray))
+        
+        if self.playModeEnabled == 1 {
+            self.playButton.button.setTitle("Play Mode\nOn", for:.normal)
+        }else {
+            self.playButton.button.setTitle("Play Mode\nOff", for:.normal)
+        }
+    }
     
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
