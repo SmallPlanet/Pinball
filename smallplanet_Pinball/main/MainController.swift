@@ -83,19 +83,41 @@ class MainController: PlanetViewController, NetServiceDelegate {
             self.navigationController?.popToRootViewController(animated: true)
         }
         
+        // confirm we are connected to the zmq broker correctly
+        let heartbeatString = "heartbeat:\(UUID().uuidString)"
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
-            if #available(iOS 11.0, *) {
-                if UIDevice.current.userInterfaceIdiom == .phone {
-                    self.navigationController?.pushViewController(PlayController(), animated: true)
-                } else {
-                    self.navigationController?.pushViewController(RemoteController(), animated: true)
-                }
-            } else {
-                RemoteControlServer.shared.ignoreRemoteControlEvents = true
-                self.navigationController?.pushViewController(ScoreController(), animated: true)
+        guard let publisher = Comm.shared.publisher(Comm.endpoints.pub_GameInfo) else {
+            return
+        }
+        
+        guard let subscriber1 = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
+            
+            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            if dataAsString == heartbeatString {
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
+                    if #available(iOS 11.0, *) {
+                        if UIDevice.current.userInterfaceIdiom == .phone {
+                            self.navigationController?.pushViewController(PlayController(), animated: true)
+                        } else {
+                            RemoteControlServer.shared.ignoreRemoteControlEvents = true
+                            self.navigationController?.pushViewController(RemoteController(), animated: true)
+                        }
+                    } else {
+                        RemoteControlServer.shared.ignoreRemoteControlEvents = true
+                        self.navigationController?.pushViewController(ScoreController(), animated: true)
+                    }
+                })
             }
-        })
+            
+        }) else {
+            return
+        }
+        
+        sleep(1)
+        
+        try! publisher.send(string: heartbeatString)
+
     }
     
     fileprivate var previewModeButton: Button {
