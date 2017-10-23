@@ -51,4 +51,11 @@
     <Constraint firstItem="permanentButton" firstAttribute="right" secondItem="playButton" secondAttribute="left" constant="-15" />
     <Constraint firstItem="permanentButton" firstAttribute="top" secondItem="startButton" secondAttribute="bottom" constant="15" />
     
+    
+    <Button id="trainButton" title="Train" styleId="ButtonStd" />
+    <Constraint firstItem="trainButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
+    <Constraint firstItem="trainButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.1" />
+    <Constraint firstItem="trainButton" firstAttribute="left" secondItem="playButton" secondAttribute="right" constant="15" />
+    <Constraint firstItem="trainButton" firstAttribute="top" secondItem="kickerButton" secondAttribute="bottom" constant="15" />
+    
 </Scene>
