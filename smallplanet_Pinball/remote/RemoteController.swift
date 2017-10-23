@@ -39,6 +39,10 @@ class RemoteControlServer {
                 return
             }
             
+            if data.count != 7 {
+                return
+            }
+            
             let leftButton:Byte = data[0]
             let rightButton:Byte = data[1]
             let playModeEnabled:Byte = data[2]
@@ -150,6 +154,10 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         
         mainBundlePath = "bundle://Assets/remote/remote.xml"
         loadView()
+        
+        trainButton.button.add(for: .touchUpInside) {
+            try! self.remoteControlPublisher!.send(string:"train")
+        }
         
         leftButton.button.add(for: .touchUpInside) {
             self.leftButtonPressed = 0
@@ -287,6 +295,9 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     }
     internal var permanentButton: Button {
         return mainXmlView!.elementForId("permanentButton")!.asButton!
+    }
+    internal var trainButton: Button {
+        return mainXmlView!.elementForId("trainButton")!.asButton!
     }
     
 }
