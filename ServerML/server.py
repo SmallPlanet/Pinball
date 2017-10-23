@@ -21,8 +21,8 @@ import glob
 # to an action, this value increases by the same so we can calculate the amount of 
 # unassigned points there are left to assign
 
-shortTermMemoryDuration = 3
-longTermMemoryMaxSize = 100
+shortTermMemoryDuration = 1
+longTermMemoryMaxSize = 50000
 
 class GameStateInfo:
     currentPlayer = 0
