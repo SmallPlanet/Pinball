@@ -158,7 +158,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         super.viewWillAppear(animated)
         
         
-        if false {
+        if true {
         
             let testImages = [
                 "bundle://Assets/score/sample/IMG_0116.JPG",
@@ -180,6 +180,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0126.JPG",
                 "bundle://Assets/score/sample/IMG_0129.JPG",
                 "bundle://Assets/score/sample/IMG_0131.JPG",
+                
+                "bundle://Assets/score/sample/IMG_0127.JPG",
+                "bundle://Assets/score/sample/IMG_0130.JPG",
+                "bundle://Assets/score/sample/IMG_0133.JPG",
+                "bundle://Assets/score/sample/IMG_0136.JPG",
+                "bundle://Assets/score/sample/IMG_0140.JPG",
             ]
             
             let testResults = [
@@ -202,6 +208,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "2,1764740",
                 "1,559170",
                 "GAME OVER",
+                
+                "2640400",
+                "1235020",
+                "2489630",
+                "3579830",
+                "1362700",
             ]
             
             var numCorrect = 0
@@ -382,6 +394,102 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
+                    didMatchSomething = true
+                    break
+                }
+            }
+        }
+        
+        return (score,didMatchSomething)
+    }
+    
+    
+    
+    func ocrQuestScore(_ dotmatrix:[UInt8]) -> (Int,Bool) {
+        var score:Int = 0
+        
+        
+        // scan from left to right, top to bottom and try and
+        // identify score numbers of 90%+ accuracy
+        var next_valid_y = 0
+        let accuracy = 0.96
+        var didMatchSomething = false
+        
+        for y in 0..<dotheight {
+            
+            if y < next_valid_y {
+                continue
+            }
+            
+            //for x in 0..<dotwidth {
+            for x in 6..<20 {
+                if ocrMatch(quest_score0, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
+                    score = score * 10 + 0
+                    next_valid_y = y + quest_score0.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score1, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
+                    score = score * 10 + 1
+                    next_valid_y = y + quest_score1.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score2, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
+                    score = score * 10 + 2
+                    next_valid_y = y + quest_score2.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score3, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
+                    score = score * 10 + 3
+                    next_valid_y = y + quest_score3.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score4, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
+                    score = score * 10 + 4
+                    next_valid_y = y + quest_score4.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score5, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
+                    score = score * 10 + 5
+                    next_valid_y = y + quest_score5.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score6, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
+                    score = score * 10 + 6
+                    next_valid_y = y + quest_score6.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score7, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
+                    score = score * 10 + 7
+                    next_valid_y = y + quest_score7.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score8, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
+                    score = score * 10 + 8
+                    next_valid_y = y + quest_score8.count / 8
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(quest_score9, accuracy, x, y, 8, dotmatrix) {
+                    if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
+                    score = score * 10 + 9
+                    next_valid_y = y + quest_score9.count / 8
                     didMatchSomething = true
                     break
                 }
@@ -788,6 +896,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
         }
         
+        if screenText == "" {
+            let (score, scoreWasFound) = self.ocrQuestScore(dotmatrix)
+            if scoreWasFound && score > lastHighScoreByPlayer[currentPlayer] {
+                updateType = "s"
+                screenText = "\(score)"
+                
+                lastHighScoreByPlayer[currentPlayer] = score
+            }
+        }
+        
         if screenText != "" {
             
             let r = Int(arc4random_uniform(4))
@@ -970,6 +1088,84 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
 
     
+    fileprivate var quest_score0: [UInt8] = [
+        0,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,1,1,
+        1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,0,
+        ]
+    
+    fileprivate var quest_score1: [UInt8] = [
+        1,1,0,0,0,1,1,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,0,
+        ]
+    
+    fileprivate var quest_score2: [UInt8] = [
+        1,1,1,1,0,0,1,1,
+        1,1,1,1,1,0,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,0,1,1,1,1,1,
+        1,1,0,0,1,1,1,0,
+        ]
+    
+    fileprivate var quest_score3: [UInt8] = [
+        1,1,0,0,0,0,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,1,1,0,0,1,1,0,
+        ]
+    
+    fileprivate var quest_score4: [UInt8] = [
+        0,0,0,1,1,1,1,1,
+        0,0,0,1,1,1,1,1,
+        0,0,0,1,1,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        ]
+    
+    fileprivate var quest_score5: [UInt8] = [
+        1,1,0,1,1,1,1,1,
+        1,1,0,1,1,1,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,1,1,1,0,1,1,
+        0,1,1,1,0,0,1,1,
+        ]
+    
+    fileprivate var quest_score6: [UInt8] = [
+        1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,1,1,1,0,1,1,
+        0,1,1,1,0,0,1,1,
+        ]
+    
+    fileprivate var quest_score7: [UInt8] = [
+        0,0,0,0,0,0,1,1,
+        1,1,1,1,0,0,1,1,
+        1,1,1,1,1,0,1,1,
+        0,0,0,0,1,1,1,1,
+        0,0,0,0,0,1,1,1,
+        ]
+    
+    fileprivate var quest_score8: [UInt8] = [
+        0,1,1,1,0,1,1,0,
+        1,1,1,1,1,1,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,1,1,1,1,1,1,
+        0,1,1,1,0,1,1,0,
+        ]
+    
+    fileprivate var quest_score9: [UInt8] = [
+        1,1,0,0,1,1,1,0,
+        1,1,0,1,1,1,1,1,
+        1,1,0,1,1,0,1,1,
+        1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,0,
+        ]
     
     fileprivate var tp_score0: [UInt8] = [
         0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
