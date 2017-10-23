@@ -25,6 +25,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
         case BeginPlayMode
         case EndPlayMode
         
+        case PermanentDown
+        case PermanentUp
     }
     
     override func viewDidLoad() {
@@ -114,7 +116,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
             return
         }
         
-        sleep(1)
+        usleep(1000000/3)
         
         try! publisher.send(string: heartbeatString)
 

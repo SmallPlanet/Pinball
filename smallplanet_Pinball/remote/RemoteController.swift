@@ -23,6 +23,7 @@ class RemoteControlServer {
     var rightButtonState:Byte = 0
     var kickerButtonState:Byte = 0
     var startButtonState:Byte = 0
+    var permanentState:Byte = 0
     var playModeEnabledState:Byte = 0
     
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
@@ -43,8 +44,22 @@ class RemoteControlServer {
             let playModeEnabled:Byte = data[2]
             let kickerButton:Byte = data[3]
             let startButton:Byte = data[4]
-            let resetAllStates:Byte = data[5]
+            let permanent:Byte = data[5]
+            let resetAllStates:Byte = data[6]
             
+            
+            if self.permanentState != permanent || resetAllStates == 1 {
+                if permanent == 0 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.PermanentUp.rawValue), object: nil, userInfo: nil)
+                    }
+                } else if permanent == 1 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.PermanentDown.rawValue), object: nil, userInfo: nil)
+                    }
+                }
+                self.permanentState = permanent
+            }
             
             if self.startButtonState != startButton || resetAllStates == 1 {
                 if startButton == 0 {
@@ -122,6 +137,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     let remoteControlPublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_RemoteControl)
 
 
+    var permanentPressed:Byte = 0
     var startButtonPressed:Byte = 0
     var kickerButtonPressed:Byte = 0
     var leftButtonPressed:Byte = 0
@@ -163,6 +179,15 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
             self.sendButtonStatesToServer()
         }
         
+        permanentButton.button.add(for: .touchUpInside) {
+            self.permanentPressed = 0
+            self.sendButtonStatesToServer()
+        }
+        permanentButton.button.add(for: .touchDown) {
+            self.permanentPressed = 1
+            self.sendButtonStatesToServer()
+        }
+        
         
         kickerButton.button.add(for: .touchUpInside) {
             self.kickerButtonPressed = 0
@@ -200,6 +225,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         byteArray.append(playModeEnabled)
         byteArray.append(kickerButtonPressed)
         byteArray.append(startButtonPressed)
+        byteArray.append(permanentPressed)
         byteArray.append(0)
         
         try! remoteControlPublisher!.send(data:Data(byteArray))
@@ -220,6 +246,7 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
         self.startButtonPressed = 0
         
         var byteArray = [Byte]()
+        byteArray.append(0)
         byteArray.append(0)
         byteArray.append(0)
         byteArray.append(0)
@@ -257,6 +284,9 @@ class RemoteController: PlanetViewController, NetServiceBrowserDelegate, NetServ
     }
     internal var startButton: Button {
         return mainXmlView!.elementForId("startButton")!.asButton!
+    }
+    internal var permanentButton: Button {
+        return mainXmlView!.elementForId("permanentButton")!.asButton!
     }
     
 }

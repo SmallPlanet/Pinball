@@ -19,6 +19,9 @@ import h5py
 batch_size = 10
 epochs = 1
 
+permanent_path = "./pmemory/"
+permanent_max_size = 50
+
 train_path = "./memory/"
 train_max_size = 50
 
@@ -56,6 +59,13 @@ def Learn():
     
     images.load_images(train_imgs, train_labels, train_path, train_max_size)
     
+    print("Load random selection of permanent memories...")
+    permanent_imgs = images.generate_image_array(permanent_path, permanent_max_size)
+    permanent_labels = []
+    
+    images.load_images(permanent_imgs, permanent_labels, permanent_path, permanent_max_size)
+    
+    
     if len(train_imgs) > batch_size:
         
         # cyclic learning rate
@@ -67,13 +77,14 @@ def Learn():
         gc.collect()
 
         # first let's train the network on high accuracy on our unaltered images
-        #print("Training the network stage 1...")
-        #model.fit_generator(datagen.flow(train_imgs, train_labels, batch_size=batch_size),
-        #                    steps_per_epoch=len(train_imgs) // batch_size,
-        #                    epochs=epochs,
-        #                    callbacks=[clr,
-        #                               ModelCheckpoint('model.h5', save_best_only=True)]
-        #                    )
+        print("Training the network stage 1...")
+        model.fit(permanent_imgs, permanent_labels,
+                  batch_size=batch_size,
+                  epochs=epochs,
+                  shuffle=True,
+                  verbose=1,
+                  callbacks=[clr],
+                  )
 
         # then let's train the network on the altered images
         print("Training the network stage 2...")
@@ -84,6 +95,7 @@ def Learn():
                   verbose=1,
                   callbacks=[clr],
                   )
+        
         
         model.save("model.h5")
         

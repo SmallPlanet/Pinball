@@ -104,13 +104,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
             if leftObservation!.confidence > 0.8 {
-                print("********* FLIP LEFT FLIPPER *********")
+                //print("********* FLIP LEFT FLIPPER *********")
             }
             if rightObservation!.confidence > 0.8 {
-                print("********* FLIP RIGHT FLIPPER *********")
+                //print("********* FLIP RIGHT FLIPPER *********")
             }
             if ballKickerObservation!.confidence > 0.8 {
-                print("********* BALL KICKER FLIPPER *********")
+                //print("********* BALL KICKER FLIPPER *********")
             }
             
             
@@ -242,6 +242,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         UIApplication.shared.isIdleTimerDisabled = true
         
         // We allow remote control of gameplay to help "manually" train the AI
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.PermanentDown.rawValue), object:nil, queue:nil) {_ in
+            self.sendCameraFrame()
+        })
+        
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonEnd()
             //self.sendCameraFrame()

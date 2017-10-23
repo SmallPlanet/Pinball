@@ -30,18 +30,25 @@
     <Constraint firstItem="playButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
     <Constraint firstItem="playButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.2" />
     <Constraint firstItem="playButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="playButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
+    <Constraint firstItem="playButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="15" />
     
     <Button id="kickerButton" title="Ball Kicker" styleId="ButtonStd" />
     <Constraint firstItem="kickerButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
     <Constraint firstItem="kickerButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.15" />
-    <Constraint firstItem="kickerButton" firstAttribute="left" secondItem="playButton" secondAttribute="right" constant="20" />
+    <Constraint firstItem="kickerButton" firstAttribute="left" secondItem="playButton" secondAttribute="right" constant="15" />
     <Constraint firstItem="kickerButton" firstAttribute="top" secondItem="playButton" secondAttribute="top" constant="0" />
     
     <Button id="startButton" title="Start Game" styleId="ButtonStd" />
     <Constraint firstItem="startButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
     <Constraint firstItem="startButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.15" />
-    <Constraint firstItem="startButton" firstAttribute="right" secondItem="playButton" secondAttribute="left" constant="-20" />
+    <Constraint firstItem="startButton" firstAttribute="right" secondItem="playButton" secondAttribute="left" constant="-15" />
     <Constraint firstItem="startButton" firstAttribute="top" secondItem="playButton" secondAttribute="top" constant="0" />
+    
+    
+    <Button id="permanentButton" title="Permanent" styleId="ButtonStd" />
+    <Constraint firstItem="permanentButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.3" />
+    <Constraint firstItem="permanentButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.1" />
+    <Constraint firstItem="permanentButton" firstAttribute="right" secondItem="playButton" secondAttribute="left" constant="-15" />
+    <Constraint firstItem="permanentButton" firstAttribute="top" secondItem="startButton" secondAttribute="bottom" constant="15" />
     
 </Scene>

@@ -213,10 +213,23 @@ def HandleTrainingImages(msg):
     start = struct.unpack("B", msg[s+2:s+3])[0]
     ballKicker = struct.unpack("B", msg[s+3:s+4])[0]
     
-    # save this in memory for x number of seconds, after which tag it with how much the
-    # score changed and then save it to long term memory if it good enough to do so
-    print("  -> short term memory:", len(jpeg), left, right, start, ballKicker)
-    shortTermMemory.append(Memory(None, jpeg, 0, left, right, start, ballKicker))
+    
+    if left == 0 and left == 0 and left == 0 and left == 0:
+        print("  -> permanent memory:", len(jpeg), left, right, start, ballKicker)
+        
+        # permanent memories get saved automatically to the permanent memory path
+        filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, 999, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
+        print (filePath)
+    
+        f = open(filePath, 'wb')
+        f.write(jpeg)
+        f.close()
+        
+    else:
+        # save this in memory for x number of seconds, after which tag it with how much the
+        # score changed and then save it to long term memory if it good enough to do so
+        print("  -> short term memory:", len(jpeg), left, right, start, ballKicker)
+        shortTermMemory.append(Memory(None, jpeg, 0, left, right, start, ballKicker))
     
 comm.subscriber(comm.endpoint_sub_TrainingImages, HandleTrainingImages)
 
