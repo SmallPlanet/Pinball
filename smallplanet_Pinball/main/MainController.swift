@@ -25,6 +25,8 @@ class MainController: PlanetViewController, NetServiceDelegate {
         case BeginPlayMode
         case EndPlayMode
         
+        case PermanentDown
+        case PermanentUp
     }
     
     override func viewDidLoad() {

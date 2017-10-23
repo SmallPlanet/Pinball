@@ -242,6 +242,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         UIApplication.shared.isIdleTimerDisabled = true
         
         // We allow remote control of gameplay to help "manually" train the AI
+        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.PermanentDown.rawValue), object:nil, queue:nil) {_ in
+            self.sendCameraFrame()
+        })
+        
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonEnd()
             //self.sendCameraFrame()
