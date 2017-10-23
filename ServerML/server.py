@@ -218,7 +218,7 @@ def HandleTrainingImages(msg):
         print("  -> permanent memory:", len(jpeg), left, right, start, ballKicker)
         
         # permanent memories get saved automatically to the permanent memory path
-        filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, 999, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
+        filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.permanent_path, 999, left, right, start, ballKicker, str(uuid.uuid4()))
         print (filePath)
     
         f = open(filePath, 'wb')

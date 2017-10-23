@@ -66,7 +66,7 @@ def Learn():
     images.load_images(permanent_imgs, permanent_labels, permanent_path, permanent_max_size)
     
     
-    if len(train_imgs) > batch_size:
+    if len(train_imgs) > batch_size or len(permanent_imgs) > batch_size:
         
         # cyclic learning rate
         clr = CyclicLR(base_lr=0.001, max_lr=0.006,
@@ -77,25 +77,26 @@ def Learn():
         gc.collect()
 
         # first let's train the network on high accuracy on our unaltered images
-        print("Training the network stage 1...")
-        model.fit(permanent_imgs, permanent_labels,
-                  batch_size=batch_size,
-                  epochs=epochs,
-                  shuffle=True,
-                  verbose=1,
-                  callbacks=[clr],
-                  )
+        if len(permanent_imgs) > batch_size:
+            print("Training the network stage 1...")
+            model.fit(permanent_imgs, permanent_labels,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      shuffle=True,
+                      verbose=1,
+                      callbacks=[clr],
+                      )
 
         # then let's train the network on the altered images
-        print("Training the network stage 2...")
-        model.fit(train_imgs, train_labels,
-                  batch_size=batch_size,
-                  epochs=epochs,
-                  shuffle=True,
-                  verbose=1,
-                  callbacks=[clr],
-                  )
-        
+        if len(train_imgs) > batch_size:
+            print("Training the network stage 2...")
+            model.fit(train_imgs, train_labels,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      shuffle=True,
+                      verbose=1,
+                      callbacks=[clr],
+                      )
         
         model.save("model.h5")
         
