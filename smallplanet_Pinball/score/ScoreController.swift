@@ -62,7 +62,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             return
         }
         
-        skippedFrame = 3
+        skippedFrame = 2
         
         let scale = image.extent.height / 2448.0
         let x = CGFloat(Defaults[.ocr_offsetX])
@@ -158,16 +158,24 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         super.viewWillAppear(animated)
         
         
-        if true {
+        if false {
         
             let testImages = [
+                // two player scores
+                "bundle://Assets/score/sample/IMG_0129.JPG",
                 "bundle://Assets/score/sample/IMG_0116.JPG",
                 "bundle://Assets/score/sample/IMG_0118.JPG",
                 "bundle://Assets/score/sample/IMG_0121.JPG",
                 "bundle://Assets/score/sample/IMG_0123.JPG",
+                
+                // push start
                 "bundle://Assets/score/sample/IMG_0081.JPG",
+                
+                // single player score
                 "bundle://Assets/score/sample/IMG_0089.JPG",
                 "bundle://Assets/score/sample/IMG_0094.JPG",
+                
+                // four player score
                 "bundle://Assets/score/sample/IMG_0098.JPG",
                 "bundle://Assets/score/sample/IMG_0099.JPG",
                 "bundle://Assets/score/sample/IMG_0100.JPG",
@@ -178,9 +186,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0124.JPG",
                 "bundle://Assets/score/sample/IMG_0125.JPG",
                 "bundle://Assets/score/sample/IMG_0126.JPG",
-                "bundle://Assets/score/sample/IMG_0129.JPG",
+
+                // GAME OVER
                 "bundle://Assets/score/sample/IMG_0131.JPG",
                 
+                // quest modes
                 "bundle://Assets/score/sample/IMG_0127.JPG",
                 "bundle://Assets/score/sample/IMG_0130.JPG",
                 "bundle://Assets/score/sample/IMG_0133.JPG",
@@ -189,13 +199,17 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             ]
             
             let testResults = [
+                "1,559170",
                 "1,5130",
                 "1,726840",
                 "1,2089420",
                 "2,391970",
+                
                 "PUSH START",
+                
                 "1669770",
                 "1872560",
+                
                 "1,5130",
                 "1,154440",
                 "2,0",
@@ -206,7 +220,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "2,239450",
                 "3,84170",
                 "2,1764740",
-                "1,559170",
+                
                 "GAME OVER",
                 
                 "2640400",
@@ -325,8 +339,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 continue
             }
             
+            // end early if we get half way across the screen and have found nothing
+            if didMatchSomething == false && y > dotheight/2 {
+                break
+            }
+            
             //for x in 0..<dotwidth {
-            for x in 8..<11 {
+            for x in [8,9,10,11] {
                 if ocrMatch(score0, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
@@ -513,7 +532,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         var next_valid_y = 0
         let accuracy = 0.98
         var didMatchSomething = false
-        var matchX = 0, matchY = 0
+        var matchX = 0
         var playerMatched = 1
         
         for y in 0..<dotheight {
@@ -522,14 +541,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 continue
             }
             
-            for x in 0..<dotwidth {
+            for x in [6,7,8,15,16,17] {
                 if ocrMatch(tp_score0, accuracy, x, y, 15, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + tp_score0.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -540,7 +558,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score1.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -551,7 +568,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score2.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -562,7 +578,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score3.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -573,7 +588,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score4.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -584,7 +598,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score5.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -595,7 +608,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score6.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -606,7 +618,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score7.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -617,7 +628,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score8.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -628,7 +638,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     next_valid_y = y + tp_score9.count / 15
                     if didMatchSomething == false {
                         matchX = x
-                        matchY = y
                     }
                     didMatchSomething = true
                     break
@@ -665,7 +674,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 continue
             }
             
-            for x in 0..<dotwidth {
+            for x in [7,8,9,18,19,20] {
                 if ocrMatch(mp_score0, accuracy, x, y, 12, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
@@ -861,16 +870,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         
         if screenText == "" {
-            let (score, scoreWasFound) = self.ocrScore(dotmatrix)
-            if scoreWasFound && score > lastHighScoreByPlayer[currentPlayer] {
-                updateType = "s"
-                screenText = "\(score)"
-                
-                lastHighScoreByPlayer[currentPlayer] = score
-            }
-        }
-        
-        if screenText == "" {
             let (tpPlayer, tpScore, scoreWasFound) = self.ocrTPScore(dotmatrix)
             if scoreWasFound {
                 currentPlayer = tpPlayer-1
@@ -906,6 +905,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
         }
         
+        if screenText == "" {
+            let (score, scoreWasFound) = self.ocrScore(dotmatrix)
+            if scoreWasFound && score > lastHighScoreByPlayer[currentPlayer] {
+                updateType = "s"
+                screenText = "\(score)"
+                
+                lastHighScoreByPlayer[currentPlayer] = score
+            }
+        }
+        
         if screenText != "" {
             
             let r = Int(arc4random_uniform(4))
@@ -920,9 +929,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     let dotwidth = 31
     let dotheight = 128
+    var rgbBytes:[UInt8] = [UInt8](repeating: 0, count: 1)
+    var dotmatrix = [UInt8](repeating: 0, count: 31 * 128)
     
     func getDotMatrix(_ image:UIImage) -> [UInt8] {
-        var dotmatrix = [UInt8](repeating: 0, count: dotwidth * dotheight)
         
         if let croppedImage = image.cgImage {
             // 0. get access to the raw pixels
@@ -932,8 +942,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let rowBytes = width * 4
             let totalBytes = height * width * 4
             
+            // only need to allocate this once for performance
+            if rgbBytes.count != totalBytes {
+                rgbBytes = [UInt8](repeating: 0, count: totalBytes)
+            }
+            
             let colorSpace = CGColorSpaceCreateDeviceRGB()
-            var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
             
             let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
             contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
