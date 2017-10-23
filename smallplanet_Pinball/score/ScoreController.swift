@@ -14,6 +14,12 @@ import CoreML
 import Vision
 import MKTween
 
+
+extension DefaultsKeys {
+    static let ocr_offsetX = DefaultsKey<Int>("ocr_offsetX")
+    static let ocr_offsetY = DefaultsKey<Int>("ocr_offsetY")
+}
+
 // TODO: It would be nice if we could dynamically identify the edges of the LED screen and use those points when deciding to
 // dynamically crop the image for sending to the OCR (thus making the OCR app less susceptible to positioning changes)
 
@@ -59,12 +65,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         skippedFrame = 3
         
         let scale = image.extent.height / 2448.0
+        let x = CGFloat(Defaults[.ocr_offsetX])
+        let y = CGFloat(Defaults[.ocr_offsetY])
 
         let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: round(1469 * scale), y: round(1123 * scale)),
-            "inputTopRight":CIVector(x: round(1472 * scale), y: round(835 * scale)),
-            "inputBottomLeft":CIVector(x: round(210 * scale), y: round(1114 * scale)),
-            "inputBottomRight":CIVector(x: round(237 * scale), y: round(822 * scale))
+            "inputTopLeft":CIVector(x: round((1469+x) * scale), y: round((1123+y) * scale)),
+            "inputTopRight":CIVector(x: round((1472+x) * scale), y: round((835+y) * scale)),
+            "inputBottomLeft":CIVector(x: round((210+x) * scale), y: round((1114+y) * scale)),
+            "inputBottomRight":CIVector(x: round((237+x) * scale), y: round((822+y) * scale))
         ]
         let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
@@ -77,8 +85,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             self.preview.imageView.image = uiImage
         }
     }
-    
-    
     
     var currentValidationURL:URL?
     override func viewDidLoad() {
@@ -98,6 +104,23 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsRotatedImage = false
         
         UIApplication.shared.isIdleTimerDisabled = true
+        
+        leftButton.button.add(for: .touchUpInside) {
+            Defaults[.ocr_offsetY] -= 3
+            Defaults.synchronize()
+        }
+        rightButton.button.add(for: .touchUpInside) {
+            Defaults[.ocr_offsetY] += 3
+            Defaults.synchronize()
+        }
+        upButton.button.add(for: .touchUpInside) {
+            Defaults[.ocr_offsetX] -= 3
+            Defaults.synchronize()
+        }
+        downButton.button.add(for: .touchUpInside) {
+            Defaults[.ocr_offsetX] += 3
+            Defaults.synchronize()
+        }
         
         saveImageButton.button.add(for: .touchUpInside) {
             if self.preview.imageView.image?.ciImage != nil {
@@ -927,6 +950,23 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     fileprivate var saveImageButton: Button {
         return mainXmlView!.elementForId("saveImageButton")!.asButton!
+    }
+    
+    
+    fileprivate var leftButton: Button {
+        return mainXmlView!.elementForId("leftButton")!.asButton!
+    }
+    
+    fileprivate var rightButton: Button {
+        return mainXmlView!.elementForId("rightButton")!.asButton!
+    }
+    
+    fileprivate var upButton: Button {
+        return mainXmlView!.elementForId("upButton")!.asButton!
+    }
+    
+    fileprivate var downButton: Button {
+        return mainXmlView!.elementForId("downButton")!.asButton!
     }
 
     
