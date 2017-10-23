@@ -78,7 +78,7 @@ def Learn():
 
         # first let's train the network on high accuracy on our unaltered images
         if len(permanent_imgs) > batch_size:
-            print("Training the network stage 1...")
+            print("Training the permanent memories...")
             model.fit(permanent_imgs, permanent_labels,
                       batch_size=batch_size,
                       epochs=epochs,
@@ -89,7 +89,7 @@ def Learn():
 
         # then let's train the network on the altered images
         if len(train_imgs) > batch_size:
-            print("Training the network stage 2...")
+            print("Training the long term memories...")
             model.fit(train_imgs, train_labels,
                       batch_size=batch_size,
                       epochs=epochs,

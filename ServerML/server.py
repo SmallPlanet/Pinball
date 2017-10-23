@@ -149,9 +149,11 @@ def SimulateGameplay():
 #comm.subscriber(comm.endpoint_sub_CoreMLUpdates, HandleCoreMLUpdate)
 
 # messages from Remote control app, adding just for debugging
-#def HandleRemoteControlInfo(msg):   
-#    print("HandleRemoteControlInfo: ")
-#comm.subscriber(comm.endpoint_sub_RemoteControl, HandleRemoteControlInfo)
+def HandleRemoteControlInfo(msg):   
+    if msg == "train":
+        CommitMemoryArray(shortTermMemory)
+        train.Learn()
+comm.subscriber(comm.endpoint_sub_RemoteControl, HandleRemoteControlInfo)
 
 # messages from OCR app
 def HandleGameInfo(msg):   
