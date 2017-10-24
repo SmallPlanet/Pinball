@@ -118,6 +118,10 @@ def LoadLongTermMemory():
         
 LoadLongTermMemory()
 
+def ClearMemoryArray(array):
+    n = len(array)
+    while len(array) > 0:
+        del array[0]
 
 def CommitMemoryArray(array):
     n = len(array)
@@ -170,7 +174,7 @@ def HandleGameInfo(msg):
             parts2 = parts[1].split(",")
             newPlayer = int(parts2[0])-1
             if newPlayer != gameState.currentPlayer:
-                CommitMemoryArray(shortTermMemory)
+                ClearMemoryArray(shortTermMemory)
                 gameState.currentPlayer = newPlayer
                 train.Learn()
                 
@@ -179,7 +183,7 @@ def HandleGameInfo(msg):
             
         # start of new player turn
         if parts[0] == 'p':
-            CommitMemoryArray(shortTermMemory)
+            ClearMemoryArray(shortTermMemory)
             gameState.currentPlayer = int(parts[1])-1
             print("  Player " + parts[1] + " is up!")
             
@@ -216,7 +220,8 @@ def HandleTrainingImages(msg):
     ballKicker = struct.unpack("B", msg[s+3:s+4])[0]
     
     
-    if left == 0 and left == 0 and left == 0 and left == 0:
+    # save all ball kickers and 0-0-0-0 to permanent memory
+    if left == 0 and right == 0 and start == 0:
         print("  -> permanent memory:", len(jpeg), left, right, start, ballKicker)
         
         # permanent memories get saved automatically to the permanent memory path
