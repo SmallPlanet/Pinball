@@ -9,10 +9,10 @@
         <ImageView id="overlay" contentMode="scaleAspectFit" />
         <Constraint firstItem="overlay" ruleSet="fillSuperview" />
     </ImageView>
-    <Constraint firstItem="preview" firstAttribute="width" constant="240"/>
-    <Constraint firstItem="preview" firstAttribute="height" constant="180"/>
+    <Constraint firstItem="preview" firstAttribute="width" constant="220"/>
+    <Constraint firstItem="preview" firstAttribute="height" constant="160"/>
     <Constraint firstItem="preview" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="preview" firstAttribute="centerY" secondItem="root" secondAttribute="top" constant="260" />
+    <Constraint firstItem="preview" firstAttribute="centerY" secondItem="root" secondAttribute="top" constant="180" />
     
     <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
     <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>

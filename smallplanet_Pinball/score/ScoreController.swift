@@ -62,7 +62,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             return
         }
         
-        skippedFrame = 2
+        skippedFrame = 11
         
         let scale = image.extent.height / 2448.0
         let x = CGFloat(Defaults[.ocr_offsetX])
@@ -161,6 +161,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         if false {
         
             let testImages = [
+                
                 // two player scores
                 "bundle://Assets/score/sample/IMG_0129.JPG",
                 "bundle://Assets/score/sample/IMG_0116.JPG",
@@ -196,9 +197,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0133.JPG",
                 "bundle://Assets/score/sample/IMG_0136.JPG",
                 "bundle://Assets/score/sample/IMG_0140.JPG",
+ 
+                // no false positives...
+                "bundle://Assets/score/sample/IMG_0142.JPG",
+                "bundle://Assets/score/sample/IMG_0143.JPG",
+                "bundle://Assets/score/sample/IMG_0144.JPG",
             ]
             
             let testResults = [
+                
                 "1,559170",
                 "1,5130",
                 "1,726840",
@@ -228,6 +235,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "2489630",
                 "3579830",
                 "1362700",
+                
+                "",
+                "",
+                "",
             ]
             
             var numCorrect = 0
@@ -434,14 +445,28 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let accuracy = 0.96
         var didMatchSomething = false
         
+        
+        // ignore any screen with the checkered flag around it...
+        if ocrMatch(flag, accuracy, 0, 0, 8, dotmatrix) {
+            if (verbose >= 1) { print("matched FLAG at \(0),\(0)") }
+            return (0,false)
+        }
+        
+        
         for y in 0..<dotheight {
             
             if y < next_valid_y {
                 continue
             }
             
+            // the quest numbers are centered on the screen, but its the same font as the
+            // highscore display, which are kind of right aligned
+            if didMatchSomething == false && y > 50 {
+                break
+            }
+            
             //for x in 0..<dotwidth {
-            for x in 6..<20 {
+            for x in 7..<20 {
                 if ocrMatch(quest_score0, accuracy, x, y, 8, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
@@ -513,6 +538,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     break
                 }
             }
+        }
+        
+        
+        // hack: these are probably erroneous scores from the bonus screens
+        if score % 100 == 0 {
+            return (0, false)
+            
         }
         
         return (score,didMatchSomething)
@@ -1101,6 +1133,19 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return mainXmlView!.elementForId("downButton")!.asButton!
     }
 
+    
+    fileprivate var flag: [UInt8] = [
+        0,0,0,0,1,1,1,1,
+        0,0,0,0,1,1,1,1,
+        0,0,0,0,1,1,1,1,
+        0,0,0,0,1,1,1,1,
+        0,0,0,0,1,1,1,1,
+        1,1,1,1,0,0,0,0,
+        1,1,1,1,0,0,0,0,
+        1,1,1,1,0,0,0,0,
+        1,1,1,1,0,0,0,0,
+        1,1,1,1,0,0,0,0,
+        ]
     
     fileprivate var quest_score0: [UInt8] = [
         0,1,1,1,1,1,1,0,
