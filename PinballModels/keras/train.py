@@ -16,42 +16,37 @@ def round2(x, y):
         return 1.0
     return 0.0
 
-def calc_predict(predictions, value):
+def calc_predict(predictions, labels, value):
     numCorrect = 0
-    for i in range(0,len(validate_labels)):
-        numCorrect += (round2(predictions[i][0], value) == round(validate_labels[i][0]) and round2(predictions[i][1], value) == round(validate_labels[i][1]))
-    acc = numCorrect / len(validate_labels)
-    print("\n ({}) prediction accuracy = {}".format(value, acc))
+    for i in range(0,len(labels)):
+        numCorrect += (round2(predictions[i][0], value) == round(labels[i][0]) and round2(predictions[i][1], value) == round(labels[i][1]) and round2(predictions[i][2], value) == round(labels[i][2]) and round2(predictions[i][3], value) == round(labels[i][3]))
+    acc = numCorrect / len(labels)
+    return acc
 
 # used for realistic accuracy reporting during training...
 class EvaluationMonitor(Callback):  
     def on_epoch_end(self, epoch, logs={}): 
-        predictions = model.predict(validate_imgs)
-        calc_predict(predictions, 0.000001)
-        calc_predict(predictions, 0.05)
-        calc_predict(predictions, 0.1)
-        calc_predict(predictions, 0.2)
-        calc_predict(predictions, 0.3)
-        calc_predict(predictions, 0.4)
-        calc_predict(predictions, 0.5)
-        calc_predict(predictions, 0.6)
-        calc_predict(predictions, 0.7)
-        calc_predict(predictions, 0.8)
+        predictions = model.predict(total_imgs)
+        acc = calc_predict(predictions, total_labels, 0.5)
+        if acc > 0.9:
+            didSaveModel = True
+            print("\n saving model with accuracy of {} (total {})".format(acc, len(total_labels)))
+            model.save("model.h5")
         
 
 
 train_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/train/"
-validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/validation/"
+#validate_path = "/Users/rjbowli/Desktop/NASCAR_TRAINING/test/validation/"
 
 train_max_size = 5000
-validate_max_size = 500
+#validate_max_size = 500
 
 print("Preprocessing training images...")
 train_imgs = images.generate_image_array(train_path, train_max_size)
 train_labels = []
 
-validate_imgs = images.generate_image_array(validate_path, validate_max_size)
-validate_labels = []
+#validate_imgs = images.generate_image_array(validate_path, validate_max_size)
+#validate_labels = []
 
 images.load_images(train_imgs, train_labels, train_path, train_max_size)
 
@@ -86,14 +81,20 @@ model.compile(loss='binary_crossentropy',
               metrics=['accuracy'])
 
 
-print("Preprocessing validation images...")
-images.load_images(validate_imgs, validate_labels, validate_path, validate_max_size)
+#print("Preprocessing validation images...")
+#images.load_images(validate_imgs, validate_labels, validate_path, validate_max_size)
 
+#total_imgs = np.concatenate((validate_imgs,train_imgs), axis=0)
+#total_labels = np.concatenate((validate_labels,train_labels), axis=0)
+
+
+total_imgs = train_imgs
+total_labels = train_labels
 
 #batch_size = 1024
 #batch_size = 1536
-batch_size = 512
-epochs = 12
+batch_size = 12
+epochs = 10
 
            
 # if we have some pre-existing weights, load those first
@@ -114,30 +115,23 @@ gc.collect()
 
 
 # first let's train the network on high accuracy on our unaltered images
+didSaveModel = False
+
 print("Training the network stage 1...")
-model.fit_generator(datagen.flow(train_imgs, train_labels, batch_size=batch_size),
-                    steps_per_epoch=len(train_imgs) // batch_size,
-                    epochs=epochs,
-                    validation_data=(validate_imgs, validate_labels),
-                    callbacks=[clr,
-                                em,
-                               ModelCheckpoint('model.stage1.{epoch:02d}-{val_acc:.3f}.h5', save_best_only=True)]
-                    )
-#model.{epoch:02d}-{val_loss:.2f}.h5
+while didSaveModel == False:
+    model.fit_generator(datagen.flow(train_imgs, train_labels, batch_size=batch_size),
+                        steps_per_epoch=len(train_imgs) // batch_size,
+                        epochs=epochs,
+                        callbacks=[clr, em]
+                        )
 
-
-# then let's train the network on the altered images
-print("Training the network stage 2...")
-model.fit(train_imgs, train_labels,
-          batch_size=batch_size,
-          epochs=epochs,
-          shuffle=True,
-          verbose=1,
-          callbacks=[clr,
-                     em,
-                     ModelCheckpoint('model.stage2.{epoch:02d}-{val_acc:.3f}.h5', save_best_only=True)],
-        validation_data=(validate_imgs, validate_labels)
-          )
+    model.fit(train_imgs, train_labels,
+              batch_size=batch_size,
+              epochs=epochs,
+              shuffle=True,
+              verbose=1,
+              callbacks=[clr,em],
+              )
 
 
 

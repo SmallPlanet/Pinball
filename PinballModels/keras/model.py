@@ -50,11 +50,11 @@ def cnn_model():
     model.add(Activation('elu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.2))
-
+    
     model.add(Flatten())
     model.add(Dense(768))
-    model.add(BatchNormalization())
     model.add(Activation('elu'))
+    model.add(BatchNormalization())
     model.add(Dropout(0.5))
     model.add(Dense(images.NUM_CLASSES))
     model.add(Activation('sigmoid'))

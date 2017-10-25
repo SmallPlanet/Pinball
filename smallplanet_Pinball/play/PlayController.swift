@@ -185,6 +185,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         if lastVisibleFrameNumber + 100 < frameNumber {
             lastVisibleFrameNumber = frameNumber
+            
+            print("\(fps) fps")
+            
             DispatchQueue.main.async {
                 self.preview.imageView.image = UIImage(ciImage: maskedImage)
             }
