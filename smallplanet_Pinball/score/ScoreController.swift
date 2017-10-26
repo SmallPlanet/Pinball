@@ -62,7 +62,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             return
         }
         
-        skippedFrame = 11
+        skippedFrame = 0
         
         let scale = image.extent.height / 2448.0
         let x = CGFloat(Defaults[.ocr_offsetX])
