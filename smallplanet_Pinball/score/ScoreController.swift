@@ -64,15 +64,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         skippedFrame = 0
         
-        let scale = image.extent.height / 2448.0
+        let scale = image.extent.height / 1936.0
         let x = CGFloat(Defaults[.ocr_offsetX])
         let y = CGFloat(Defaults[.ocr_offsetY])
 
+        // note: measure Y from the bottom
         let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: round((1469+x) * scale), y: round((1123+y) * scale)),
-            "inputTopRight":CIVector(x: round((1472+x) * scale), y: round((835+y) * scale)),
-            "inputBottomLeft":CIVector(x: round((210+x) * scale), y: round((1114+y) * scale)),
-            "inputBottomRight":CIVector(x: round((237+x) * scale), y: round((822+y) * scale))
+            "inputTopLeft":CIVector(x: round((1306+x) * scale), y: round((807+y) * scale)),
+            "inputTopRight":CIVector(x: round((1309+x) * scale), y: round((586+y) * scale)),
+            "inputBottomLeft":CIVector(x: round((362+x) * scale), y: round((803+y) * scale)),
+            "inputBottomRight":CIVector(x: round((379+x) * scale), y: round((582+y) * scale))
         ]
         let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
@@ -243,6 +244,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             var numCorrect = 0
             
+            //let i = 23
             for i in 0..<testImages.count {
                 ResetGame()
                 
@@ -251,11 +253,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 let result = ocrReadScreen(testImage!)
                 
                 if result != testResults[i] {
-                    print("OCR UNIT TEST FAILED: \(result) should be \(testResults[i])")
+                    print("OCR UNIT TEST \(i) FAILED: \(result) should be \(testResults[i])")
                 } else {
                     numCorrect = numCorrect + 1
                 }
-                
+            
                 //let cgImage = self.ciContext.createCGImage(testImage!, from: testImage!.extent)
                 //UIImageWriteToSavedPhotosAlbum(UIImage(cgImage: cgImage!), self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
                 //break
@@ -275,8 +277,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func ocrGameOver(_ dotmatrix:[UInt8]) -> Bool {
         
-        for y in 27..<30 {
-            for x in 8..<11 {
+        for y in 25..<32 {
+            for x in 6..<13 {
                 if ocrMatch(game_over, 0.86, x, y, 12, dotmatrix) {
                     if (verbose >= 1) { print("matched GAME OVER at \(x),\(y)") }
                     return true
@@ -289,8 +291,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func ocrPushStart(_ dotmatrix:[UInt8]) -> Bool {
         
-        for y in 2..<5 {
-            for x in 3..<6 {
+        for y in 1..<6 {
+            for x in 2..<7 {
                 if ocrMatch(push_start, 0.9, x, y, 24, dotmatrix) {
                     if (verbose >= 1) { print("matched PUSH START at \(x),\(y)") }
                     return true
@@ -303,8 +305,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func ocrPlayerUp(_ dotmatrix:[UInt8]) -> Int {
         
-        for y in 24..<26 {
-            for x in 12..<14 {
+        for y in 22..<28 {
+            for x in 10..<16 {
                 if ocrMatch(player_up, 0.9, x, y, 8, dotmatrix) {
                     // once we match "Player Up", we need to match the right number...
                     if ocrPlayerUpNumber(dotmatrix, player_4_up) {
@@ -323,7 +325,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func ocrPlayerUpNumber(_ dotmatrix:[UInt8], _ number:[UInt8]) -> Bool {
         for y in 0..<dotheight {
-            for x in 12..<14 {
+            for x in 10..<16 {
                 if ocrMatch(number, 0.9, x, y, 8, dotmatrix) {
                     return true
                 }
@@ -356,7 +358,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             //for x in 0..<dotwidth {
-            for x in [8,9,10,11] {
+            for x in [7,8,9,10,11,12] {
                 if ocrMatch(score0, accuracy, x, y, 21, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
@@ -573,7 +575,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 continue
             }
             
-            for x in [6,7,8,15,16,17] {
+            for x in [5,6,7,8,15,16,17,18] {
                 if ocrMatch(tp_score0, accuracy, x, y, 15, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
@@ -706,7 +708,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 continue
             }
             
-            for x in [7,8,9,18,19,20] {
+            for x in [6,7,8,9,18,19,20,21] {
                 if ocrMatch(mp_score0, accuracy, x, y, 12, dotmatrix) {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0

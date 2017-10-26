@@ -69,6 +69,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var rightFlipperCounter:Int = 0
     
     var lastFrame:CIImage? = nil
+    var send_leftButton:Byte = 0
+    var send_rightButton:Byte = 0
+    var send_startButton:Byte = 0
+    var send_ballKickerButton:Byte = 0
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
@@ -79,6 +83,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
+        
+        // really, we don't want the start button
+        if lastFrame != nil && (send_leftButton == 1 || send_rightButton == 1 || send_ballKickerButton == 1) {
+            sendCameraFrame(lastFrame!, send_leftButton, send_rightButton, 0, send_ballKickerButton)
+            send_leftButton = 0
+            send_rightButton = 0
+            send_ballKickerButton = 0
+        }
         
         lastFrame = maskedImage
         
@@ -105,13 +117,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             //print("\(leftObservation!.confidence)  \(rightObservation!.confidence)  \(ballKickerObservation!.confidence)")
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
-            if leftObservation!.confidence > 0.9 {
+            if leftObservation!.confidence > 0.97 {
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
             }
-            if rightObservation!.confidence > 0.9 {
+            if rightObservation!.confidence > 0.97 {
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
             }
-            if ballKickerObservation!.confidence > 0.9 {
+            if ballKickerObservation!.confidence > 0.97 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
             }
             
@@ -253,42 +265,38 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonStart()
-            self.sendCameraFrame()
+            self.send_rightButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.leftButtonEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.leftButtonStart()
-            self.sendCameraFrame()
+            self.send_leftButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.startButtonEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.startButtonStart()
-            self.sendCameraFrame()
+            self.send_startButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerStart()
-            self.sendCameraFrame()
+            self.send_ballKickerButton = 1
         })
         
         // Load the ML model through its generated class
