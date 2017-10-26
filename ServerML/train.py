@@ -51,7 +51,7 @@ class EvaluationMonitor(Callback):
 
 
 batch_size = 12
-epochs = 10
+epochs = 25
 
 permanent_path = "./pmemory/"
 permanent_max_size = 0
@@ -75,8 +75,8 @@ if os.path.isfile("model.h5"):
 print("Allocating the image data generator...")
 datagen = ImageDataGenerator(featurewise_center=False,
                              featurewise_std_normalization=False,
-                             width_shift_range=0.02,
-                             height_shift_range=0.02,
+                             width_shift_range=0.04,
+                             height_shift_range=0.04,
                              )
 
 coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
