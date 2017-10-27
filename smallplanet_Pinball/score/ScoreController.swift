@@ -70,10 +70,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
         // note: measure Y from the bottom
         let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: round((1306+x) * scale), y: round((807+y) * scale)),
-            "inputTopRight":CIVector(x: round((1309+x) * scale), y: round((586+y) * scale)),
-            "inputBottomLeft":CIVector(x: round((362+x) * scale), y: round((803+y) * scale)),
-            "inputBottomRight":CIVector(x: round((379+x) * scale), y: round((582+y) * scale))
+            "inputTopLeft":CIVector(x: round((1244+x) * scale), y: round((828+y) * scale)),
+            "inputTopRight":CIVector(x: round((1240+x) * scale), y: round((605+y) * scale)),
+            "inputBottomLeft":CIVector(x: round((292+x) * scale), y: round((848+y) * scale)),
+            "inputBottomRight":CIVector(x: round((305+x) * scale), y: round((625+y) * scale))
         ]
         let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
         
@@ -107,19 +107,19 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         UIApplication.shared.isIdleTimerDisabled = true
         
         leftButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetY] -= 3
+            Defaults[.ocr_offsetY] -= 2
             Defaults.synchronize()
         }
         rightButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetY] += 3
+            Defaults[.ocr_offsetY] += 2
             Defaults.synchronize()
         }
         upButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetX] -= 3
+            Defaults[.ocr_offsetX] -= 2
             Defaults.synchronize()
         }
         downButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetX] += 3
+            Defaults[.ocr_offsetX] += 2
             Defaults.synchronize()
         }
         
@@ -245,6 +245,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             var numCorrect = 0
             
             //let i = 23
+            //testImages.count
             for i in 0..<testImages.count {
                 ResetGame()
                 
@@ -454,6 +455,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             return (0,false)
         }
         
+        if ocrMatch(border, accuracy, 0, 0, 8, dotmatrix) {
+            if (verbose >= 1) { print("matched FLAG at \(0),\(0)") }
+            return (0,false)
+        }
+        
         
         for y in 0..<dotheight {
             
@@ -463,7 +469,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             // the quest numbers are centered on the screen, but its the same font as the
             // highscore display, which are kind of right aligned
-            if didMatchSomething == false && y > 50 {
+            if didMatchSomething == false && y > 48 {
                 break
             }
             
@@ -1135,6 +1141,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return mainXmlView!.elementForId("downButton")!.asButton!
     }
 
+    
+    fileprivate var border: [UInt8] = [
+        1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        ]
     
     fileprivate var flag: [UInt8] = [
         0,0,0,0,1,1,1,1,

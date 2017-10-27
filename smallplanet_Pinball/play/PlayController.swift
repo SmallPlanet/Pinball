@@ -16,6 +16,8 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    var currentPlayer = 1
+    
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
     var scoreSubscriber:SwiftyZeroMQ.Socket? = nil
     
@@ -27,6 +29,24 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
             let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            
+            guard let parts = dataAsString?.components(separatedBy: ":") else {
+                return
+            }
+            
+            if parts.count == 2 {
+                if parts[0] == "p" {
+                    self.currentPlayer = Int(parts[1])!
+                    print("Switching to player \(self.currentPlayer)")
+                }
+                if parts[0] == "m" {
+                    let score_parts = parts[1].components(separatedBy: ",")
+
+                    self.currentPlayer = Int(score_parts[0])!
+                    print("Switching to player \(self.currentPlayer)")
+                }
+            }
+            
             print("play controller received: \(dataAsString!)")
         })
         
@@ -118,13 +138,34 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
             if leftObservation!.confidence > 0.97 {
+                if self?.currentPlayer == 2 && self?.pinball.leftButtonPressed == false {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
+                }
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+            } else {
+                if self?.currentPlayer == 2 && self?.pinball.leftButtonPressed == true {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                }
             }
             if rightObservation!.confidence > 0.97 {
+                if self?.currentPlayer == 2 && self?.pinball.rightButtonPressed == false {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
+                }
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
+            }else{
+                if self?.currentPlayer == 2 && self?.pinball.rightButtonPressed == true {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                }
             }
             if ballKickerObservation!.confidence > 0.97 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
+                if self?.currentPlayer == 2 && self?.pinball.ballKickerPressed == false {
+                    //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
+                }
+            } else {
+                if self?.currentPlayer == 2 && self?.pinball.ballKickerPressed == true {
+                    //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
+                }
             }
             
             
