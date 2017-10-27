@@ -35,6 +35,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             if parts.count == 2 {
+                if parts[0] == "b" || parts[0] == "x" {
+                    self.currentPlayer = 1
+                }
                 if parts[0] == "p" {
                     self.currentPlayer = Int(parts[1])!
                     print("Switching to player \(self.currentPlayer)")
