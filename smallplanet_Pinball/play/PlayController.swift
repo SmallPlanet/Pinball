@@ -16,6 +16,14 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    enum PlayMode {
+        case Observe    // AI will never cause actions to happen
+        case ObserveAndPlay // AI will player as player 2, allowing human to play as player 1
+        case Play    // AI will play as player 1 over and over
+    }
+    
+    let playMode:PlayMode = .Play
+    
     var currentPlayer = 1
     
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
@@ -138,97 +146,45 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             //print("\(leftObservation!.confidence)  \(rightObservation!.confidence)  \(ballKickerObservation!.confidence)")
+            let canPlay = self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
-            if leftObservation!.confidence > 0.97 {
-                if self?.currentPlayer == 2 && self?.pinball.leftButtonPressed == false {
+            let experimental:Float = 0.1
+            let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
+            let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
+            let cutoff1 = 1.0 - rand1 * experimental
+            let cutoff2 = 1.0 - rand2 * experimental
+            
+            if leftObservation!.confidence > cutoff1 {
+                if canPlay && self?.pinball.leftButtonPressed == false {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
                 }
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
             } else {
-                if self?.currentPlayer == 2 && self?.pinball.leftButtonPressed == true {
+                if canPlay && self?.pinball.leftButtonPressed == true {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
                 }
             }
-            if rightObservation!.confidence > 0.97 {
-                if self?.currentPlayer == 2 && self?.pinball.rightButtonPressed == false {
+            if rightObservation!.confidence > cutoff2 {
+                if canPlay && self?.pinball.rightButtonPressed == false {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
                 }
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
             }else{
-                if self?.currentPlayer == 2 && self?.pinball.rightButtonPressed == true {
+                if canPlay && self?.pinball.rightButtonPressed == true {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
                 }
             }
-            if ballKickerObservation!.confidence > 0.97 {
+            if ballKickerObservation!.confidence > 0.99 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
-                if self?.currentPlayer == 2 && self?.pinball.ballKickerPressed == false {
+                if canPlay && self?.pinball.ballKickerPressed == false {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
                 }
             } else {
-                if self?.currentPlayer == 2 && self?.pinball.ballKickerPressed == true {
+                if canPlay && self?.pinball.ballKickerPressed == true {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
                 }
             }
-            
-            
-            
-            /*
-            // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
-            // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
-            // (basically trying to handle small false positives)
-            var leftFlipperShouldBePressed = false
-            var rightFlipperShouldBePressed = false
-            
-            var leftFlipperConfidence:Float = leftObservation!.confidence
-            var rightFlipperConfidence:Float = rightObservation!.confidence
-            
-            if self!.leftFlipperCounter > 0 {
-                leftFlipperConfidence = 0
-            }
-            if self!.rightFlipperCounter > 0 {
-                rightFlipperConfidence = 0
-            }
-            
-            leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
-            rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
-            
-            //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            
-            let flipDelay = 12
-            if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
-                self?.leftFlipperCounter = flipDelay/2
-                
-            }
-            if rightFlipperShouldBePressed && self!.rightFlipperCounter < -flipDelay {
-                self?.rightFlipperCounter = flipDelay/2
-            }
-            
-            
-            if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
-                self?.pinball.leftButtonStart()
-                self?.sendCameraFrame(maskedImage, 1, right, start, ballKicker)
-                //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            }
-            if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
-                self?.pinball.leftButtonEnd()
-                self?.sendCameraFrame(maskedImage, 0, right, start, ballKicker)
-            }
-            
-            if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
-                self?.pinball.rightButtonStart()
-                self?.sendCameraFrame(maskedImage, left, 1, start, ballKicker)
-                //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            }
-            if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
-                self?.pinball.rightButtonEnd()
-                self?.sendCameraFrame(maskedImage, left, 0, start, ballKicker)
-            }
-
-            let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(leftObservation!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(rightObservation!.identifier), \(fps) fps"
-            DispatchQueue.main.async {
-                self?.statusLabel.label.text = confidence
-            }*/
         }
         
         // Run the Core ML classifier on global dispatch queue
