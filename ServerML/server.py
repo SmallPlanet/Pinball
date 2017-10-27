@@ -21,7 +21,7 @@ import glob
 # to an action, this value increases by the same so we can calculate the amount of 
 # unassigned points there are left to assign
 
-shortTermMemoryDuration = 1
+shortTermMemoryDuration = 2
 longTermMemoryMaxSize = 50000
 
 class GameStateInfo:
@@ -62,9 +62,13 @@ class Memory:
         # calculate the total number of points scored during this memory's unique time frame
         totalPointsPossible = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
         
+        print("totalPointsPossible", totalPointsPossible)
+        
         # multiply the total points possible by the pointScale, this helps ensure one memory does not
         # hog all of the points
         totalPointsPossible = totalPointsPossible * pointScale
+        
+        print("totalPointsPossible after scale", totalPointsPossible)
         
         # drain points from the point pool up to totalPointsPossible, without exceeding the pool limits
         self.differentialScore = 0
@@ -73,12 +77,11 @@ class Memory:
             gameState.scoreDrainByPlayer[gameState.currentPlayer] += 1
         
         
-        
         # sort the long term memory such that the lowest diff score memory is first
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
-        
+                
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if len(longTermMemory) == 0 or self.differentialScore > longTermMemory[0].differentialScore:
+        if self.differentialScore > 1:
             print("  -> long term memory:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
             
             longTermMemory.append(self)
@@ -92,6 +95,15 @@ class Memory:
             f.close()
         else:
             print("  -> waste bin:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
+            
+            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.waste_path, 0, 0, 0, 0, 0, str(uuid.uuid4()))
+            print (self.filePath)
+        
+            f = open(self.filePath, 'wb')
+            f.write(x.jpeg)
+            f.close()
+            
+            
         
         # Now we need to ensure our long term memory does not exceed our established maximum, so forget
         # the least valuable memories until we are under the maximum
@@ -126,7 +138,7 @@ def ClearMemoryArray(array):
 def CommitMemoryArray(array):
     n = len(array)
     while len(array) > 0:
-        array[0].CommitMemory(1/n)
+        array[0].CommitMemory(1.0/n)
         del array[0]
 
 def SimulateGameplay():
@@ -143,8 +155,6 @@ def SimulateGameplay():
         else:
             gameState.currentPlayer = 0
         print("  Player changed: ", gameState.currentPlayer, gameState.scoreByPlayer)
-        
-        train.Learn()
 
 
 # messages from CoreML updates, adding just for debugging
@@ -176,7 +186,6 @@ def HandleGameInfo(msg):
             if newPlayer != gameState.currentPlayer:
                 ClearMemoryArray(shortTermMemory)
                 gameState.currentPlayer = newPlayer
-                train.Learn()
                 
             gameState.scoreByPlayer[gameState.currentPlayer] = int(parts2[1])
             print("  Received scores: ", gameState.scoreByPlayer)

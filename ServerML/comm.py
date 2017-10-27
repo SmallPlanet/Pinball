@@ -48,7 +48,7 @@ def subscriber(endpoint, func):
 
 def PollSockets():
     didProcessMessage = False
-    socks = dict(poller.poll())
+    socks = dict(poller.poll(50))
     for socket in socks:
         if socks[socket] == zmq.POLLIN:
             msg = socket.recv()

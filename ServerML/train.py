@@ -11,6 +11,7 @@ import numpy as np
 import os
 import gc
 import comm
+import random
 
 import coremltools   
 import h5py
@@ -23,6 +24,7 @@ class EvaluationMonitor(Callback):
     imgs = []
     labels = []
     didSaveModel = False
+    minSaveAccuracy = 0.9
     
     def round2(self, x, y):
         if x > y:
@@ -42,7 +44,8 @@ class EvaluationMonitor(Callback):
     def on_epoch_end(self, epoch, logs={}): 
         predictions = model.predict(self.imgs)
         acc = self.calc_predict(predictions, 0.5)
-        if acc > 0.9:
+        if acc > self.minSaveAccuracy:
+            self.minSaveAccuracy = acc
             print("\n saving model with accuracy of {} (total {})".format(acc, len(self.labels)))
             self.didSaveModel = True
             model.save("model.h5")
@@ -51,13 +54,16 @@ class EvaluationMonitor(Callback):
 
 
 batch_size = 12
-epochs = 25
+epochs = 10
 
 permanent_path = "./pmemory/"
 permanent_max_size = 0
 
 train_path = "./memory/"
 train_max_size = 0
+
+waste_path = "./waste/"
+waste_max_size = 10
 
 # create the model
 print("Generating the CNN model...")
@@ -87,36 +93,33 @@ def read_file(path):
 
 def Learn():
 
-    print("Load random selection of long term memories...")
+    print("Loadinf long term memories...")
     train_imgs = images.generate_image_array(train_path, train_max_size)
     train_labels = []
     
     images.load_images(train_imgs, train_labels, train_path, train_max_size)
     
-    print("Load random selection of permanent memories...")
+    print("Load permanent memories...")
     permanent_imgs = images.generate_image_array(permanent_path, permanent_max_size)
     permanent_labels = []
     
     images.load_images(permanent_imgs, permanent_labels, permanent_path, permanent_max_size)
     
-    total_imgs = np.concatenate((permanent_imgs,train_imgs), axis=0)
-    total_labels = np.concatenate((permanent_labels,train_labels), axis=0)
+    print("Load wasted memories...")
+    waste_imgs = images.generate_image_array(waste_path, waste_max_size)
+    waste_labels = []
     
+    images.load_images(waste_imgs, waste_labels, waste_path, waste_max_size)
     
-    if len(total_imgs) >= batch_size:
+    total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
+    total_labels = np.concatenate((permanent_labels,train_labels,waste_labels), axis=0)
+                
+    if len(total_imgs) >= 6:
         
         if os.path.isfile("model.h5"):
             print("Loading previous model weights...")
             model.load_weights("model.h5")
-        
-        # free up whatever memory we can before training
-        gc.collect()
-        
-        # cyclic learning rate
-        clr = CyclicLR(base_lr=0.001, max_lr=0.006,
-                                step_size=(len(permanent_imgs) // batch_size * 4), mode='exp_range',
-                                gamma=0.99994)
-                                
+                                        
         em = EvaluationMonitor()
         em.imgs = total_imgs
         em.labels = total_labels
@@ -124,10 +127,32 @@ def Learn():
         # then let's train the network on the altered images
         print("Training the long term memories...")
         while em.didSaveModel == False:
+            
+            # free up whatever memory we can before training
+            gc.collect()
+            
+            batch_size = int(random.random() * 32 + 6)
+            
+            if batch_size > len(total_imgs):
+                batch_size = len(total_imgs)
+            
+            # cyclic learning rate
+            clr = CyclicLR(base_lr=0.001, max_lr=0.006,
+                                    step_size=(len(permanent_imgs) // batch_size * 4), mode='exp_range',
+                                    gamma=0.99994)
+            
             model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
                     steps_per_epoch=len(total_imgs) // batch_size,
                     epochs=epochs,
                     callbacks=[clr,em])
+                    
+            model.fit(total_imgs, total_labels,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      shuffle=True,
+                      verbose=1,
+                      callbacks=[clr,em],
+                      )
                 
         print("Training finished...")
         
