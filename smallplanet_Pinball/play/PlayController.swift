@@ -331,6 +331,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.startButtonStart()
+            self.currentPlayer = 1
             self.send_startButton = 1
         })
         
