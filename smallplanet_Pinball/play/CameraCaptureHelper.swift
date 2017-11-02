@@ -256,9 +256,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             let hw = image.extent.width / 2
             let hh = image.extent.height / 2
             
+            let frameHeight:CGFloat = 169.0
+            let frameWidth:CGFloat = 300.0
+            
             // scale down to 50 pixels on min size
-            var scaleW = 169.0 / image.extent.height
-            var scaleH = 300.0 / image.extent.width
+            var scaleW = frameHeight / image.extent.height
+            var scaleH = frameWidth / image.extent.width
             
             if self.delegateWantsScaledImages == false {
                 scaleW = 1.0
@@ -287,37 +290,32 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             var lastBlurFrame = rotatedImage
             if self.delegateWantsBlurredImages {
                 self.motionBlurFrames.append(rotatedImage)
-                while self.motionBlurFrames.count > 3 {
+                while self.motionBlurFrames.count > 4 {
                     self.motionBlurFrames.remove(at: 0)
                 }
                 
-                lastBlurFrame = self.motionBlurFrames[0]
-                for i in 1..<self.motionBlurFrames.count {
-                    // merge on our motion blur frames
-                    guard let colorMatrix = CIFilter(name:"CIColorMatrix") else {
-                        return
-                    }
-                    let blurFactor:CGFloat = 0.5
-                    
-                    colorMatrix.setDefaults()
-                    colorMatrix.setValue(self.motionBlurFrames[i], forKey: kCIInputImageKey)
-                    colorMatrix.setValue(CIVector(x:0.0,y:0.0,z:0.0,w:blurFactor), forKey: "inputAVector")
-                    
-                    lastBlurFrame = self.motionBlurFrames[i].composited(over: lastBlurFrame)
+                if self.motionBlurFrames.count < 4 {
+                    // we don't have enough images, abort
+                    return
                 }
                 
-                // only save blur frame every few frames
+                // instead of blurring them, let's just stack them vertically
+                lastBlurFrame = self.motionBlurFrames[0]
+                for i in 1..<self.motionBlurFrames.count {
+                    let otherFrame = self.motionBlurFrames[i]
+                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: 0, y: CGFloat(i) * otherFrame.extent.height)))
+                }
+                
                 if localPlayFrameNumber % 10 != 1 {
                     self.motionBlurFrames.removeLast()
                 }
+                
             }
             
             
-            let maskedImage = self.maskImage!.composited(over: lastBlurFrame)            
-            
             if self.delegateWantsPlayImages {
                 self.playQueue.sync {
-                    self.delegate?.playCameraImage(self, maskedImage: maskedImage, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+                    self.delegate?.playCameraImage(self, maskedImage: lastBlurFrame, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
                 }
             }
             

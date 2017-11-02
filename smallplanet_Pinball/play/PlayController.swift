@@ -16,6 +16,16 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    enum PlayMode {
+        case Observe    // AI will never cause actions to happen
+        case ObserveAndPlay // AI will player as player 2, allowing human to play as player 1
+        case Play    // AI will play as player 1 over and over
+    }
+    
+    let playMode:PlayMode = .Play
+    
+    var currentPlayer = 1
+    
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
     var scoreSubscriber:SwiftyZeroMQ.Socket? = nil
     
@@ -27,6 +37,27 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
             let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            
+            guard let parts = dataAsString?.components(separatedBy: ":") else {
+                return
+            }
+            
+            if parts.count == 2 {
+                if parts[0] == "b" || parts[0] == "x" {
+                    self.currentPlayer = 1
+                }
+                if parts[0] == "p" {
+                    self.currentPlayer = Int(parts[1])!
+                    print("Switching to player \(self.currentPlayer)")
+                }
+                if parts[0] == "m" {
+                    let score_parts = parts[1].components(separatedBy: ",")
+
+                    self.currentPlayer = Int(score_parts[0])!
+                    print("Switching to player \(self.currentPlayer)")
+                }
+            }
+            
             print("play controller received: \(dataAsString!)")
         })
         
@@ -69,6 +100,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var rightFlipperCounter:Int = 0
     
     var lastFrame:CIImage? = nil
+    var send_leftButton:Byte = 0
+    var send_rightButton:Byte = 0
+    var send_startButton:Byte = 0
+    var send_ballKickerButton:Byte = 0
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
@@ -79,6 +114,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
+        
+        // really, we don't want the start button
+        if lastFrame != nil && (send_leftButton == 1 || send_rightButton == 1 || send_ballKickerButton == 1) {
+            sendCameraFrame(lastFrame!, send_leftButton, send_rightButton, 0, send_ballKickerButton)
+            send_leftButton = 0
+            send_rightButton = 0
+            send_ballKickerButton = 0
+        }
         
         lastFrame = maskedImage
         
@@ -103,76 +146,45 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             //print("\(leftObservation!.confidence)  \(rightObservation!.confidence)  \(ballKickerObservation!.confidence)")
+            let canPlay = self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
-            if leftObservation!.confidence > 0.9 {
+            let experimental:Float = 0.1
+            let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
+            let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
+            let cutoff1 = 1.0 - rand1 * experimental
+            let cutoff2 = 1.0 - rand2 * experimental
+            
+            if leftObservation!.confidence > cutoff1 {
+                if canPlay && self?.pinball.leftButtonPressed == false {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
+                }
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+            } else {
+                if canPlay && self?.pinball.leftButtonPressed == true {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                }
             }
-            if rightObservation!.confidence > 0.9 {
+            if rightObservation!.confidence > cutoff2 {
+                if canPlay && self?.pinball.rightButtonPressed == false {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
+                }
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
+            }else{
+                if canPlay && self?.pinball.rightButtonPressed == true {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                }
             }
-            if ballKickerObservation!.confidence > 0.9 {
+            if ballKickerObservation!.confidence > 0.99 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
+                if canPlay && self?.pinball.ballKickerPressed == false {
+                    //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
+                }
+            } else {
+                if canPlay && self?.pinball.ballKickerPressed == true {
+                    //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
+                }
             }
-            
-            
-            
-            /*
-            // now that we're ~100 fps with an ~84% accuracy, let's keep a rolling window of the
-            // last 6 results. If we have 4 or more confirmed flips then we should flip the flipper
-            // (basically trying to handle small false positives)
-            var leftFlipperShouldBePressed = false
-            var rightFlipperShouldBePressed = false
-            
-            var leftFlipperConfidence:Float = leftObservation!.confidence
-            var rightFlipperConfidence:Float = rightObservation!.confidence
-            
-            if self!.leftFlipperCounter > 0 {
-                leftFlipperConfidence = 0
-            }
-            if self!.rightFlipperCounter > 0 {
-                rightFlipperConfidence = 0
-            }
-            
-            leftFlipperShouldBePressed = leftFlipperConfidence > 0.19
-            rightFlipperShouldBePressed = rightFlipperConfidence > 0.19
-            
-            //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            
-            let flipDelay = 12
-            if leftFlipperShouldBePressed && self!.leftFlipperCounter < -flipDelay {
-                self?.leftFlipperCounter = flipDelay/2
-                
-            }
-            if rightFlipperShouldBePressed && self!.rightFlipperCounter < -flipDelay {
-                self?.rightFlipperCounter = flipDelay/2
-            }
-            
-            
-            if self?.pinball.leftButtonPressed == false && self!.leftFlipperCounter > 0 {
-                self?.pinball.leftButtonStart()
-                self?.sendCameraFrame(maskedImage, 1, right, start, ballKicker)
-                //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            }
-            if self?.pinball.leftButtonPressed == true && self!.leftFlipperCounter < 0 {
-                self?.pinball.leftButtonEnd()
-                self?.sendCameraFrame(maskedImage, 0, right, start, ballKicker)
-            }
-            
-            if self?.pinball.rightButtonPressed == false && self!.rightFlipperCounter > 0 {
-                self?.pinball.rightButtonStart()
-                self?.sendCameraFrame(maskedImage, left, 1, start, ballKicker)
-                //print("\(String(format:"%0.2f", leftFlipperConfidence))  \(String(format:"%0.2f", rightFlipperConfidence)) \(fps) fps")
-            }
-            if self?.pinball.rightButtonPressed == true && self!.rightFlipperCounter < 0 {
-                self?.pinball.rightButtonEnd()
-                self?.sendCameraFrame(maskedImage, left, 0, start, ballKicker)
-            }
-
-            let confidence = "\(String(format:"%0.2f", leftFlipperConfidence))% \(leftObservation!.identifier), \(String(format:"%0.2f", rightFlipperConfidence))% \(rightObservation!.identifier), \(fps) fps"
-            DispatchQueue.main.async {
-                self?.statusLabel.label.text = confidence
-            }*/
         }
         
         // Run the Core ML classifier on global dispatch queue
@@ -253,42 +265,39 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.rightButtonStart()
-            self.sendCameraFrame()
+            self.send_rightButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.leftButtonEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.leftButtonStart()
-            self.sendCameraFrame()
+            self.send_leftButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.startButtonEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.startButtonStart()
-            self.sendCameraFrame()
+            self.currentPlayer = 1
+            self.send_startButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerEnd()
-            //self.sendCameraFrame()
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
             self.pinball.ballKickerStart()
-            self.sendCameraFrame()
+            self.send_ballKickerButton = 1
         })
         
         // Load the ML model through its generated class
