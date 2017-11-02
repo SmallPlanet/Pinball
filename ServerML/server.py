@@ -81,7 +81,7 @@ class Memory:
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
                 
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if self.differentialScore > 1:
+        if self.differentialScore > 15000:
             print("  -> long term memory:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
             
             longTermMemory.append(self)

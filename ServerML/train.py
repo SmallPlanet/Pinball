@@ -24,7 +24,7 @@ class EvaluationMonitor(Callback):
     imgs = []
     labels = []
     didSaveModel = False
-    minSaveAccuracy = 0.9
+    minSaveAccuracy = 0.95
     
     def round2(self, x, y):
         if x > y:
@@ -63,7 +63,7 @@ train_path = "./memory/"
 train_max_size = 0
 
 waste_path = "./waste/"
-waste_max_size = 10
+waste_max_size = 0
 
 # create the model
 print("Generating the CNN model...")
@@ -106,6 +106,7 @@ def Learn():
     images.load_images(permanent_imgs, permanent_labels, permanent_path, permanent_max_size)
     
     print("Load wasted memories...")
+    waste_max_size = len(train_imgs)//3
     waste_imgs = images.generate_image_array(waste_path, waste_max_size)
     waste_labels = []
     
