@@ -112,14 +112,25 @@ def Learn():
     
     images.load_images(waste_imgs, waste_labels, waste_path, waste_max_size)
     
-    total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
-    total_labels = np.concatenate((permanent_labels,train_labels,waste_labels), axis=0)
-                
+    if len(train_labels) > 0 and len(waste_labels) > 0:
+        total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
+        total_labels = np.concatenate((permanent_labels,train_labels,waste_labels), axis=0)
+    elif len(train_labels) > 0:
+        total_imgs = np.concatenate((permanent_imgs,train_imgs), axis=0)
+        total_labels = np.concatenate((permanent_labels,train_labels), axis=0)
+    elif len(waste_labels) > 0:
+        total_imgs = np.concatenate((permanent_imgs,waste_imgs), axis=0)
+        total_labels = np.concatenate((permanent_labels,waste_labels), axis=0)
+    else:
+        total_imgs = permanent_imgs
+        total_labels = permanent_labels
+    
+                    
     if len(total_imgs) >= 6:
         
-        if os.path.isfile("model.h5"):
-            print("Loading previous model weights...")
-            model.load_weights("model.h5")
+        #if os.path.isfile("model.h5"):
+        #    print("Loading previous model weights...")
+        #    model.load_weights("model.h5")
                                         
         em = EvaluationMonitor()
         em.imgs = total_imgs

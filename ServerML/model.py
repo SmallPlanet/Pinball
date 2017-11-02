@@ -20,7 +20,7 @@ def cnn_model():
     model.add(Dropout(0.2))
 
     model.add(Flatten())
-    model.add(Dense(768))
+    model.add(Dense(256))
     model.add(Activation('elu'))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))

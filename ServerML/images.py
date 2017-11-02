@@ -6,7 +6,8 @@ import glob
 import gc
 
 NUM_CLASSES = 4
-IMG_SIZE = [169,120,1]
+# four images high, one image high == 120
+IMG_SIZE = [169,480,1]
 
 K.set_image_data_format('channels_last')
 

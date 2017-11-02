@@ -1,3 +1,3 @@
-include train
+import train
 
 train.Learn()
