@@ -45,7 +45,7 @@ def triggerBallLauncher():
         print 'Ball launcher on'
 
     # wait predetermined time
-        time.sleep(0.05) # time in seconds
+        time.sleep(0.025) # time in seconds
 
     # trigger launcher off
         relayExp.setChannel(relayBank2, 1, 0)
