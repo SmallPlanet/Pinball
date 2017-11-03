@@ -152,8 +152,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let experimental:Float = 0.1
             let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
             let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
-            let cutoff1 = 1.0 - rand1 * experimental
-            let cutoff2 = 1.0 - rand2 * experimental
+            //let cutoff1 = 1.0 - rand1 * experimental
+            //let cutoff2 = 1.0 - rand2 * experimental
+            
+            let cutoff1:Float = 0.9
+            let cutoff2:Float = 0.9
             
             if leftObservation!.confidence > cutoff1 {
                 if canPlay && self?.pinball.leftButtonPressed == false {
