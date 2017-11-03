@@ -22,7 +22,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case Play    // AI will play as player 1 over and over
     }
     
-    let playMode:PlayMode = .Play
+    let playMode:PlayMode = .Observe
     
     var currentPlayer = 1
     
@@ -159,7 +159,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 if canPlay && self?.pinball.leftButtonPressed == false {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
                 }
-                print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+                //print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
             } else {
                 if canPlay && self?.pinball.leftButtonPressed == true {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
@@ -169,14 +169,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 if canPlay && self?.pinball.rightButtonPressed == false {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
                 }
-                print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
+                //print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
             }else{
                 if canPlay && self?.pinball.rightButtonPressed == true {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
                 }
             }
             if ballKickerObservation!.confidence > 0.99 {
-                print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
+                //print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
                 if canPlay && self?.pinball.ballKickerPressed == false {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
                 }
