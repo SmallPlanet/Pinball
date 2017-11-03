@@ -32,18 +32,20 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var pinball:PinballInterface? = nil
     
-    var maskImage:CIImage?
-    
     var isLocked = false
     
     
-    var delegateWantsPlayImages = false
+    var perspectiveImagesCoords:[String:Any] = [:]
+    var delegateWantsPerspectiveImages = false
     
-    var delegateWantsRotatedImage = true
-    var delegateWantsScaledImages = true
-    var delegateWantsCroppedImages = true
-    var delegateWantsBlurredImages = true
+    var scaledImagesSize = CGSize(width: 100, height: 100)
+    var delegateWantsScaledImages = false
+    
+    var delegateWantsPlayImages = false
+    var delegateWantsTemporalImages = false
     var delegateWantsLockedCamera = false
+    
+    var delegateWantsHiSpeedCamera = false
     
     weak var delegate: CameraCaptureHelperDelegate?
     
@@ -74,7 +76,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         var bestFrameRateRange:AVFrameRateRange? = nil
         var bestResolution:CGFloat = 0.0
         
-        if delegateWantsScaledImages == true {
+        if delegateWantsHiSpeedCamera == true {
             // choose the highest framerate
             for format in camera.formats {
                 for range in format.videoSupportedFrameRateRanges {
@@ -149,10 +151,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             captureSession.addOutput(videoOutput)
         }
         
-        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
-        maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
-        maskImage = maskImage!.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-
         
         start()
     }
@@ -245,49 +243,22 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             return
         }
 
-        let image = CIImage(cvPixelBuffer: pixelBuffer)
+        var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let originalImage = cameraImage
         
-        let rotation:CGFloat = 90
-        
-        let hw = image.extent.width / 2
-        let hh = image.extent.height / 2
-        
-        let frameHeight:CGFloat = 169.0
-        let frameWidth:CGFloat = 300.0
-        
-        // scale down to 50 pixels on min size
-        var scaleW = frameHeight / image.extent.height
-        var scaleH = frameWidth / image.extent.width
-        
-        if self.delegateWantsScaledImages == false {
-            scaleW = 1.0
-            scaleH = 1.0
+        if self.delegateWantsPerspectiveImages && perspectiveImagesCoords.count > 0 {
+            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perspectiveImagesCoords)
         }
         
-        var transform = CGAffineTransform.identity
-        
-        if self.delegateWantsRotatedImage || self.delegateWantsScaledImages {
-            transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
-            if self.delegateWantsRotatedImage {
-                transform = transform.rotated(by: rotation.degreesToRadians)
-            }
-            if self.delegateWantsScaledImages {
-                transform = transform.scaledBy(x: scaleW, y: scaleH)
-            }
-            transform = transform.translatedBy(x: -hw, y: -hh)
+        if self.delegateWantsScaledImages {
+            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
         }
         
-        var rotatedImage = image.transformed(by: transform)
-        
-        if self.delegateWantsCroppedImages {
-            rotatedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-        }
-        
-        var lastBlurFrame = rotatedImage
-        if self.delegateWantsBlurredImages {
-            self.motionBlurFrames.append(rotatedImage)
+        var lastBlurFrame = cameraImage
+        if self.delegateWantsTemporalImages {
+            self.motionBlurFrames.append(cameraImage)
             
-            let numberOfFrames = 4
+            let numberOfFrames = 2
             
             while self.motionBlurFrames.count > numberOfFrames {
                 self.motionBlurFrames.remove(at: 0)
@@ -313,7 +284,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         
         if self.delegateWantsPlayImages {
-            self.delegate?.playCameraImage(self, maskedImage: lastBlurFrame, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+            self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: originalImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
         }
  
         fpsCounter += 1
@@ -330,5 +301,5 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
 protocol CameraCaptureHelperDelegate: class
 {
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
 }

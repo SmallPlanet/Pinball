@@ -49,37 +49,28 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     
     
-    
-    // skip every 3rd(?) frame to try and combat overheating issues
-    var skippedFrame = 0
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
         
-        skippedFrame -= 1
-        if skippedFrame >= 0 {
+        if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
+            let scale = originalImage.extent.height / 1936.0
+            let x = CGFloat(Defaults[.ocr_offsetX])
+            let y = CGFloat(Defaults[.ocr_offsetY])
+            
+            cameraCaptureHelper.perspectiveImagesCoords = [
+                "inputTopLeft":CIVector(x: round((1244+x) * scale), y: round((828+y) * scale)),
+                "inputTopRight":CIVector(x: round((1240+x) * scale), y: round((605+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((292+x) * scale), y: round((848+y) * scale)),
+                "inputBottomRight":CIVector(x: round((305+x) * scale), y: round((625+y) * scale))
+            ]
             return
         }
         
-        skippedFrame = 0
+        let uiImage = UIImage(ciImage: image)
         
-        let scale = image.extent.height / 1936.0
-        let x = CGFloat(Defaults[.ocr_offsetX])
-        let y = CGFloat(Defaults[.ocr_offsetY])
-
-        // note: measure Y from the bottom
-        let rectCoords:[String:Any] = [
-            "inputTopLeft":CIVector(x: round((1244+x) * scale), y: round((828+y) * scale)),
-            "inputTopRight":CIVector(x: round((1240+x) * scale), y: round((605+y) * scale)),
-            "inputBottomLeft":CIVector(x: round((292+x) * scale), y: round((848+y) * scale)),
-            "inputBottomRight":CIVector(x: round((305+x) * scale), y: round((625+y) * scale))
-        ]
-        let alignedImage = image.applyingFilter("CIPerspectiveCorrection", parameters: rectCoords)
-        
-        let uiImage = UIImage(ciImage: alignedImage)
-        
-        _ = ocrReadScreen(alignedImage)
+        _ = ocrReadScreen(image)
         
         DispatchQueue.main.async {
             self.statusLabel.label.text = "P \(self.currentPlayer+1): \(self.lastHighScoreByPlayer[self.currentPlayer])"
@@ -97,12 +88,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         captureHelper.delegate = self
         captureHelper.pinball = nil
+        captureHelper.delegateWantsHiSpeedCamera = false
         captureHelper.delegateWantsScaledImages = false
         captureHelper.delegateWantsPlayImages = true
-        captureHelper.delegateWantsCroppedImages = false
-        captureHelper.delegateWantsBlurredImages = false
+        captureHelper.delegateWantsTemporalImages = false
         captureHelper.delegateWantsLockedCamera = true
-        captureHelper.delegateWantsRotatedImage = false
+        captureHelper.delegateWantsPerspectiveImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         
@@ -1101,12 +1092,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
     
     // MARK: Play and capture
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         
     }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         
     }

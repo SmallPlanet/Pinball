@@ -105,10 +105,24 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var send_startButton:Byte = 0
     var send_ballKickerButton:Byte = 0
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
         // Create a Vision request with completion handler
         guard let model = model else {
+            return
+        }
+        
+        if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
+            let scale = originalImage.extent.height / 720.0
+            let x:CGFloat = 0.0
+            let y:CGFloat = 0.0
+            
+            cameraCaptureHelper.perspectiveImagesCoords = [
+                "inputTopLeft":CIVector(x: round((149+x) * scale), y: round((566+y) * scale)),
+                "inputTopRight":CIVector(x: round((553+x) * scale), y: round((566+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((149+x) * scale), y: round((145+y) * scale)),
+                "inputBottomRight":CIVector(x: round((553+x) * scale), y: round((145+y) * scale))
+            ]
             return
         }
         
@@ -123,7 +137,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             send_ballKickerButton = 0
         }
         
-        lastFrame = maskedImage
+        lastFrame = image
         
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
             guard let results = request.results as? [VNClassificationObservation] else {
@@ -191,7 +205,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
         
         // Run the Core ML classifier on global dispatch queue
-        let handler = VNImageRequestHandler(ciImage: maskedImage)
+        let handler = VNImageRequestHandler(ciImage: image)
         do {
             try handler.perform([request])
         } catch {
@@ -204,14 +218,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("\(fps) fps")
             
             DispatchQueue.main.async {
-                self.preview.imageView.image = UIImage(ciImage: maskedImage)
+                self.preview.imageView.image = UIImage(ciImage: image)
             }
         }
     }
     
-    func sendCameraFrame(_ maskedImage: CIImage, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
+    func sendCameraFrame(_ image: CIImage, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
         
-        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
+        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
             return
         }
         
@@ -258,6 +272,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
+        captureHelper.delegateWantsPerspectiveImages = true
+        
+        captureHelper.scaledImagesSize = CGSize(width: 80, height: 80)
+        captureHelper.delegateWantsScaledImages = true
+        
+        captureHelper.delegateWantsHiSpeedCamera = true
+        
+        captureHelper.delegateWantsLockedCamera = true
+        
+        captureHelper.delegateWantsTemporalImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         

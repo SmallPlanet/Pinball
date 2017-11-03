@@ -21,10 +21,10 @@ class PreviewController: PlanetViewController, CameraCaptureHelperDelegate, NetS
 
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         DispatchQueue.main.async {
-            self.preview.imageView.image = UIImage(ciImage: image)
+            self.preview.imageView.image = UIImage(ciImage: originalImage)
         }
     }
 
@@ -41,8 +41,7 @@ class PreviewController: PlanetViewController, CameraCaptureHelperDelegate, NetS
         captureHelper.delegate = self
         captureHelper.pinball = nil
         captureHelper.delegateWantsPlayImages = true
-        captureHelper.delegateWantsCroppedImages = false
-        captureHelper.delegateWantsBlurredImages = false
+        captureHelper.delegateWantsTemporalImages = false
         
         UIApplication.shared.isIdleTimerDisabled = true
     }
@@ -62,12 +61,12 @@ class PreviewController: PlanetViewController, CameraCaptureHelperDelegate, NetS
 
     
     // MARK: Play and capture
-    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         
     }
     
-    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage:CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         
     }
