@@ -214,9 +214,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var fpsDisplay:Int = 0
     var lastDate = Date()
     
-    let serialQueue = DispatchQueue(label: "frame_transformation_queue")
-    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
-    
     var motionBlurFrames:[CIImage] = []
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
@@ -237,88 +234,86 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             ballKicker = (self.pinball!.ballKickerPressed ? 1 : 0)
         }
         
-        serialQueue.sync {
-            var bufferCopy : CMSampleBuffer?
-            let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
-            if err != noErr {
-                return
-            }
-            
-            guard let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else
-            {
-                return
-            }
+        var bufferCopy : CMSampleBuffer?
+        let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
+        if err != noErr {
+            return
+        }
+        
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else
+        {
+            return
+        }
 
-            let image = CIImage(cvPixelBuffer: pixelBuffer)
+        let image = CIImage(cvPixelBuffer: pixelBuffer)
+        
+        let rotation:CGFloat = 90
+        
+        let hw = image.extent.width / 2
+        let hh = image.extent.height / 2
+        
+        let frameHeight:CGFloat = 169.0
+        let frameWidth:CGFloat = 300.0
+        
+        // scale down to 50 pixels on min size
+        var scaleW = frameHeight / image.extent.height
+        var scaleH = frameWidth / image.extent.width
+        
+        if self.delegateWantsScaledImages == false {
+            scaleW = 1.0
+            scaleH = 1.0
+        }
+        
+        var transform = CGAffineTransform.identity
+        
+        if self.delegateWantsRotatedImage || self.delegateWantsScaledImages {
+            transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
+            if self.delegateWantsRotatedImage {
+                transform = transform.rotated(by: rotation.degreesToRadians)
+            }
+            if self.delegateWantsScaledImages {
+                transform = transform.scaledBy(x: scaleW, y: scaleH)
+            }
+            transform = transform.translatedBy(x: -hw, y: -hh)
+        }
+        
+        var rotatedImage = image.transformed(by: transform)
+        
+        if self.delegateWantsCroppedImages {
+            rotatedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+        }
+        
+        var lastBlurFrame = rotatedImage
+        if self.delegateWantsBlurredImages {
+            self.motionBlurFrames.append(rotatedImage)
             
-            let rotation:CGFloat = 90
+            let numberOfFrames = 4
             
-            let hw = image.extent.width / 2
-            let hh = image.extent.height / 2
-            
-            let frameHeight:CGFloat = 169.0
-            let frameWidth:CGFloat = 300.0
-            
-            // scale down to 50 pixels on min size
-            var scaleW = frameHeight / image.extent.height
-            var scaleH = frameWidth / image.extent.width
-            
-            if self.delegateWantsScaledImages == false {
-                scaleW = 1.0
-                scaleH = 1.0
+            while self.motionBlurFrames.count > numberOfFrames {
+                self.motionBlurFrames.remove(at: 0)
             }
             
-            var transform = CGAffineTransform.identity
-            
-            if self.delegateWantsRotatedImage || self.delegateWantsScaledImages {
-                transform = transform.translatedBy(x: hh * scaleH, y: hw * scaleW)
-                if self.delegateWantsRotatedImage {
-                    transform = transform.rotated(by: rotation.degreesToRadians)
-                }
-                if self.delegateWantsScaledImages {
-                    transform = transform.scaledBy(x: scaleW, y: scaleH)
-                }
-                transform = transform.translatedBy(x: -hw, y: -hh)
+            if self.motionBlurFrames.count < numberOfFrames {
+                // we don't have enough images, abort
+                return
             }
             
-            var rotatedImage = image.transformed(by: transform)
-            
-            if self.delegateWantsCroppedImages {
-                rotatedImage = rotatedImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+            // instead of blurring them, let's just stack them horizontally
+            lastBlurFrame = self.motionBlurFrames[0]
+            for i in 1..<self.motionBlurFrames.count {
+                let otherFrame = self.motionBlurFrames[i]
+                lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i) * otherFrame.extent.width, y: 0)))
             }
             
-            var lastBlurFrame = rotatedImage
-            if self.delegateWantsBlurredImages {
-                self.motionBlurFrames.append(rotatedImage)
-                while self.motionBlurFrames.count > 4 {
-                    self.motionBlurFrames.remove(at: 0)
-                }
-                
-                if self.motionBlurFrames.count < 4 {
-                    // we don't have enough images, abort
-                    return
-                }
-                
-                // instead of blurring them, let's just stack them vertically
-                lastBlurFrame = self.motionBlurFrames[0]
-                for i in 1..<self.motionBlurFrames.count {
-                    let otherFrame = self.motionBlurFrames[i]
-                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: 0, y: CGFloat(i) * otherFrame.extent.height)))
-                }
-                
-                if localPlayFrameNumber % 10 != 1 {
-                    self.motionBlurFrames.removeLast()
-                }
-                
+            if localPlayFrameNumber % numberOfFrames == 0 {
+                self.motionBlurFrames.removeLast()
             }
             
-            
-            if self.delegateWantsPlayImages {
-                self.playQueue.sync {
-                    self.delegate?.playCameraImage(self, maskedImage: lastBlurFrame, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
-                }
-            }
-            
+        }
+        
+        
+        if self.delegateWantsPlayImages {
+            self.delegate?.playCameraImage(self, maskedImage: lastBlurFrame, image: lastBlurFrame, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
         }
  
         fpsCounter += 1
