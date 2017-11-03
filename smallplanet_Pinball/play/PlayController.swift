@@ -112,6 +112,20 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
+        if cameraCaptureHelper.pipImagesCoords.count == 0 {
+            let scale = originalImage.extent.height / 720.0
+            let x:CGFloat = 0.0
+            let y:CGFloat = 0.0
+            
+            cameraCaptureHelper.pipImagesCoords = [
+                "inputTopLeft":CIVector(x: round((23+x) * scale), y: round((115+y) * scale)),
+                "inputTopRight":CIVector(x: round((98+x) * scale), y: round((115+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((23+x) * scale), y: round((38+y) * scale)),
+                "inputBottomRight":CIVector(x: round((98+x) * scale), y: round((38+y) * scale))
+            ]
+            return
+        }
+        
         if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
             let scale = originalImage.extent.height / 720.0
             let x:CGFloat = 0.0
@@ -125,6 +139,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             ]
             return
         }
+        
+        
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
@@ -273,6 +289,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsPerspectiveImages = true
+        captureHelper.delegateWantsPictureInPictureImages = true
         
         captureHelper.scaledImagesSize = CGSize(width: 80, height: 80)
         captureHelper.delegateWantsScaledImages = true

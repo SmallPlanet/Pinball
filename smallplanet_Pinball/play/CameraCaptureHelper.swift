@@ -34,6 +34,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var isLocked = false
     
+    var pipImagesCoords:[String:Any] = [:]
+    var delegateWantsPictureInPictureImages = false
+    
     
     var perspectiveImagesCoords:[String:Any] = [:]
     var delegateWantsPerspectiveImages = false
@@ -249,6 +252,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         if self.delegateWantsPerspectiveImages && perspectiveImagesCoords.count > 0 {
             cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perspectiveImagesCoords)
         }
+        
+        if self.delegateWantsPictureInPictureImages && pipImagesCoords.count > 0 {
+            var pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: pipImagesCoords)            
+            cameraImage = pipImage.composited(over: cameraImage)
+        }
+        
         
         if self.delegateWantsScaledImages {
             cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
