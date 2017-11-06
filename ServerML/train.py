@@ -25,7 +25,7 @@ class EvaluationMonitor(Callback):
     imgs = []
     labels = []
     didSaveModel = False
-    minSaveAccuracy = 0.95
+    minSaveAccuracy = 0.98
     
     def round2(self, x, y):
         if x > y:
@@ -75,9 +75,9 @@ model.compile(loss='binary_crossentropy',
               metrics=['accuracy'])
 
 # if we have some pre-existing weights, load those first
-if os.path.isfile("model.h5"):
-    print("Loading previous model weights...")
-    model.load_weights("model.h5")
+#if os.path.isfile("model.h5"):
+#    print("Loading previous model weights...")
+#    model.load_weights("model.h5")
 
 print("Allocating the image data generator...")
 datagen = ImageDataGenerator(featurewise_center=False,
@@ -93,7 +93,7 @@ def read_file(path):
         return f.read()
 
 def Learn():
-
+    
     print("Loadinf long term memories...")
     train_imgs = images.generate_image_array(train_path, train_max_size)
     train_labels = []
@@ -151,13 +151,13 @@ def Learn():
             # free up whatever memory we can before training
             gc.collect()
             
+            # TODO: shuffle the arrays
+            
             batch_size = int(random.random() * 32 + 6)
             
             if batch_size > len(total_imgs):
                 batch_size = len(total_imgs)
-                
-            batch_size = 3
-                                                
+                                                                
             wlr = WeightedLR(total_weights)
             
             model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),

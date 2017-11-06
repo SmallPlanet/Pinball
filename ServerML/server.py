@@ -100,6 +100,9 @@ class Memory:
         for scoreEvent in gameState.scoringEvents:
             if scoreEvent.player == gameState.currentPlayer:
                 self.reward += scoreEvent.rewardForMemory(self)
+        
+        # we want to reward clean shots, not just randomly flipping the flippers a thousand times a second
+        self.reward *= pointScale
                 
         #print("commit reward", self.reward)
                 
@@ -314,7 +317,7 @@ while True:
     
     
     # NOTE: Gameplay simulator, useful for self-testing when not near the pinball machine
-    SimulateGameplay()
+    #SimulateGameplay()
 
 
 
