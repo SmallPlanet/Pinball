@@ -54,19 +54,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
         
-        if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
-            let scale = originalImage.extent.height / 1936.0
-            let x = CGFloat(Defaults[.ocr_offsetX])
-            let y = CGFloat(Defaults[.ocr_offsetY])
-            
-            cameraCaptureHelper.perspectiveImagesCoords = [
-                "inputTopLeft":CIVector(x: round((1244+x) * scale), y: round((828+y) * scale)),
-                "inputTopRight":CIVector(x: round((1240+x) * scale), y: round((605+y) * scale)),
-                "inputBottomLeft":CIVector(x: round((292+x) * scale), y: round((848+y) * scale)),
-                "inputBottomRight":CIVector(x: round((305+x) * scale), y: round((625+y) * scale))
-            ]
-            return
-        }
+        let scale = originalImage.extent.height / 1936.0
+        let x = CGFloat(Defaults[.ocr_offsetX])
+        let y = CGFloat(Defaults[.ocr_offsetY])
+        
+        cameraCaptureHelper.perspectiveImagesCoords = [
+            "inputTopLeft":CIVector(x: round((1236+x) * scale), y: round((827+y) * scale)),
+            "inputTopRight":CIVector(x: round((1236+x) * scale), y: round((604+y) * scale)),
+            "inputBottomLeft":CIVector(x: round((287+x) * scale), y: round((841+y) * scale)),
+            "inputBottomRight":CIVector(x: round((299+x) * scale), y: round((617+y) * scale))
+        ]
         
         let uiImage = UIImage(ciImage: image)
         
