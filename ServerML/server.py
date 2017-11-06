@@ -11,28 +11,64 @@ import struct
 import os
 import glob
 
-# The goal here is to distribute the points earned fairly to the actions taken. As such,
-# we need to assign only the point earned and not amny more. For example, if 5 actions
-# were take in quick succession and over the next N seconds that resulted in a score
-# increase of 500 pts, then that 500 pts needs to be distrubted somehow across those
-# 5 actions, and NOT each action gets 500 pts
-#
-# This can be accomplished but the scoreDrainByPlayer; each time some points are assigned
-# to an action, this value increases by the same so we can calculate the amount of 
-# unassigned points there are left to assign
+# how far reaching into the past scores earned should affect the reward value associated with
+# actions.  1 means its stretches far, 0 means its very near sighted
+shortTermLearningRate = 0.8
 
-shortTermMemoryDuration = 2
+# the absolaute maximum number of seconds a memory can be affected by new scores; when a short
+# term memory exceeeds this threashold is it converted to a long term memory
+# NOTE: all memories are committed immediately when the active player changes
+shortTermMemoryDuration = 30
+
+# absoluate maximum number of long term memories to store on disk; when the threashold is
+# reached memories with least reward are thrown away
 longTermMemoryMaxSize = 50000
+
+# if an action does not score more than this it will not be considered for long term memory storage
+longTermMemoryMinimumReward = 15000
+
+class ScoreEvent:
+    def __init__(self, player, differentialScore):
+        self.scoreEpoc = time.time()
+        self.player = player
+        self.differentialScore = differentialScore
+        
+        print("  new scoring event", self.scoreEpoc, self.player, self.differentialScore)
+        
+    
+    def rewardForMemory(self, memory):
+        # if this score happened before the action, it should not affect it
+        if self.scoreEpoc < memory.startEpoc:
+            return 0
+        
+        # number of seconds after the event the change in score happend
+        t = self.scoreEpoc - memory.startEpoc
+        
+        # basic idea is we want the affect of the score to fall off over time
+        # note: i'm sure there is a more fantastic method for doing this, but for now
+        # it means scores will falloff over quarter second intervals, fall off less
+        # the closer shortTermLearningRate is to 1
+        reward = self.differentialScore
+        x = int(t * 4)
+        while x > 0:
+            reward *= shortTermLearningRate
+            x -= 1
+            
+        #print("  calculated", t, int(t * 4), reward, self.differentialScore)
+        
+        return reward
+        
+        
 
 class GameStateInfo:
     currentPlayer = 0
     scoreByPlayer = [-1,-1,-1,-1]
-    scoreDrainByPlayer = [0,0,0,0]
+    scoringEvents = []
     
     def Reset(self):
         currentPlayer = 0
         scoreByPlayer = [-1,-1,-1,-1]
-        scoreDrainByPlayer = [0,0,0,0]
+        scoringEvents = []
 
 
 gameState = GameStateInfo()
@@ -43,12 +79,11 @@ longTermMemory = []
 class Memory:
     
     def __repr__(self):
-        return '%d:%d,%d,%d,%d' % (self.differentialScore, self.left, self.right, self.start, self.ballKicker)
+        return '%d:%d,%d,%d,%d' % (self.reward, self.left, self.right, self.start, self.ballKicker)
         
     def __init__(self, filePath=None, jpeg=None, diffScore=0, left=None, right=None, start=None, ballKicker=None):
         self.startEpoc = time.time()
-        self.startScore = gameState.scoreByPlayer[gameState.currentPlayer]
-        self.differentialScore = diffScore
+        self.reward = 0
         self.jpeg = jpeg
         self.left = left
         self.right = right
@@ -59,42 +94,33 @@ class Memory:
     
     def CommitMemory(self, pointScale):
         
-        # calculate the total number of points scored during this memory's unique time frame
-        totalPointsPossible = gameState.scoreByPlayer[gameState.currentPlayer] - self.startScore
+        # run through all scoring events for this player, add up their reward for this action
+        self.reward = 0
         
-        print("totalPointsPossible", totalPointsPossible)
-        
-        # multiply the total points possible by the pointScale, this helps ensure one memory does not
-        # hog all of the points
-        totalPointsPossible = totalPointsPossible * pointScale
-        
-        print("totalPointsPossible after scale", totalPointsPossible)
-        
-        # drain points from the point pool up to totalPointsPossible, without exceeding the pool limits
-        self.differentialScore = 0
-        while self.differentialScore < totalPointsPossible and gameState.scoreDrainByPlayer[gameState.currentPlayer] < gameState.scoreByPlayer[gameState.currentPlayer]:
-            self.differentialScore += 1
-            gameState.scoreDrainByPlayer[gameState.currentPlayer] += 1
-        
-        
+        for scoreEvent in gameState.scoringEvents:
+            if scoreEvent.player == gameState.currentPlayer:
+                self.reward += scoreEvent.rewardForMemory(self)
+                
+        #print("commit reward", self.reward)
+                
         # sort the long term memory such that the lowest diff score memory is first
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
                 
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if self.differentialScore > 15000:
-            print("  -> long term memory:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
+        if self.reward > longTermMemoryMinimumReward:
+            print("  -> long term memory:", self.reward, self.left, self.right, self.start, self.ballKicker)
             
             longTermMemory.append(self)
             longTermMemory.sort(reverse=False, key=GetMemoryKey)
             
-            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, self.differentialScore, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
+            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, self.reward, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
             print (self.filePath)
         
             f = open(self.filePath, 'wb')
             f.write(x.jpeg)
             f.close()
         else:
-            print("  -> waste bin:", self.differentialScore, self.left, self.right, self.start, self.ballKicker)
+            print("  -> waste bin:", self.reward, self.left, self.right, self.start, self.ballKicker)
             
             self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.waste_path, 0, 0, 0, 0, 0, str(uuid.uuid4()))
             print (self.filePath)
@@ -114,7 +140,7 @@ class Memory:
         
 
 def GetMemoryKey(item):
-    return item.differentialScore
+    return item.reward
 
 def LoadLongTermMemory():
     all_img_paths = glob.glob(os.path.join(train.train_path, '*.jpg'))
@@ -142,20 +168,20 @@ def CommitMemoryArray(array):
         del array[0]
 
 def SimulateGameplay():
-    if random.random() < 0.05:
-        # randomly increase our score
-        gameState.scoreByPlayer[gameState.currentPlayer] += random.random() * 100
-        print("  Simulated scores: ", gameState.scoreByPlayer)
     
     if random.random() < 0.01:
-        # randomly change the player
-        CommitMemoryArray(shortTermMemory)
-        if gameState.currentPlayer == 0:
-            gameState.currentPlayer = 1
+        player = gameState.currentPlayer
+        if player == 0:
+            player = 1
         else:
-            gameState.currentPlayer = 0
-        print("  Player changed: ", gameState.currentPlayer, gameState.scoreByPlayer)
-
+            player = 0
+        newScore = gameState.scoreByPlayer[player] + random.random() * 100
+        HandleGameInfo('m:{0},{1}'.format(player+1, int(newScore)))
+    
+    if random.random() < 0.05:
+        newScore = gameState.scoreByPlayer[gameState.currentPlayer] + random.random() * 100
+        HandleGameInfo('m:{0},{1}'.format(gameState.currentPlayer+1, int(newScore)))
+    
 
 # messages from CoreML updates, adding just for debugging
 #def HandleCoreMLUpdate(msg):   
@@ -169,6 +195,17 @@ def HandleRemoteControlInfo(msg):
         train.Learn()
 comm.subscriber(comm.endpoint_sub_RemoteControl, HandleRemoteControlInfo)
 
+
+def HandleChangeInScore(player, newScore):
+    differentialScore = newScore - gameState.scoreByPlayer[player]
+    if differentialScore < 0:
+        differentialScore = 0
+    gameState.scoreByPlayer[player] = newScore
+    
+    gameState.scoringEvents.append(ScoreEvent(player, differentialScore))
+    
+    
+
 # messages from OCR app
 def HandleGameInfo(msg):   
     print(msg) 
@@ -176,23 +213,21 @@ def HandleGameInfo(msg):
     if len(parts) == 2:
         # single player score
         if parts[0] == 's':
-            gameState.scoreByPlayer[gameState.currentPlayer] = int(parts[1])
-            print("  Received scores: ", gameState.scoreByPlayer)
+            HandleChangeInScore(gameState.currentPlayer, int(parts[1]))
             
         # multiplayer scoring, includes current player as the first item and score as second item
         if parts[0] == 'm':
             parts2 = parts[1].split(",")
             newPlayer = int(parts2[0])-1
             if newPlayer != gameState.currentPlayer:
-                ClearMemoryArray(shortTermMemory)
+                CommitMemoryArray(shortTermMemory)
                 gameState.currentPlayer = newPlayer
-                
-            gameState.scoreByPlayer[gameState.currentPlayer] = int(parts2[1])
-            print("  Received scores: ", gameState.scoreByPlayer)
+            
+            HandleChangeInScore(gameState.currentPlayer, int(parts2[1]))
             
         # start of new player turn
         if parts[0] == 'p':
-            ClearMemoryArray(shortTermMemory)
+            CommitMemoryArray(shortTermMemory)
             gameState.currentPlayer = int(parts[1])-1
             print("  Player " + parts[1] + " is up!")
             
@@ -254,7 +289,7 @@ print("Begin server main loop...")
 while True:
     
     didProcessMessage = comm.PollSockets()
-    
+
     # run through short term memory and see if we should save it to
     # long term memory
     currentEpoc = time.time()
@@ -267,7 +302,7 @@ while True:
             elapsedShortTermMemories.append(x)
             del shortTermMemory[i]
     
-    #2) for all of the elapsed memories, commit them with the evenly distributed score gains
+    #2) for all of the elapsed memories, commit them
     CommitMemoryArray(elapsedShortTermMemories)
     
     
@@ -279,7 +314,7 @@ while True:
     
     
     # NOTE: Gameplay simulator, useful for self-testing when not near the pinball machine
-    #SimulateGameplay()
+    SimulateGameplay()
 
 
 
