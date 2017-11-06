@@ -22,7 +22,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case Play    // AI will play as player 1 over and over
     }
     
-    let playMode:PlayMode = .Play
+    let playMode:PlayMode = .Observe
     
     var currentPlayer = 1
     
@@ -105,12 +105,42 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var send_startButton:Byte = 0
     var send_ballKickerButton:Byte = 0
     
-    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, maskedImage: CIImage, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+    func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
         // Create a Vision request with completion handler
         guard let model = model else {
             return
         }
+        
+        if cameraCaptureHelper.pipImagesCoords.count == 0 {
+            let scale = originalImage.extent.height / 720.0
+            let x:CGFloat = 0.0
+            let y:CGFloat = 0.0
+            
+            cameraCaptureHelper.pipImagesCoords = [
+                "inputTopLeft":CIVector(x: round((23+x) * scale), y: round((115+y) * scale)),
+                "inputTopRight":CIVector(x: round((98+x) * scale), y: round((115+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((23+x) * scale), y: round((38+y) * scale)),
+                "inputBottomRight":CIVector(x: round((98+x) * scale), y: round((38+y) * scale))
+            ]
+            return
+        }
+        
+        if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
+            let scale = originalImage.extent.height / 720.0
+            let x:CGFloat = 0.0
+            let y:CGFloat = 0.0
+            
+            cameraCaptureHelper.perspectiveImagesCoords = [
+                "inputTopLeft":CIVector(x: round((149+x) * scale), y: round((566+y) * scale)),
+                "inputTopRight":CIVector(x: round((553+x) * scale), y: round((566+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((149+x) * scale), y: round((145+y) * scale)),
+                "inputBottomRight":CIVector(x: round((553+x) * scale), y: round((145+y) * scale))
+            ]
+            return
+        }
+        
+        
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
@@ -123,7 +153,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             send_ballKickerButton = 0
         }
         
-        lastFrame = maskedImage
+        lastFrame = image
         
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
             guard let results = request.results as? [VNClassificationObservation] else {
@@ -152,14 +182,17 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let experimental:Float = 0.1
             let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
             let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
-            let cutoff1 = 1.0 - rand1 * experimental
-            let cutoff2 = 1.0 - rand2 * experimental
+            //let cutoff1 = 1.0 - rand1 * experimental
+            //let cutoff2 = 1.0 - rand2 * experimental
+            
+            let cutoff1:Float = 0.9
+            let cutoff2:Float = 0.9
             
             if leftObservation!.confidence > cutoff1 {
                 if canPlay && self?.pinball.leftButtonPressed == false {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
                 }
-                print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+                //print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
             } else {
                 if canPlay && self?.pinball.leftButtonPressed == true {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
@@ -169,14 +202,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 if canPlay && self?.pinball.rightButtonPressed == false {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
                 }
-                print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
+                //print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
             }else{
                 if canPlay && self?.pinball.rightButtonPressed == true {
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
                 }
             }
             if ballKickerObservation!.confidence > 0.99 {
-                print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
+                //print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
                 if canPlay && self?.pinball.ballKickerPressed == false {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
                 }
@@ -188,7 +221,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
         
         // Run the Core ML classifier on global dispatch queue
-        let handler = VNImageRequestHandler(ciImage: maskedImage)
+        let handler = VNImageRequestHandler(ciImage: image)
         do {
             try handler.perform([request])
         } catch {
@@ -201,14 +234,14 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("\(fps) fps")
             
             DispatchQueue.main.async {
-                self.preview.imageView.image = UIImage(ciImage: maskedImage)
+                self.preview.imageView.image = UIImage(ciImage: image)
             }
         }
     }
     
-    func sendCameraFrame(_ maskedImage: CIImage, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
+    func sendCameraFrame(_ image: CIImage, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
         
-        guard let jpegData = ciContext.jpegRepresentation(of: maskedImage, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
+        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
             return
         }
         
@@ -255,6 +288,17 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
+        captureHelper.delegateWantsPerspectiveImages = true
+        captureHelper.delegateWantsPictureInPictureImages = true
+        
+        captureHelper.scaledImagesSize = CGSize(width: 80, height: 80)
+        captureHelper.delegateWantsScaledImages = true
+        
+        captureHelper.delegateWantsHiSpeedCamera = true
+        
+        captureHelper.delegateWantsLockedCamera = true
+        
+        captureHelper.delegateWantsTemporalImages = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         

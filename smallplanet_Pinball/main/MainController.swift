@@ -75,7 +75,9 @@ class MainController: PlanetViewController, NetServiceDelegate {
         NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BeginPlayMode.rawValue), object:nil, queue:nil) {_ in
             self.navigationController?.popToRootViewController(animated: true)
             if #available(iOS 11.0, *) {
-                self.navigationController?.pushViewController(PlayController(), animated: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
+                    self.navigationController?.pushViewController(PlayController(), animated: true)
+                })
             } else {
                 
             }
