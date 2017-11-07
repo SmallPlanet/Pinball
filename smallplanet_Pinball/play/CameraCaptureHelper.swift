@@ -34,6 +34,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var isLocked = false
     
+    var constantFPS = 70
+    var delegateWantsConstantFPS = false
+    
     var pipImagesCoords:[String:Any] = [:]
     var delegateWantsPictureInPictureImages = false
     
@@ -132,10 +135,19 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 
                 camera.activeFormat = bestFormat!
                 if bestFrameRateRange != nil {
-                    var frameDuration = bestFrameRateRange!.minFrameDuration
-                    frameDuration.value *= 2
-                    camera.activeVideoMinFrameDuration = frameDuration
-                    print("setting camera fps to \(bestFrameRateRange!.minFrameDuration.timescale)")
+                    
+                    if delegateWantsConstantFPS {
+                        camera.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: CMTimeScale(constantFPS))
+                        camera.activeVideoMinFrameDuration = CMTime(value: 1, timescale: CMTimeScale(constantFPS))
+                        print("setting camera fps to constant \(constantFPS)")
+                    } else {
+                        var frameDuration = bestFrameRateRange!.minFrameDuration
+                        frameDuration.value *= 2
+                        camera.activeVideoMinFrameDuration = frameDuration
+                        print("setting camera fps to \(bestFrameRateRange!.minFrameDuration.timescale)")
+                    }
+                    
+                    
                 }
                 camera.unlockForConfiguration()
                 
