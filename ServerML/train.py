@@ -28,7 +28,7 @@ class EvaluationMonitor(Callback):
     imgs = []
     labels = []
     didSaveModel = False
-    minSaveAccuracy = 0.98
+    minSaveAccuracy = 0.97
     
     def round2(self, x, y):
         if x > y:
@@ -112,46 +112,47 @@ def Learn():
     
     images.load_images(permanent_imgs, permanent_labels, permanent_weights, permanent_path, permanent_max_size)
     
-    print("Load wasted memories...")
-    waste_max_size = len(train_imgs)//3
-    waste_imgs = images.generate_image_array(waste_path, waste_max_size)
-    waste_labels = []
-    waste_weights = []
-    
-    images.load_images(waste_imgs, waste_labels, waste_weights, waste_path, waste_max_size)
-    
-    if len(train_labels) > 0 and len(waste_labels) > 0:
-        total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
-        total_labels = np.concatenate((permanent_labels,train_labels,waste_labels), axis=0)
-        total_weights = np.concatenate((permanent_weights,train_weights,waste_weights), axis=0)
-    elif len(train_labels) > 0:
-        total_imgs = np.concatenate((permanent_imgs,train_imgs), axis=0)
-        total_labels = np.concatenate((permanent_labels,train_labels), axis=0)
-        total_weights = np.concatenate((permanent_weights,train_weights), axis=0)
-    elif len(waste_labels) > 0:
-        total_imgs = np.concatenate((permanent_imgs,waste_imgs), axis=0)
-        total_labels = np.concatenate((permanent_labels,waste_labels), axis=0)
-        total_weights = np.concatenate((permanent_weights,waste_weights), axis=0)
-    else:
-        total_imgs = permanent_imgs
-        total_labels = permanent_labels
-        total_weights = permanent_weights
-    
                     
-    if len(total_imgs) >= 6:
+    if len(permanent_imgs) + len(train_imgs) >= 6:
         
         #if os.path.isfile("model.h5"):
         #    print("Loading previous model weights...")
         #    cnn_model.load_weights("model.h5")
         
         em = EvaluationMonitor()
-        em.imgs = total_imgs
-        em.labels = total_labels
-        em.cnn_model = cnn_model
+        
+        waste_max_size = len(train_imgs)//3
+        waste_imgs = images.generate_image_array(waste_path, waste_max_size)
                                         
         # then let's train the network on the altered images
         print("Training the long term memories...")
         while em.didSaveModel == False:
+            
+            # load a new set of wasted images each time through the training loop
+            print("Reload new wasted memories...")
+            waste_labels = []
+            waste_weights = []
+    
+            images.load_images(waste_imgs, waste_labels, waste_weights, waste_path, waste_max_size)
+    
+            if len(train_labels) > 0 and len(waste_labels) > 0:
+                total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
+                total_labels = np.concatenate((permanent_labels,train_labels,waste_labels), axis=0)
+                total_weights = np.concatenate((permanent_weights,train_weights,waste_weights), axis=0)
+            elif len(train_labels) > 0:
+                total_imgs = np.concatenate((permanent_imgs,train_imgs), axis=0)
+                total_labels = np.concatenate((permanent_labels,train_labels), axis=0)
+                total_weights = np.concatenate((permanent_weights,train_weights), axis=0)
+            elif len(waste_labels) > 0:
+                total_imgs = np.concatenate((permanent_imgs,waste_imgs), axis=0)
+                total_labels = np.concatenate((permanent_labels,waste_labels), axis=0)
+                total_weights = np.concatenate((permanent_weights,waste_weights), axis=0)
+            else:
+                total_imgs = permanent_imgs
+                total_labels = permanent_labels
+                total_weights = permanent_weights
+                
+            
             
             # free up whatever memory we can before training
             gc.collect()
@@ -164,6 +165,11 @@ def Learn():
             prng.shuffle(total_labels)
             prng = RandomState(t)
             prng.shuffle(total_weights)
+            
+            # make the evaluator point to the updated arrays
+            em.imgs = total_imgs
+            em.labels = total_labels
+            em.cnn_model = cnn_model
             
             
             batch_size = int(random.random() * 32 + 6)
