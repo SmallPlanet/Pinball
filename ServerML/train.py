@@ -6,6 +6,8 @@ from keras.optimizers import SGD
 from keras import backend as K
 from clr_callback import CyclicLR
 from weighted_learning import WeightedLR
+from numpy.random import RandomState
+import time
 import model
 import images
 import numpy as np
@@ -22,6 +24,7 @@ import h5py
 
 # used for realistic accuracy reporting during training...
 class EvaluationMonitor(Callback):  
+    cnn_model = None
     imgs = []
     labels = []
     didSaveModel = False
@@ -43,13 +46,14 @@ class EvaluationMonitor(Callback):
         return acc
     
     def on_epoch_end(self, epoch, logs={}): 
-        predictions = model.predict(self.imgs)
+        predictions = self.cnn_model.predict(self.imgs)
         acc = self.calc_predict(predictions, 0.5)
+        print("  - pred_acc {}".format(acc))
         if acc > self.minSaveAccuracy:
             self.minSaveAccuracy = acc
             print("\n saving model with accuracy of {} (total {})".format(acc, len(self.labels)))
             self.didSaveModel = True
-            model.save("model.h5")
+            self.cnn_model.save("model.h5")
 
 
 
@@ -65,14 +69,6 @@ train_max_size = 0
 
 waste_path = "./waste/"
 waste_max_size = 0
-
-# create the model
-print("Generating the CNN model...")
-model = model.cnn_model()
-
-model.compile(loss='binary_crossentropy',
-              optimizer='rmsprop',
-              metrics=['accuracy'])
 
 # if we have some pre-existing weights, load those first
 #if os.path.isfile("model.h5"):
@@ -94,7 +90,15 @@ def read_file(path):
 
 def Learn():
     
-    print("Loadinf long term memories...")
+    # create the model
+    print("Generating the CNN model...")
+    cnn_model = model.cnn_model()
+
+    cnn_model.compile(loss='binary_crossentropy',
+                  optimizer='rmsprop',
+                  metrics=['accuracy'])
+    
+    print("Loading long term memories...")
     train_imgs = images.generate_image_array(train_path, train_max_size)
     train_labels = []
     train_weights = []
@@ -138,12 +142,13 @@ def Learn():
         
         #if os.path.isfile("model.h5"):
         #    print("Loading previous model weights...")
-        #    model.load_weights("model.h5")
-                                        
+        #    cnn_model.load_weights("model.h5")
+        
         em = EvaluationMonitor()
         em.imgs = total_imgs
         em.labels = total_labels
-
+        em.cnn_model = cnn_model
+                                        
         # then let's train the network on the altered images
         print("Training the long term memories...")
         while em.didSaveModel == False:
@@ -151,7 +156,15 @@ def Learn():
             # free up whatever memory we can before training
             gc.collect()
             
-            # TODO: shuffle the arrays
+            # shuffle the arrays
+            t = int(time.time())
+            prng = RandomState(t)
+            prng.shuffle(total_imgs)
+            prng = RandomState(t)
+            prng.shuffle(total_labels)
+            prng = RandomState(t)
+            prng.shuffle(total_weights)
+            
             
             batch_size = int(random.random() * 32 + 6)
             
@@ -159,13 +172,13 @@ def Learn():
                 batch_size = len(total_imgs)
                                                                 
             wlr = WeightedLR(total_weights)
-            
-            model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
+
+            cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
                     steps_per_epoch=len(total_imgs) // batch_size,
                     epochs=epochs,
                     callbacks=[wlr,em])
                     
-            model.fit(total_imgs, total_labels,
+            cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
                       epochs=epochs,
                       verbose=1,
