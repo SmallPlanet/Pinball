@@ -27,6 +27,9 @@ longTermMemoryMaxSize = 50000
 # if an action does not score more than this it will not be considered for long term memory storage
 longTermMemoryMinimumReward = 15000
 
+# when a player loses a ball, that should negatively impact actions taken before the lost ball
+penaltyForLostBall = -1000000
+
 class ScoreEvent:
     def __init__(self, player, differentialScore):
         self.scoreEpoc = time.time()
@@ -223,14 +226,23 @@ def HandleGameInfo(msg):
             parts2 = parts[1].split(",")
             newPlayer = int(parts2[0])-1
             if newPlayer != gameState.currentPlayer:
-                CommitMemoryArray(shortTermMemory)
+                HandlePlayerLostBall()
                 gameState.currentPlayer = newPlayer
             
             HandleChangeInScore(gameState.currentPlayer, int(parts2[1]))
+        
+        # ball count, includes current player as the first item and ball number as the second item
+        # note: we only receive this once when the ball number changes per player, so we can
+        # simply act on it
+        if parts[0] == 'b':
+            parts2 = parts[1].split(",")
+            ballPlayer = int(parts2[0])-1
+            if ballPlayer == gameState.currentPlayer:
+                HandlePlayerLostBall()
             
         # start of new player turn
         if parts[0] == 'p':
-            CommitMemoryArray(shortTermMemory)
+            HandlePlayerLostBall()
             gameState.currentPlayer = int(parts[1])-1
             print("  Player " + parts[1] + " is up!")
             
@@ -240,11 +252,18 @@ def HandleGameInfo(msg):
             print("  Received game over")
         
         # push start
-        if parts[0] == 'b':
+        if parts[0] == 'g':
             gameState.Reset()
             print("  Received begin new game")
 
 comm.subscriber(comm.endpoint_sub_GameInfo, HandleGameInfo)
+
+
+def HandlePlayerLostBall():
+    print("  *** HANDLE LOST BALL ***")
+    gameState.scoringEvents.append(ScoreEvent(gameState.currentPlayer, penaltyForLostBall))
+    CommitMemoryArray(shortTermMemory)
+    
 
 
 # messages from ML app
