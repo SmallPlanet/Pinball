@@ -300,6 +300,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.delegateWantsTemporalImages = true
         
+        captureHelper.constantFPS = 70
+        captureHelper.delegateWantsConstantFPS = true
+        
         UIApplication.shared.isIdleTimerDisabled = true
         
         // We allow remote control of gameplay to help "manually" train the AI
