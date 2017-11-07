@@ -33,12 +33,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     let verbose = 0
     
     var lastHighScoreByPlayer = [-1,-1,-1,-1]
+    var lastBallCountByPlayer = [3,3,3,3]
     var currentPlayer = 0
     
     func ResetGame() {
         currentPlayer = 0
         for i in 0..<lastHighScoreByPlayer.count {
             lastHighScoreByPlayer[i] = -1
+        }
+        for i in 0..<lastBallCountByPlayer.count {
+            lastBallCountByPlayer[i] = 3
         }
     }
     
@@ -235,6 +239,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             //let i = 23
             //testImages.count
             for i in 0..<testImages.count {
+            //for i in [6,7] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
@@ -323,6 +328,38 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         return false
     }
+    
+    func ocrCurrentBallNumber(_ dotmatrix:[UInt8]) -> Int {
+        
+        for y in 6..<9 {
+            for x in 0..<3 {
+                if ocrMatch(current_ball, 0.9, x, y, 5, dotmatrix) {
+                    
+                    for y2 in 18..<24 {
+                        // once we match "BALL", we need to match the right number...
+                        if ocrMatch(current_ball_1, 0.9, x, y+y2, 5, dotmatrix) {
+                            if (verbose >= 1) { print("matched BALL 1 at \(x),\(y)") }
+                            return 1
+                        }
+                        if ocrMatch(current_ball_2, 0.9, x, y+y2, 5, dotmatrix) {
+                            if (verbose >= 1) { print("matched BALL 2 at \(x),\(y)") }
+                            return 2
+                        }
+                        if ocrMatch(current_ball_3, 0.9, x, y+y2, 5, dotmatrix) {
+                            if (verbose >= 1) { print("matched BALL 3 at \(x),\(y)") }
+                            return 3
+                        }
+                    }
+                    
+                    return 0
+                }
+            }
+        }
+        
+        return 0
+    }
+    
+    
     
     func ocrScore(_ dotmatrix:[UInt8]) -> (Int,Bool) {
         var score:Int = 0
@@ -891,7 +928,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         
         if screenText == "" && self.ocrPushStart(dotmatrix) {
-            updateType = "b"
+            updateType = "g"
             screenText = "PUSH START"
             
             ResetGame()
@@ -919,6 +956,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     screenText = "\(currentPlayer+1),\(mpScore)"
                     
                     lastHighScoreByPlayer[currentPlayer] = mpScore
+                    
+                    // Note: we don't really need to watch for ball changes in multiplayer games
+                    // because when we lost a ball we change the player
                 }
             }
         }
@@ -940,6 +980,17 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 screenText = "\(score)"
                 
                 lastHighScoreByPlayer[currentPlayer] = score
+                
+                // if we are seeing single player scores, we need to report changes to the ball count so we know when,
+                // in single player, the player loses the ball
+                let ballNumber = self.ocrCurrentBallNumber(dotmatrix)
+                if ballNumber > 0 && ballNumber < lastBallCountByPlayer[currentPlayer] {
+                    lastBallCountByPlayer[currentPlayer] = ballNumber
+                    
+                    let ballDidChangeString = "b" + ":" + "\(currentPlayer+1),\(ballNumber)"
+                    try! scorePublisher?.send(string: ballDidChangeString)
+                    print(ballDidChangeString)
+                }
             }
         }
         
@@ -1735,6 +1786,54 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         ]
+    
+    
+    
+    
+    
+    fileprivate var current_ball: [UInt8] = [
+        1,1,1,1,1,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,0,1,0,
+        0,0,0,0,0,
+        1,1,1,1,0,
+        0,0,1,0,1,
+        0,0,1,0,1,
+        1,1,1,1,0,
+        0,0,0,0,0,
+        1,1,1,1,1,
+        1,0,0,0,0,
+        1,0,0,0,0,
+        0,0,0,0,0,
+        1,1,1,1,1,
+        1,0,0,0,0,
+        1,0,0,0,0,
+        ]
+    
+    fileprivate var current_ball_1: [UInt8] = [
+        1,0,0,1,0,
+        1,1,1,1,1,
+        1,0,0,0,0,
+        ]
+    
+    fileprivate var current_ball_2: [UInt8] = [
+        1,1,0,0,1,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        1,0,0,1,0,
+        ]
+    
+    fileprivate var current_ball_3: [UInt8] = [
+        1,0,0,0,1,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,0,1,0,
+        ]
+    
+    
+    
+    
     
     
     fileprivate var player_4_up: [UInt8] = [
