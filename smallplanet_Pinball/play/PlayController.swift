@@ -16,13 +16,13 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let pinballModel = PinballModel.tngEcho_2f
+    let pinballModel = PinballModel.tngEcho_2e
 
     var pinball = PinballInterface()
     
     let ciContext = CIContext(options: [:])
     
-    var observers:[NSObjectProtocol] = [NSObjectProtocol]()
+    var observers = [NSObjectProtocol]()
 
     var captureHelper: CameraCaptureHelper!
     var model: VNCoreMLModel? = nil

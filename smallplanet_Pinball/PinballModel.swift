@@ -24,6 +24,8 @@ enum PinballModel: String {
     case tngEcho_0c
     case tngEcho_2e
     case tngEcho_2f
+    case tngFoxtrot_0b
+    case tngFoxtrot_0f
 
     var description: String {
         switch self {
@@ -37,6 +39,10 @@ enum PinballModel: String {
             return "200x240 PNG full playfield, full Echo image set, 3 states including right upper flipper"
         case .tngEcho_2f:
             return "200x240 PNG full playfield, full Echo image set + augmentation, 3 states including right upper flipper"
+        case .tngFoxtrot_0b:
+            return "100x120 PNG full playfield, full Echo image set scaled down, 3 states"
+        case .tngFoxtrot_0f:
+            return "175x210 PNG full playfield, full Echo image set scaled down, 3 states"
         }
     }
     
@@ -52,6 +58,10 @@ enum PinballModel: String {
             return try? VNCoreMLModel(for: tng_echo_2e().model)
         case .tngEcho_2f:
             return try? VNCoreMLModel(for: tng_echo_2f().model)
+        case .tngFoxtrot_0b:
+            return try? VNCoreMLModel(for: tng_foxtrot_0b().model)
+        case .tngFoxtrot_0f:
+            return try? VNCoreMLModel(for: tng_foxtrot_0f().model)
         }
     }
 
@@ -70,6 +80,14 @@ enum PinballModel: String {
             width = 200
             height = 240
             yOffset = -300
+        case .tngFoxtrot_0b:
+            width = 100
+            height = 120
+            yOffset = -178
+        case .tngFoxtrot_0f:
+            width = 175
+            height = 210
+            yOffset = -312
         }
         
         let scale = width / image.extent.height
