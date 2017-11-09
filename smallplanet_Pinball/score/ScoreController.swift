@@ -33,7 +33,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     let verbose = 0
     
     var lastHighScoreByPlayer = [-1,-1,-1,-1]
-    var lastBallCountByPlayer = [3,3,3,3]
+    var lastBallCountByPlayer = [0,0,0,0]
     var currentPlayer = 0
     
     func ResetGame() {
@@ -42,7 +42,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             lastHighScoreByPlayer[i] = -1
         }
         for i in 0..<lastBallCountByPlayer.count {
-            lastBallCountByPlayer[i] = 3
+            lastBallCountByPlayer[i] = 0
         }
     }
     
@@ -239,7 +239,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             //let i = 23
             //testImages.count
             for i in 0..<testImages.count {
-            //for i in [6,7] {
+            //for i in [5] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
@@ -285,10 +285,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func ocrPushStart(_ dotmatrix:[UInt8]) -> Bool {
         
+        // we make this one super strict, because we can use this one to calibrate the screen against
         for y in 1..<6 {
             for x in 2..<7 {
                 if ocrMatch(push_start, 0.9, x, y, 24, dotmatrix) {
-                    if (verbose >= 1) { print("matched PUSH START at \(x),\(y)") }
+                    print("matched PUSH START at \(x),\(y), should be 4,4")
                     return true
                 }
             }
@@ -980,11 +981,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 screenText = "\(score)"
                 
                 lastHighScoreByPlayer[currentPlayer] = score
-                
+            }
+            
+            if scoreWasFound {
                 // if we are seeing single player scores, we need to report changes to the ball count so we know when,
                 // in single player, the player loses the ball
                 let ballNumber = self.ocrCurrentBallNumber(dotmatrix)
-                if ballNumber > 0 && ballNumber < lastBallCountByPlayer[currentPlayer] {
+                if ballNumber > 0 && ballNumber > lastBallCountByPlayer[currentPlayer] {
                     lastBallCountByPlayer[currentPlayer] = ballNumber
                     
                     let ballDidChangeString = "b" + ":" + "\(currentPlayer+1),\(ballNumber)"
