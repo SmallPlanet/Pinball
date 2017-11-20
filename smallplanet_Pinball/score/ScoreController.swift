@@ -30,7 +30,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     // 0 = no prints
     // 1 = matched letters
     // 2 = dot matrix conversion
-    let verbose = 0
+    let verbose = 2
     
     var lastHighScoreByPlayer = [-1,-1,-1,-1]
     var lastBallCountByPlayer = [0,0,0,0]
@@ -150,6 +150,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        ResetGame()
+        
+        let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate.jpg")))
+        
+        let result = ocrReadScreen(testImage!)
+        
+        sleep(3)
+        exit(0)
         
         if false {
         
@@ -164,6 +172,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 
                 // push start
                 "bundle://Assets/score/sample/IMG_0081.JPG",
+                "bundle://Assets/score/sample/IMG_0044.JPG",
                 
                 // single player score
                 "bundle://Assets/score/sample/IMG_0089.JPG",
@@ -206,6 +215,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "2,391970",
                 
                 "PUSH START",
+                "PUSH START",
                 
                 "1669770",
                 "1872560",
@@ -238,8 +248,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             //let i = 23
             //testImages.count
-            for i in 0..<testImages.count {
-            //for i in [5] {
+            //for i in 0..<testImages.count {
+            for i in [20,24] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
@@ -499,6 +509,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 break
             }
             
+            // 12,41
             //for x in 0..<dotwidth {
             for x in 7..<20 {
                 if ocrMatch(quest_score0, accuracy, x, y, 8, dotmatrix) {
@@ -576,7 +587,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         // hack: these are probably erroneous scores from the bonus screens
-        if score % 100 == 0 {
+        if score % 1000 == 0 {
             return (0, false)
             
         }
@@ -1927,6 +1938,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         0,0,0,1,1,0,1,1,
         0,0,0,1,1,0,1,1,
         0,0,0,1,1,1,1,1,
+        ]
+    
+    
+    
+    fileprivate var calibrate: [UInt8] = [
+        0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,
         ]
     
 }

@@ -22,7 +22,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case Play    // AI will play as player 1 over and over
     }
     
-    let playMode:PlayMode = .Play
+    let playMode:PlayMode = .ObserveAndPlay
     
     var currentPlayer = 1
     
@@ -185,8 +185,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             //let cutoff1 = 1.0 - rand1 * experimental
             //let cutoff2 = 1.0 - rand2 * experimental
             
-            let cutoff1:Float = 0.94
-            let cutoff2:Float = 0.94
+            let f:Float = Float(frameNumber) / 500.0
+            let cutoff1:Float = 0.95 + sin(f) * 0.01
+            let cutoff2:Float = 0.95 + sin(f) * 0.01
             
             if leftObservation!.confidence > cutoff1 {
                 if canPlay && self?.pinball.leftButtonPressed == false {
