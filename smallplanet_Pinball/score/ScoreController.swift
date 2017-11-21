@@ -16,8 +16,15 @@ import MKTween
 
 
 extension DefaultsKeys {
-    static let ocr_offsetX = DefaultsKey<Int>("ocr_offsetX")
-    static let ocr_offsetY = DefaultsKey<Int>("ocr_offsetY")
+    static let calibrate_x1 = DefaultsKey<Double>("calibrate_x1")
+    static let calibrate_x2 = DefaultsKey<Double>("calibrate_x2")
+    static let calibrate_x3 = DefaultsKey<Double>("calibrate_x3")
+    static let calibrate_x4 = DefaultsKey<Double>("calibrate_x4")
+    
+    static let calibrate_y1 = DefaultsKey<Double>("calibrate_y1")
+    static let calibrate_y2 = DefaultsKey<Double>("calibrate_y2")
+    static let calibrate_y3 = DefaultsKey<Double>("calibrate_y3")
+    static let calibrate_y4 = DefaultsKey<Double>("calibrate_y4")
 }
 
 // TODO: It would be nice if we could dynamically identify the edges of the LED screen and use those points when deciding to
@@ -25,12 +32,17 @@ extension DefaultsKeys {
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let topLeft = (CGFloat(1236), CGFloat(827))
+    let topRight = (CGFloat(1236), CGFloat(604))
+    let bottomLeft = (CGFloat(287), CGFloat(841))
+    let bottomRight = (CGFloat(299), CGFloat(617))
+    
     let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
     // 0 = no prints
     // 1 = matched letters
     // 2 = dot matrix conversion
-    let verbose = 2
+    let verbose = 0
     
     var lastHighScoreByPlayer = [-1,-1,-1,-1]
     var lastBallCountByPlayer = [0,0,0,0]
@@ -53,25 +65,263 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     
     
+    
+    // used by the genetic algorithm for matrix calibration
+    var calibrationImage:CIImage? = nil
+    var shouldBeCalibrating:Bool = false
+    
+    class Organism {
+        let contentLength = 8
+        var content : [CGFloat]?
+        
+        init() {
+            content = [CGFloat](repeating:0, count:contentLength)
+        }
+        
+        subscript(index:Int) -> CGFloat {
+            get {
+                return content![index]
+            }
+            set(newElm) {
+                content![index] = newElm;
+            }
+        }
+    }
+    
+    @objc func CancelCalibration(_ sender: UITapGestureRecognizer) {
+        shouldBeCalibrating = false
+    }
+    
+    func PerformCalibration( ) {
+        
+        shouldBeCalibrating = true
+        
+        calibrationBlocker.view.isHidden = false
+        
+        DispatchQueue.global(qos: .background).async {
+            // use a genetic algorithm to calibrate the best offsets for each point...
+            let maxWidth:CGFloat = 100
+            let maxHeight:CGFloat = 100
+            let halfWidth:CGFloat = maxWidth / 2
+            let halfHeight:CGFloat = maxHeight / 2
+
+            
+            var bestCalibrationAccuracy:Float = 0.0
+            
+            let timeout = 9000000
+            
+            let ga = GeneticAlgorithm<Organism>()
+            
+            ga.generateOrganism = { (idx, prng) in
+                let newChild = Organism ()
+                if idx == 0 {
+                    newChild.content! [0] = 0
+                    newChild.content! [1] = 0
+                    newChild.content! [2] = 0
+                    newChild.content! [3] = 0
+                    newChild.content! [4] = 0
+                    newChild.content! [5] = 0
+                    newChild.content! [6] = 0
+                    newChild.content! [7] = 0
+                } else if idx == 1 {
+                    newChild.content! [0] = CGFloat(Defaults[.calibrate_x1])
+                    newChild.content! [1] = CGFloat(Defaults[.calibrate_y1])
+                    newChild.content! [2] = CGFloat(Defaults[.calibrate_x2])
+                    newChild.content! [3] = CGFloat(Defaults[.calibrate_y2])
+                    newChild.content! [4] = CGFloat(Defaults[.calibrate_x3])
+                    newChild.content! [5] = CGFloat(Defaults[.calibrate_y3])
+                    newChild.content! [6] = CGFloat(Defaults[.calibrate_x4])
+                    newChild.content! [7] = CGFloat(Defaults[.calibrate_y4])
+                } else {
+                    newChild.content! [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content! [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content! [2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content! [3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content! [4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content! [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content! [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content! [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                }
+                return newChild;
+            }
+            
+            ga.breedOrganisms = { (organismA, organismB, child, prng) in
+                
+                if (organismA === organismB) {
+                    for i in 0..<child.contentLength {
+                        child [i] = organismA [i]
+                    }
+                    
+                    let index = prng.getRandomNumberi(min:0, max:UInt64(child.contentLength-1))
+                    let r = prng.getRandomNumberf()
+                    if (r < 0.6) {
+                        child [index] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    } else if (r < 0.95) {
+                        child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 4.0 - 2.0
+                    } else {
+                        child [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                        child [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                        child [2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                        child [3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                        child [4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                        child [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                        child [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                        child [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    }
+                } else {
+                    // breed two organisms, we'll do this by randomly choosing chromosomes from each parent, with the odd-ball mutation
+                    for i in 0..<8 {
+                        let t = prng.getRandomNumberf()
+                        if (t < 0.45) {
+                            child [i] = organismA [i];
+                        } else if (t < 0.9) {
+                            child [i] = organismB [i];
+                        } else {
+                            if i & 1 == 1 {
+                                child [i] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                            }else{
+                                child [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                            }
+                        }
+                    }
+                }
+            }
+            
+            ga.scoreOrganism = { (organism, prng) in
+                
+                var accuracy:Double = 0
+                
+                autoreleasepool { () -> Void in
+                    let scale = self.calibrationImage!.extent.height / 1936.0
+                    
+                    let x1 = organism.content![0]
+                    let y1 = organism.content![1]
+                    let x2 = organism.content![2]
+                    let y2 = organism.content![3]
+                    let x3 = organism.content![4]
+                    let y3 = organism.content![5]
+                    let x4 = organism.content![6]
+                    let y4 = organism.content![7]
+                    
+                    let perspectiveImagesCoords = [
+                        "inputTopLeft":CIVector(x: round((self.topLeft.0+x1) * scale), y: round((self.topLeft.1+y1) * scale)),
+                        "inputTopRight":CIVector(x: round((self.topRight.0+x2) * scale), y: round((self.topRight.1+y2) * scale)),
+                        "inputBottomLeft":CIVector(x: round((self.bottomLeft.0+x3) * scale), y: round((self.bottomLeft.1+y3) * scale)),
+                        "inputBottomRight":CIVector(x: round((self.bottomRight.0+x4) * scale), y: round((self.bottomRight.1+y4) * scale))
+                    ]
+                    
+                    let adjustedImage = self.calibrationImage!.applyingFilter("CIPerspectiveCorrection", parameters: perspectiveImagesCoords)
+                    
+                    guard let cgImage = self.ciContext.createCGImage(adjustedImage, from: adjustedImage.extent) else {
+                        return
+                    }
+                    
+                    let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage))
+                    
+                    accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
+                }
+                
+                return Float(accuracy)
+            }
+            
+            ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
+                if self.shouldBeCalibrating == false || score > 0.99 {
+                    return true
+                }
+                
+                if score > bestCalibrationAccuracy {
+                    bestCalibrationAccuracy = score
+                    
+                    let x1 = organism.content![0]
+                    let y1 = organism.content![1]
+                    let x2 = organism.content![2]
+                    let y2 = organism.content![3]
+                    let x3 = organism.content![4]
+                    let y3 = organism.content![5]
+                    let x4 = organism.content![6]
+                    let y4 = organism.content![7]
+                    
+                    print("calibrated to: \(score) -> \(x1),\(y1)   \(x2),\(y2)   \(x3),\(y3)   \(x4),\(y4)")
+                    
+                    let statusString = "Calibrating\n\(Int(score*100))%"
+                    DispatchQueue.main.async {
+                        self.calibrationLabel.label.text = statusString
+                    }
+                }
+                
+                return false
+            }
+            
+            print("** Begin PerformCalibration **")
+            
+            let finalResult = ga.PerformGeneticsThreaded (UInt64(timeout))
+            
+            // force a score of the final result so we can fill the dotmatrix
+            let finalAccuracy = ga.scoreOrganism(finalResult, PRNG())
+            
+            print("final accuracy: \(finalAccuracy)")
+            for y in 0..<self.dotheight {
+                for x in 0..<self.dotwidth {
+                    if self.dotmatrix[y * self.dotwidth + x] == 0 {
+                        print("-", terminator:"")
+                    }else{
+                        print("@", terminator:"")
+                    }
+                }
+                print("\n", terminator:"")
+            }
+            
+            Defaults[.calibrate_x1] = Double(finalResult[0])
+            Defaults[.calibrate_y1] = Double(finalResult[1])
+            
+            Defaults[.calibrate_x2] = Double(finalResult[2])
+            Defaults[.calibrate_y2] = Double(finalResult[3])
+            
+            Defaults[.calibrate_x3] = Double(finalResult[4])
+            Defaults[.calibrate_y3] = Double(finalResult[5])
+            
+            Defaults[.calibrate_x4] = Double(finalResult[6])
+            Defaults[.calibrate_y4] = Double(finalResult[7])
+            
+            print("** End PerformCalibration **")
+            
+            
+            DispatchQueue.main.async {
+                self.calibrationBlocker.view.isHidden = true
+            }
+            
+        }
+    }
+    
+    
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
         
         let scale = originalImage.extent.height / 1936.0
-        let x = CGFloat(Defaults[.ocr_offsetX])
-        let y = CGFloat(Defaults[.ocr_offsetY])
+        let x1 = CGFloat(Defaults[.calibrate_x1])
+        let x2 = CGFloat(Defaults[.calibrate_x2])
+        let x3 = CGFloat(Defaults[.calibrate_x3])
+        let x4 = CGFloat(Defaults[.calibrate_x4])
+        let y1 = CGFloat(Defaults[.calibrate_y1])
+        let y2 = CGFloat(Defaults[.calibrate_y2])
+        let y3 = CGFloat(Defaults[.calibrate_y3])
+        let y4 = CGFloat(Defaults[.calibrate_y4])
         
         cameraCaptureHelper.perspectiveImagesCoords = [
-            "inputTopLeft":CIVector(x: round((1236+x) * scale), y: round((827+y) * scale)),
-            "inputTopRight":CIVector(x: round((1236+x) * scale), y: round((604+y) * scale)),
-            "inputBottomLeft":CIVector(x: round((287+x) * scale), y: round((841+y) * scale)),
-            "inputBottomRight":CIVector(x: round((299+x) * scale), y: round((617+y) * scale))
+            "inputTopLeft":CIVector(x: round((topLeft.0+x1) * scale), y: round((topLeft.1+y1) * scale)),
+            "inputTopRight":CIVector(x: round((topRight.0+x2) * scale), y: round((topRight.1+y2) * scale)),
+            "inputBottomLeft":CIVector(x: round((bottomLeft.0+x3) * scale), y: round((bottomLeft.1+y3) * scale)),
+            "inputBottomRight":CIVector(x: round((bottomRight.0+x4) * scale), y: round((bottomRight.1+y4) * scale))
         ]
         
         let uiImage = UIImage(ciImage: image)
         
         _ = ocrReadScreen(image)
+        
+        // NOTE: we want to comment this out if testing not at a machine...
+        calibrationImage = originalImage
         
         DispatchQueue.main.async {
             self.statusLabel.label.text = "P \(self.currentPlayer+1): \(self.lastHighScoreByPlayer[self.currentPlayer])"
@@ -99,19 +349,31 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         UIApplication.shared.isIdleTimerDisabled = true
         
         leftButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetY] -= 2
+            Defaults[.calibrate_y1] -= 2
+            Defaults[.calibrate_y2] -= 2
+            Defaults[.calibrate_y3] -= 2
+            Defaults[.calibrate_y4] -= 2
             Defaults.synchronize()
         }
         rightButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetY] += 2
+            Defaults[.calibrate_y1] += 2
+            Defaults[.calibrate_y2] += 2
+            Defaults[.calibrate_y3] += 2
+            Defaults[.calibrate_y4] += 2
             Defaults.synchronize()
         }
         upButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetX] -= 2
+            Defaults[.calibrate_x1] -= 2
+            Defaults[.calibrate_x2] -= 2
+            Defaults[.calibrate_x3] -= 2
+            Defaults[.calibrate_x4] -= 2
             Defaults.synchronize()
         }
         downButton.button.add(for: .touchUpInside) {
-            Defaults[.ocr_offsetX] += 2
+            Defaults[.calibrate_x1] += 2
+            Defaults[.calibrate_x2] += 2
+            Defaults[.calibrate_x3] += 2
+            Defaults[.calibrate_x4] += 2
             Defaults.synchronize()
         }
         
@@ -123,6 +385,17 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 UIImageWriteToSavedPhotosAlbum(self.preview.imageView.image!, self, #selector(self.image(_:didFinishSavingWithError:contextInfo:)), nil)
             }
         }
+        
+        calibrateButton.button.add(for: .touchUpInside) {
+            self.calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate_test.JPG")))
+            self.PerformCalibration()
+        }
+        
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.CancelCalibration(_:)))
+        calibrationBlocker.view.addGestureRecognizer(tap)
+        calibrationBlocker.view.isUserInteractionEnabled = true
+
     }
     
     @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
@@ -155,9 +428,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate.jpg")))
         
         let result = ocrReadScreen(testImage!)
-        
-        sleep(3)
-        exit(0)
         
         if false {
         
@@ -283,7 +553,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         for y in 25..<32 {
             for x in 6..<13 {
-                if ocrMatch(game_over, 0.86, x, y, 12, dotmatrix) {
+                if ocrMatch(game_over, 0.86, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched GAME OVER at \(x),\(y)") }
                     return true
                 }
@@ -298,7 +568,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         // we make this one super strict, because we can use this one to calibrate the screen against
         for y in 1..<6 {
             for x in 2..<7 {
-                if ocrMatch(push_start, 0.9, x, y, 24, dotmatrix) {
+                if ocrMatch(push_start, 0.9, x, y, 24, dotmatrix).0 {
                     print("matched PUSH START at \(x),\(y), should be 4,4")
                     return true
                 }
@@ -312,7 +582,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         for y in 22..<28 {
             for x in 10..<16 {
-                if ocrMatch(player_up, 0.9, x, y, 8, dotmatrix) {
+                if ocrMatch(player_up, 0.9, x, y, 8, dotmatrix).0 {
                     // once we match "Player Up", we need to match the right number...
                     if ocrPlayerUpNumber(dotmatrix, player_4_up) {
                         if (verbose >= 1) { print("matched PLAYER 4 UP at \(x),\(y)") }
@@ -331,7 +601,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     func ocrPlayerUpNumber(_ dotmatrix:[UInt8], _ number:[UInt8]) -> Bool {
         for y in 0..<dotheight {
             for x in 10..<16 {
-                if ocrMatch(number, 0.9, x, y, 8, dotmatrix) {
+                if ocrMatch(number, 0.9, x, y, 8, dotmatrix).0 {
                     return true
                 }
             }
@@ -344,19 +614,19 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         for y in 6..<9 {
             for x in 0..<3 {
-                if ocrMatch(current_ball, 0.9, x, y, 5, dotmatrix) {
+                if ocrMatch(current_ball, 0.9, x, y, 5, dotmatrix).0 {
                     
                     for y2 in 18..<24 {
                         // once we match "BALL", we need to match the right number...
-                        if ocrMatch(current_ball_1, 0.9, x, y+y2, 5, dotmatrix) {
+                        if ocrMatch(current_ball_1, 0.9, x, y+y2, 5, dotmatrix).0 {
                             if (verbose >= 1) { print("matched BALL 1 at \(x),\(y)") }
                             return 1
                         }
-                        if ocrMatch(current_ball_2, 0.9, x, y+y2, 5, dotmatrix) {
+                        if ocrMatch(current_ball_2, 0.9, x, y+y2, 5, dotmatrix).0 {
                             if (verbose >= 1) { print("matched BALL 2 at \(x),\(y)") }
                             return 2
                         }
-                        if ocrMatch(current_ball_3, 0.9, x, y+y2, 5, dotmatrix) {
+                        if ocrMatch(current_ball_3, 0.9, x, y+y2, 5, dotmatrix).0 {
                             if (verbose >= 1) { print("matched BALL 3 at \(x),\(y)") }
                             return 3
                         }
@@ -396,70 +666,70 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             //for x in 0..<dotwidth {
             for x in [7,8,9,10,11,12] {
-                if ocrMatch(score0, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score0, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score1, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score1, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
                     score = score * 10 + 1
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score2, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score2, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
                     score = score * 10 + 2
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score3, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score3, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
                     score = score * 10 + 3
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score4, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score4, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
                     score = score * 10 + 4
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score5, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score5, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
                     score = score * 10 + 5
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score6, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score6, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
                     score = score * 10 + 6
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score7, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score7, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
                     score = score * 10 + 7
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score8, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score8, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
                     score = score * 10 + 8
                     next_valid_y = y + advance_on_letter_found
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(score9, accuracy, x, y, 21, dotmatrix) {
+                if ocrMatch(score9, accuracy, x, y, 21, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + advance_on_letter_found
@@ -486,12 +756,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         // ignore any screen with the checkered flag around it...
-        if ocrMatch(flag, accuracy, 0, 0, 8, dotmatrix) {
+        if ocrMatch(flag, accuracy, 0, 0, 8, dotmatrix).0 {
             if (verbose >= 1) { print("matched FLAG at \(0),\(0)") }
             return (0,false)
         }
         
-        if ocrMatch(border, accuracy, 0, 0, 8, dotmatrix) {
+        if ocrMatch(border, accuracy, 0, 0, 8, dotmatrix).0 {
             if (verbose >= 1) { print("matched FLAG at \(0),\(0)") }
             return (0,false)
         }
@@ -512,70 +782,70 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             // 12,41
             //for x in 0..<dotwidth {
             for x in 7..<20 {
-                if ocrMatch(quest_score0, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score0, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + quest_score0.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score1, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score1, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
                     score = score * 10 + 1
                     next_valid_y = y + quest_score1.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score2, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score2, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
                     score = score * 10 + 2
                     next_valid_y = y + quest_score2.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score3, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score3, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
                     score = score * 10 + 3
                     next_valid_y = y + quest_score3.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score4, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score4, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
                     score = score * 10 + 4
                     next_valid_y = y + quest_score4.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score5, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score5, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
                     score = score * 10 + 5
                     next_valid_y = y + quest_score5.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score6, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score6, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
                     score = score * 10 + 6
                     next_valid_y = y + quest_score6.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score7, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score7, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
                     score = score * 10 + 7
                     next_valid_y = y + quest_score7.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score8, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score8, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
                     score = score * 10 + 8
                     next_valid_y = y + quest_score8.count / 8
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(quest_score9, accuracy, x, y, 8, dotmatrix) {
+                if ocrMatch(quest_score9, accuracy, x, y, 8, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + quest_score9.count / 8
@@ -619,7 +889,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             for x in [5,6,7,8,15,16,17,18] {
-                if ocrMatch(tp_score0, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score0, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + tp_score0.count / 15
@@ -629,7 +899,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score1, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score1, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
                     score = score * 10 + 1
                     next_valid_y = y + tp_score1.count / 15
@@ -639,7 +909,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score2, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score2, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
                     score = score * 10 + 2
                     next_valid_y = y + tp_score2.count / 15
@@ -649,7 +919,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score3, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score3, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
                     score = score * 10 + 3
                     next_valid_y = y + tp_score3.count / 15
@@ -659,7 +929,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score4, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score4, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
                     score = score * 10 + 4
                     next_valid_y = y + tp_score4.count / 15
@@ -669,7 +939,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score5, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score5, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
                     score = score * 10 + 5
                     next_valid_y = y + tp_score5.count / 15
@@ -679,7 +949,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score6, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score6, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
                     score = score * 10 + 6
                     next_valid_y = y + tp_score6.count / 15
@@ -689,7 +959,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score7, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score7, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
                     score = score * 10 + 7
                     next_valid_y = y + tp_score7.count / 15
@@ -699,7 +969,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score8, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score8, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
                     score = score * 10 + 8
                     next_valid_y = y + tp_score8.count / 15
@@ -709,7 +979,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(tp_score9, accuracy, x, y, 15, dotmatrix) {
+                if ocrMatch(tp_score9, accuracy, x, y, 15, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + tp_score9.count / 15
@@ -752,7 +1022,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             for x in [6,7,8,9,18,19,20,21] {
-                if ocrMatch(mp_score0, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score0, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 0 at \(x),\(y)") }
                     score = score * 10 + 0
                     next_valid_y = y + mp_score0.count / 12
@@ -763,7 +1033,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score1, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score1, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 1 at \(x),\(y)") }
                     score = score * 10 + 1
                     next_valid_y = y + mp_score1.count / 12
@@ -774,7 +1044,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score2, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score2, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 2 at \(x),\(y)") }
                     score = score * 10 + 2
                     next_valid_y = y + mp_score2.count / 12
@@ -785,7 +1055,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score3, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score3, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 3 at \(x),\(y)") }
                     score = score * 10 + 3
                     next_valid_y = y + mp_score3.count / 12
@@ -796,7 +1066,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score4, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score4, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 4 at \(x),\(y)") }
                     score = score * 10 + 4
                     next_valid_y = y + mp_score4.count / 12
@@ -807,7 +1077,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score5, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score5, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 5 at \(x),\(y)") }
                     score = score * 10 + 5
                     next_valid_y = y + mp_score5.count / 12
@@ -818,7 +1088,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score6, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score6, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 6 at \(x),\(y)") }
                     score = score * 10 + 6
                     next_valid_y = y + mp_score6.count / 12
@@ -829,7 +1099,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score7, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score7, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 7 at \(x),\(y)") }
                     score = score * 10 + 7
                     next_valid_y = y + mp_score7.count / 12
@@ -840,7 +1110,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score8, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score8, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 8 at \(x),\(y)") }
                     score = score * 10 + 8
                     next_valid_y = y + mp_score8.count / 12
@@ -851,7 +1121,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     didMatchSomething = true
                     break
                 }
-                if ocrMatch(mp_score9, accuracy, x, y, 12, dotmatrix) {
+                if ocrMatch(mp_score9, accuracy, x, y, 12, dotmatrix).0 {
                     if (verbose >= 1) { print("matched 9 at \(x),\(y)") }
                     score = score * 10 + 9
                     next_valid_y = y + mp_score9.count / 12
@@ -884,7 +1154,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return (playerMatched,score,didMatchSomething)
     }
     
-    func ocrMatch(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ height:Int, _ dotmatrix:[UInt8]) -> Bool {
+    func ocrMatch(_ letter:[UInt8], _ accuracy:Double, _ startX:Int, _ startY:Int, _ height:Int, _ dotmatrix:[UInt8]) -> (Bool,Double) {
         let width = letter.count / height
         var bad:Double = 0
         let total:Double = Double(width * height)
@@ -892,10 +1162,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         // early outs: if our letter would be outside of the dotmatix, we cannot possibly match it
         if startY+width > dotheight {
-            return false
+            return (false,0)
         }
         if startX+height > dotwidth {
-            return false
+            return (false,0)
         }
         
         
@@ -910,13 +1180,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     // if the number of bad ones would put use as inaccurate, then end early
                     if bad / total  > inv_accuracy {
-                        return false
+                        return (false,0)
                     }
                 }
             }
         }
         
-        return match / Double(width * height) > accuracy
+        let matchAccuracy = match / Double(width * height)
+        
+        return (matchAccuracy > accuracy,matchAccuracy)
     }
     
     func ocrReadScreen(_ croppedImage:CIImage) -> String {
@@ -1036,12 +1308,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let totalBytes = height * width * 4
             
             // only need to allocate this once for performance
-            if rgbBytes.count != totalBytes {
-                rgbBytes = [UInt8](repeating: 0, count: totalBytes)
-            }
+            //if rgbBytes.count != totalBytes {
+            var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
+            //}
             
             let colorSpace = CGColorSpaceCreateDeviceRGB()
-            
             let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
             contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
 
@@ -1175,6 +1446,18 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     fileprivate var saveImageButton: Button {
         return mainXmlView!.elementForId("saveImageButton")!.asButton!
+    }
+    
+    fileprivate var calibrateButton: Button {
+        return mainXmlView!.elementForId("calibrateButton")!.asButton!
+    }
+    
+    fileprivate var calibrationBlocker: View {
+        return mainXmlView!.elementForId("calibrationBlocker")!.asView!
+    }
+    
+    fileprivate var calibrationLabel: Label {
+        return mainXmlView!.elementForId("calibrationLabel")!.asLabel!
     }
     
     
@@ -1942,9 +2225,149 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     
     
-    fileprivate var calibrate: [UInt8] = [
-        0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,
+    fileprivate var calibrate2: [UInt8] = [
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,1,1,0,0,0,1,0,1,1,1,0,0,0,
+        0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,1,1,0,1,0,1,1,1,1,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,0,0,1,0,1,1,0,0,0,1,0,0,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,
+        0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,1,1,1,1,1,0,1,1,0,1,0,0,0,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,1,0,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        0,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,1,0,0,0,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,
+        0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,1,1,1,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,1,1,1,0,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,0,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,
+        0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,0,0,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,0,0,0,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,0,0,1,0,0,0,0,0,1,1,0,0,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,0,1,1,
+        0,1,0,0,0,1,0,0,0,1,0,1,0,1,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,0,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,1,1,0,1,0,0,0,1,1,1,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,1,0,0,0,0,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
+        0,1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,0,1,
+        0,1,0,1,1,1,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
+        0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,
+        0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,1,0,0,1,1,1,0,0,0,1,0,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
+        0,1,0,1,0,1,0,0,0,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,0,0,0,0,1,0,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,0,0,0,1,0,1,
+        0,1,1,1,1,1,0,0,0,1,1,0,0,0,0,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
+        0,0,0,0,1,0,0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,1,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
+        0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,0,0,1,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,0,0,0,1,1,0,0,1,1,1,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,1,
+        0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0,1,0,0,1,1,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,0,1,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
         ]
+    
+    
+    /*
+    fileprivate var calibrate1: [UInt8] = [
+        0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0, 1,1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0, 1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0, 1,1,1,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,
+        ]*/
     
 }
 
