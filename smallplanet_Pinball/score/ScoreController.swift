@@ -101,7 +101,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         calibrationBlocker.view.isHidden = false
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
             let maxWidth:CGFloat = 50
             let maxHeight:CGFloat = 50
@@ -308,6 +308,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             Defaults[.calibrate_y4] = Double(finalResult[7])
             
             Defaults[.calibrate_cutoff] = finalResult.cutoff
+            
+            Defaults.synchronize()
             
             print("** End PerformCalibration **")
             
@@ -1229,7 +1231,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
             return ""
         }
-        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff])
+        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 35)
         var screenText = ""
         var updateType = ""
         
