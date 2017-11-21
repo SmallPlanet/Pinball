@@ -25,6 +25,8 @@ extension DefaultsKeys {
     static let calibrate_y2 = DefaultsKey<Double>("calibrate_y2")
     static let calibrate_y3 = DefaultsKey<Double>("calibrate_y3")
     static let calibrate_y4 = DefaultsKey<Double>("calibrate_y4")
+    
+    static let calibrate_cutoff = DefaultsKey<Int>("calibrate_cutoff")
 }
 
 // TODO: It would be nice if we could dynamically identify the edges of the LED screen and use those points when deciding to
@@ -73,6 +75,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     class Organism {
         let contentLength = 8
         var content : [CGFloat]?
+        var cutoff:Int = 125
         
         init() {
             content = [CGFloat](repeating:0, count:contentLength)
@@ -98,10 +101,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         calibrationBlocker.view.isHidden = false
         
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .userInitiated).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 100
-            let maxHeight:CGFloat = 100
+            let maxWidth:CGFloat = 50
+            let maxHeight:CGFloat = 50
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
 
@@ -123,6 +126,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     newChild.content! [5] = 0
                     newChild.content! [6] = 0
                     newChild.content! [7] = 0
+                    newChild.cutoff = 125
                 } else if idx == 1 {
                     newChild.content! [0] = CGFloat(Defaults[.calibrate_x1])
                     newChild.content! [1] = CGFloat(Defaults[.calibrate_y1])
@@ -132,6 +136,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     newChild.content! [5] = CGFloat(Defaults[.calibrate_y3])
                     newChild.content! [6] = CGFloat(Defaults[.calibrate_x4])
                     newChild.content! [7] = CGFloat(Defaults[.calibrate_y4])
+                    newChild.cutoff = Defaults[.calibrate_cutoff]
                 } else {
                     newChild.content! [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
                     newChild.content! [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
@@ -141,6 +146,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     newChild.content! [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
                     newChild.content! [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
                     newChild.content! [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.cutoff = Int(prng.getRandomNumber(min: 20, max: 240))
                 }
                 return newChild;
             }
@@ -152,26 +158,44 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         child [i] = organismA [i]
                     }
                     
-                    let index = prng.getRandomNumberi(min:0, max:UInt64(child.contentLength-1))
-                    let r = prng.getRandomNumberf()
-                    if (r < 0.6) {
-                        child [index] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                    } else if (r < 0.95) {
-                        child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 4.0 - 2.0
+                    
+                    if prng.getRandomNumberf() < 0.2 {
+                        child.cutoff = Int(prng.getRandomNumber(min: 20, max: 240))
                     } else {
-                        child [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                        child [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                        child [2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                        child [3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                        child [4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                        child [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                        child [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                        child [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                        let n = prng.getRandomNumberi(min:1, max:4)
+                        for _ in 0..<n {
+                            let index = prng.getRandomNumberi(min:0, max:UInt64(child.contentLength-1))
+                            let r = prng.getRandomNumberf()
+                            if (r < 0.6) {
+                                child [index] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                            } else if (r < 0.95) {
+                                child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 4.0 - 2.0
+                            } else {
+                                child [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                                child [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                                child [2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                                child [3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                                child [4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                                child [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                                child [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                                child [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                            }
+                        }
                     }
+                    
+                    
+                    
                 } else {
                     // breed two organisms, we'll do this by randomly choosing chromosomes from each parent, with the odd-ball mutation
-                    for i in 0..<8 {
+                    child.cutoff = organismA.cutoff
+                    
+                    for i in 0..<child.contentLength {
                         let t = prng.getRandomNumberf()
+                        
+                        if t < 0.2 {
+                            child.cutoff = organismB.cutoff
+                        }
+                        
                         if (t < 0.45) {
                             child [i] = organismA [i];
                         } else if (t < 0.9) {
@@ -216,7 +240,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         return
                     }
                     
-                    let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage))
+                    let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff)
                     
                     accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
                 }
@@ -241,7 +265,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     let x4 = organism.content![6]
                     let y4 = organism.content![7]
                     
-                    print("calibrated to: \(score) -> \(x1),\(y1)   \(x2),\(y2)   \(x3),\(y3)   \(x4),\(y4)")
+                    print("calibrated to: \(score) -> cutoff \(organism.cutoff) -> \(x1),\(y1)   \(x2),\(y2)   \(x3),\(y3)   \(x4),\(y4)")
                     
                     let statusString = "Calibrating\n\(Int(score*100))%"
                     DispatchQueue.main.async {
@@ -283,6 +307,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             Defaults[.calibrate_x4] = Double(finalResult[6])
             Defaults[.calibrate_y4] = Double(finalResult[7])
             
+            Defaults[.calibrate_cutoff] = finalResult.cutoff
+            
             print("** End PerformCalibration **")
             
             
@@ -320,8 +346,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         _ = ocrReadScreen(image)
         
+        
         // NOTE: we want to comment this out if testing not at a machine...
         calibrationImage = originalImage
+        if shouldBeCalibrating {
+            sleep(1)
+        }
         
         DispatchQueue.main.async {
             self.statusLabel.label.text = "P \(self.currentPlayer+1): \(self.lastHighScoreByPlayer[self.currentPlayer])"
@@ -386,8 +416,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
         }
         
+        self.calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate_test.JPG")))
         calibrateButton.button.add(for: .touchUpInside) {
-            self.calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate_test.JPG")))
             self.PerformCalibration()
         }
         
@@ -1199,7 +1229,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
             return ""
         }
-        let dotmatrix = self.getDotMatrix(UIImage(cgImage:cgImage))
+        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff])
         var screenText = ""
         var updateType = ""
         
@@ -1297,103 +1327,99 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     var rgbBytes:[UInt8] = [UInt8](repeating: 0, count: 1)
     var dotmatrix = [UInt8](repeating: 0, count: 31 * 128)
     
-    func getDotMatrix(_ image:UIImage) -> [UInt8] {
+    func getDotMatrix(_ croppedImage:CGImage, _ cutoff:Int) -> [UInt8] {
         
-        if let croppedImage = image.cgImage {
-            // 0. get access to the raw pixels
-            let width = croppedImage.width
-            let height = croppedImage.height
-            let bitsPerComponent = croppedImage.bitsPerComponent
-            let rowBytes = width * 4
-            let totalBytes = height * width * 4
-            
-            // only need to allocate this once for performance
-            //if rgbBytes.count != totalBytes {
-            var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
-            //}
-            
-            let colorSpace = CGColorSpaceCreateDeviceRGB()
-            let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
-            contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
+        // 0. get access to the raw pixels
+        let width = croppedImage.width
+        let height = croppedImage.height
+        let bitsPerComponent = croppedImage.bitsPerComponent
+        let rowBytes = width * 4
+        let totalBytes = height * width * 4
+        
+        // only need to allocate this once for performance
+        //if rgbBytes.count != totalBytes {
+        var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
+        //}
+        
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
 
-            let x_margin = 0.0
-            let y_margin = 0.0
+        let x_margin = 0.0
+        let y_margin = 0.0
+        
+        let x_step = Double(croppedImage.width) / Double(dotwidth)
+        let y_step = Double(croppedImage.height) / Double(dotheight-1)
+        
+        for y in 0..<dotheight {
             
-            let x_step = Double(image.size.width) / Double(dotwidth)
-            let y_step = Double(image.size.height) / Double(dotheight-1)
-            
-            let cutoff = 125
-            
-            for y in 0..<dotheight {
+            for x in 0..<dotwidth {
                 
-                for x in 0..<dotwidth {
-                    
-                    let intensity_x = round(Double(x) * x_step + x_margin)
-                    var intensity_y = round(Double(y) * y_step + y_margin)
-                    
-                    if y == dotheight-1 {
-                        intensity_y = intensity_y-2
-                    }
-                    
-                    let intensity_i0 = Int(intensity_y) * rowBytes + (Int(intensity_x) * 4)
-                    let intensity_i1 = intensity_i0 + 4
-                    var intensity_i2 = intensity_i0 - 4
-                    let intensity_i3 = intensity_i0 + (width * 4)
-                    var intensity_i4 = intensity_i0 - (width * 4)
-                    
-                    if intensity_i2 < 0 {
-                        intensity_i2 = 0
-                    }
-                    if intensity_i4 < 0 {
-                        intensity_i4 = 0
-                    }
-                    
-                    let intensity_i0g = intensity_i0 + 1
-                    let intensity_i1g = intensity_i1 + 1
-                    let intensity_i2g = intensity_i2 + 1
-                    let intensity_i3g = intensity_i3 + 1
-                    let intensity_i4g = intensity_i4 + 1
-                    let intensity_i0b = intensity_i0 + 2
-                    let intensity_i1b = intensity_i1 + 2
-                    let intensity_i2b = intensity_i2 + 2
-                    let intensity_i3b = intensity_i3 + 2
-                    let intensity_i4b = intensity_i4 + 2
-                    
-                    let dot_i = y * dotwidth + x
-                    
-                    var avg:Int = 0
-                    avg += Int(rgbBytes[intensity_i0g]) * 6
-                    avg += Int(rgbBytes[intensity_i1g])
-                    avg += Int(rgbBytes[intensity_i2g])
-                    avg += Int(rgbBytes[intensity_i3g])
-                    avg += Int(rgbBytes[intensity_i4g])
-                    
-                    avg += Int(rgbBytes[intensity_i0b]) * 6
-                    avg += Int(rgbBytes[intensity_i1b])
-                    avg += Int(rgbBytes[intensity_i2b])
-                    avg += Int(rgbBytes[intensity_i3b])
-                    avg += Int(rgbBytes[intensity_i4b])
-                    avg /= 20
-                    
-                    //avg = Int(rgbBytes[intensity_i0b])
-                    
-                    if (verbose >= 2) {
-                        printValue(avg)
-                    }
-                    
-                    if avg >= cutoff {
-                        dotmatrix[dot_i] = 1
-                    } else {
-                        dotmatrix[dot_i] = 0
-                    }
+                let intensity_x = round(Double(x) * x_step + x_margin)
+                var intensity_y = round(Double(y) * y_step + y_margin)
+                
+                if y == dotheight-1 {
+                    intensity_y = intensity_y-2
                 }
+                
+                let intensity_i0 = Int(intensity_y) * rowBytes + (Int(intensity_x) * 4)
+                let intensity_i1 = intensity_i0 + 4
+                var intensity_i2 = intensity_i0 - 4
+                let intensity_i3 = intensity_i0 + (width * 4)
+                var intensity_i4 = intensity_i0 - (width * 4)
+                
+                if intensity_i2 < 0 {
+                    intensity_i2 = 0
+                }
+                if intensity_i4 < 0 {
+                    intensity_i4 = 0
+                }
+                
+                let intensity_i0g = intensity_i0 + 1
+                let intensity_i1g = intensity_i1 + 1
+                let intensity_i2g = intensity_i2 + 1
+                let intensity_i3g = intensity_i3 + 1
+                let intensity_i4g = intensity_i4 + 1
+                let intensity_i0b = intensity_i0 + 2
+                let intensity_i1b = intensity_i1 + 2
+                let intensity_i2b = intensity_i2 + 2
+                let intensity_i3b = intensity_i3 + 2
+                let intensity_i4b = intensity_i4 + 2
+                
+                let dot_i = y * dotwidth + x
+                
+                var avg:Int = 0
+                avg += Int(rgbBytes[intensity_i0g]) * 6
+                avg += Int(rgbBytes[intensity_i1g])
+                avg += Int(rgbBytes[intensity_i2g])
+                avg += Int(rgbBytes[intensity_i3g])
+                avg += Int(rgbBytes[intensity_i4g])
+                
+                avg += Int(rgbBytes[intensity_i0b]) * 6
+                avg += Int(rgbBytes[intensity_i1b])
+                avg += Int(rgbBytes[intensity_i2b])
+                avg += Int(rgbBytes[intensity_i3b])
+                avg += Int(rgbBytes[intensity_i4b])
+                avg /= 20
+                
+                //avg = Int(rgbBytes[intensity_i0b])
                 
                 if (verbose >= 2) {
-                    print("")
+                    printValue(avg)
                 }
                 
-                
+                if avg >= cutoff {
+                    dotmatrix[dot_i] = 1
+                } else {
+                    dotmatrix[dot_i] = 0
+                }
             }
+            
+            if (verbose >= 2) {
+                print("")
+            }
+            
+            
         }
         
         return dotmatrix
@@ -2226,134 +2252,134 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     
     fileprivate var calibrate2: [UInt8] = [
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,0,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,1,
+        1,1,1,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,1,1,0,1,0,1,1,1,1,0,0,0,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,1,1,0,0,1,0,1,1,0,0,0,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,1,1,0,0,0,1,0,1,1,1,0,0,0,
-        0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,1,
-        0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,1,1,0,1,0,1,1,1,1,0,0,0,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,1,0,0,1,0,1,1,0,0,0,1,0,0,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,
-        0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,1,1,1,1,1,0,1,1,0,1,0,0,0,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,0,0,1,0,0,1,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
         0,0,0,0,0,1,0,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
         0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
-        0,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,0,0,1,0,0,0,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,
+        0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
-        0,0,1,1,1,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,1,1,1,0,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,
-        0,1,0,0,0,1,0,0,0,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,1,1,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,
         0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,
-        0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
-        0,0,0,0,0,0,0,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,1,1,0,0,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
-        0,0,0,0,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
-        0,0,0,1,0,0,0,0,0,1,1,0,0,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,0,1,1,
-        0,1,0,0,0,1,0,0,0,1,0,1,0,1,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,0,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,0,0,0,1,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,0,0,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,0,1,0,1,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
         0,1,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
-        0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
-        0,1,1,1,0,1,0,0,0,1,1,1,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,1,0,0,0,0,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,1,1,0,1,0,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
         0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,1,0,0,0,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
-        0,1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
+        0,1,0,0,0,1,0,0,1,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
         0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,0,1,
-        0,1,0,1,1,1,0,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
-        0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,
-        0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,1,1,1,
+        0,1,0,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,
+        0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
-        0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,1,0,0,1,1,1,0,0,0,1,0,1,1,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
-        0,1,0,1,0,1,0,0,0,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
-        0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,0,0,0,0,1,0,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,0,0,0,1,0,1,
-        0,1,1,1,1,1,0,0,0,1,1,0,0,0,0,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
-        0,0,0,0,1,0,0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,1,1,1,0,1,0,0,0,1,1,
-        0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,1,0,0,0,1,1,
-        0,1,1,1,1,1,0,0,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
-        0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
-        0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,0,0,1,1,0,1,1,1,
+        0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,0,0,1,1,1,0,0,0,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,0,0,0,0,1,0,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,0,0,0,1,0,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,0,0,0,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
+        0,0,0,0,1,0,0,0,1,1,0,1,1,1,1,1,0,1,0,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
+        0,1,0,0,0,0,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,0,0,0,1,1,0,0,1,1,1,1,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,1,
-        0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0,1,0,0,1,1,1,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,0,1,1,0,1,1,1,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
+        1,1,1,0,0,0,1,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
         ]
     
