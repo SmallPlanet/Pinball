@@ -211,7 +211,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 }
             }
             
-            ga.scoreOrganism = { (organism, prng) in
+            ga.scoreOrganism = { (organism, threadIdx, prng) in
                 
                 var accuracy:Double = 0
                 
@@ -240,16 +240,21 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         return
                     }
                     
-                    let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff)
-                    
-                    accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
+                    if threadIdx == 0 {
+                        let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff, &self.dotmatrixA)
+                        accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
+                    } else {
+                        let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff, &self.dotmatrixB)
+                        accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
+                    }
                 }
                 
                 return Float(accuracy)
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
-                if self.shouldBeCalibrating == false || score > 0.99 {
+                if self.shouldBeCalibrating == false || score > 0.994 {
+                    self.shouldBeCalibrating = false
                     return true
                 }
                 
@@ -281,12 +286,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let finalResult = ga.PerformGeneticsThreaded (UInt64(timeout))
             
             // force a score of the final result so we can fill the dotmatrix
-            let finalAccuracy = ga.scoreOrganism(finalResult, PRNG())
+            let finalAccuracy = ga.scoreOrganism(finalResult, 1, PRNG())
             
             print("final accuracy: \(finalAccuracy)")
             for y in 0..<self.dotheight {
                 for x in 0..<self.dotwidth {
-                    if self.dotmatrix[y * self.dotwidth + x] == 0 {
+                    if self.dotmatrixB[y * self.dotwidth + x] == 0 {
                         print("-", terminator:"")
                     }else{
                         print("@", terminator:"")
@@ -350,8 +355,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         
         // NOTE: we want to comment this out if testing not at a machine...
-        calibrationImage = originalImage
         if shouldBeCalibrating {
+            calibrationImage = originalImage
             sleep(1)
         }
         
@@ -1231,7 +1236,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
             return ""
         }
-        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 35)
+        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 35, &dotmatrixA)
         var screenText = ""
         var updateType = ""
         
@@ -1327,9 +1332,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     let dotwidth = 31
     let dotheight = 128
     var rgbBytes:[UInt8] = [UInt8](repeating: 0, count: 1)
-    var dotmatrix = [UInt8](repeating: 0, count: 31 * 128)
+    var dotmatrixA = [UInt8](repeating: 0, count: 31 * 128)
+    var dotmatrixB = [UInt8](repeating: 0, count: 31 * 128)
     
-    func getDotMatrix(_ croppedImage:CGImage, _ cutoff:Int) -> [UInt8] {
+    func getDotMatrix(_ croppedImage:CGImage, _ cutoff:Int, _ dotmatrix:inout [UInt8]) -> [UInt8] {
         
         // 0. get access to the raw pixels
         let width = croppedImage.width
@@ -2256,19 +2262,19 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     fileprivate var calibrate2: [UInt8] = [
         1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,0,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,
         1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
         1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,
-        1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,1,
-        1,1,1,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        1,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,
-        1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,1,1,0,1,0,1,1,1,1,0,0,0,1,1,
-        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,1,1,0,0,1,0,1,1,0,0,0,1,1,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,1,0,1,1,
+        1,1,1,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,1,1,0,1,0,1,1,1,1,0,1,0,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,1,0,1,0,1,1,1,
         1,1,1,0,1,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
         1,0,0,0,0,0,1,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,

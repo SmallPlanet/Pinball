@@ -18,7 +18,7 @@ class GeneticAlgorithm<T> {
     
     typealias GenerateOrganismFunc<T> = ((Int, PRNG) -> T)
     typealias BreedOrganismsFunc<T> = ((T, T, T, PRNG) -> Void)
-    typealias ScoreOrganismFunc<T> = ((T, PRNG) -> Float)
+    typealias ScoreOrganismFunc<T> = ((T, Int, PRNG) -> Float)
     typealias ChosenOrganismFunc<T> = ((T, Float, Int, Int, PRNG) -> Bool)
     
     
@@ -83,7 +83,7 @@ class GeneticAlgorithm<T> {
         // Call the delegate to generate all of the organisms in the population array; score them as well
         for i in 0..<numberOfOrganisms {
             allOrganisms [i] = generateOrganism (i, prng)
-            allOrganismScores [i] = scoreOrganism (allOrganisms [i]!, prng)
+            allOrganismScores [i] = scoreOrganism (allOrganisms [i]!, sharedOrganismIdx, prng)
         }
         
         // sort the organisms so the higher fitness are all the end of the array; it is critical
@@ -99,7 +99,7 @@ class GeneticAlgorithm<T> {
         // population array when required, eliminating the need for costly object allocations
         var newChild : T = generateOrganism (0, prng)
         var trashedChild : T = newChild
-        var childScore = scoreOrganism (newChild, prng)
+        var childScore = scoreOrganism (newChild, sharedOrganismIdx, prng)
         
         
         // The multi-threaded version of this relies on a ring network of threads to process; if this is the multithreaded version
@@ -168,7 +168,7 @@ class GeneticAlgorithm<T> {
                     
                     
                     // record the fitness value of the newly bred child
-                    childScore = scoreOrganism (newChild, prng)
+                    childScore = scoreOrganism (newChild, sharedOrganismIdx, prng)
                     
                     
                     // if we're better than the worst member of the population, then the child should be inserted into the population
@@ -294,6 +294,9 @@ class GeneticAlgorithm<T> {
         let numThreads = ProcessInfo.processInfo.activeProcessorCount
         if numThreads == 1 {
             return PerformGenetics (millisecondsToProcess)
+        }
+        if numThreads > 2 {
+            numThreads = 2
         }
         
         let watchStart = DispatchTime.now()
