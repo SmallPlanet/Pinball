@@ -291,7 +291,7 @@ class GeneticAlgorithm<T> {
     public func PerformGeneticsThreaded (_ millisecondsToProcess:UInt64) -> T {
         
         // figure out the number of threads we want to use to create our ring network
-        let numThreads = ProcessInfo.processInfo.activeProcessorCount
+        var numThreads = ProcessInfo.processInfo.activeProcessorCount
         if numThreads == 1 {
             return PerformGenetics (millisecondsToProcess)
         }
