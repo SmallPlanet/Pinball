@@ -76,6 +76,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let contentLength = 8
         var content : [CGFloat]?
         var cutoff:Int = 125
+        var lastScore:CGFloat = 0
         
         init() {
             content = [CGFloat](repeating:0, count:contentLength)
@@ -153,6 +154,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             ga.breedOrganisms = { (organismA, organismB, child, prng) in
                 
+                let localMaxHeight = maxHeight * max(1.0 - organismA.lastScore, 0.4)
+                let localMaxWidth = maxHeight * max(1.0 - organismA.lastScore, 0.4)
+                let localHalfWidth:CGFloat = localMaxWidth / 2
+                let localHalfHeight:CGFloat = localMaxHeight / 2
+                
                 if (organismA === organismB) {
                     for i in 0..<child.contentLength {
                         child [i] = organismA [i]
@@ -160,7 +166,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     
                     if prng.getRandomNumberf() < 0.2 {
-                        child.cutoff = Int(prng.getRandomNumber(min: 20, max: 240))
+                        if prng.getRandomNumberf() < 0.5 {
+                            child.cutoff = organismA.cutoff + Int(prng.getRandomNumber(min: 0, max: 20)) - 10
+                        } else {
+                            child.cutoff = organismB.cutoff + Int(prng.getRandomNumber(min: 0, max: 20)) - 10
+                        }
                     } else {
                         let n = prng.getRandomNumberi(min:1, max:4)
                         for _ in 0..<n {
@@ -171,14 +181,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                             } else if (r < 0.95) {
                                 child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 4.0 - 2.0
                             } else {
-                                child [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                                child [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                                child [2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                                child [3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                                child [4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                                child [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                                child [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                                child [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                                child [0] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                                child [1] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
+                                child [2] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                                child [3] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
+                                child [4] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                                child [5] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
+                                child [6] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                                child [7] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
                             }
                         }
                     }
@@ -189,22 +199,22 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     // breed two organisms, we'll do this by randomly choosing chromosomes from each parent, with the odd-ball mutation
                     child.cutoff = organismA.cutoff
                     
+                    if prng.getRandomNumberf() < 0.5 {
+                        child.cutoff = organismB.cutoff
+                    }
+                    
                     for i in 0..<child.contentLength {
                         let t = prng.getRandomNumberf()
-                        
-                        if t < 0.2 {
-                            child.cutoff = organismB.cutoff
-                        }
-                        
+
                         if (t < 0.45) {
                             child [i] = organismA [i];
                         } else if (t < 0.9) {
                             child [i] = organismB [i];
                         } else {
                             if i & 1 == 1 {
-                                child [i] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                                child [i] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
                             }else{
-                                child [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                                child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
                             }
                         }
                     }
@@ -247,13 +257,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff, &self.dotmatrixB)
                         accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
                     }
+                    
+                    organism.lastScore = CGFloat(accuracy)
                 }
                 
                 return Float(accuracy)
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
-                if self.shouldBeCalibrating == false || score > 0.994 {
+                if self.shouldBeCalibrating == false || score > 0.999 {
                     self.shouldBeCalibrating = false
                     return true
                 }
@@ -291,10 +303,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             print("final accuracy: \(finalAccuracy)")
             for y in 0..<self.dotheight {
                 for x in 0..<self.dotwidth {
-                    if self.dotmatrixB[y * self.dotwidth + x] == 0 {
-                        print("-", terminator:"")
-                    }else{
-                        print("@", terminator:"")
+                    if self.dotmatrixB[y * self.dotwidth + x] == self.calibrate2[y * self.dotwidth + x] {
+                        if self.dotmatrixB[y * self.dotwidth + x] == 0 {
+                            print("-", terminator:"")
+                        }else{
+                            print("@", terminator:"")
+                        }
+                    } else {
+                        print("*", terminator:"")
                     }
                 }
                 print("\n", terminator:"")
@@ -356,7 +372,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         // NOTE: we want to comment this out if testing not at a machine...
         if shouldBeCalibrating {
-            calibrationImage = originalImage
+            //calibrationImage = originalImage
             sleep(1)
         }
         
@@ -2266,9 +2282,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,
         1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
-        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,
         1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,1,0,1,1,
-        1,1,1,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
         1,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
         1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
         1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
@@ -2276,7 +2292,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,1,1,0,1,0,1,1,1,1,0,1,0,1,1,
         1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,1,0,1,0,1,1,1,
         1,1,1,0,1,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
-        1,0,0,0,0,0,1,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -2342,10 +2358,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
         0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
         0,1,0,0,0,1,0,0,1,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
-        0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,0,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
         0,1,0,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
-        0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,
-        0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1,0,1,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,
+        0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
         0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -2355,16 +2371,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         0,0,0,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
         0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
         0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,0,0,1,1,1,0,0,0,1,1,1,1,0,1,1,
-        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,1,0,0,0,1,1,1,
         0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
         0,1,0,1,0,1,0,0,1,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
-        0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,0,0,0,0,1,0,1,
-        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,0,0,0,1,0,1,
+        0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
         0,1,1,1,1,1,0,0,1,1,1,0,0,0,0,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
-        0,0,0,0,1,0,0,0,1,1,0,1,1,1,1,1,0,1,0,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,0,0,0,1,0,0,0,1,1,0,1,1,1,1,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
         0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
         0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,1,
-        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,1,0,1,1,
         0,1,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
         0,1,0,0,0,0,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
         0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -2378,9 +2394,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,
         1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
         1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
-        1,1,1,0,0,0,1,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        1,1,1,0,1,0,1,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
         1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,
-        1,1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
         1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
         1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
         1,0,0,0,0,0,1,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
