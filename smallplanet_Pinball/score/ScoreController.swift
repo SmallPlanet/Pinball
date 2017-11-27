@@ -527,6 +527,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0142.JPG",
                 "bundle://Assets/score/sample/IMG_0143.JPG",
                 "bundle://Assets/score/sample/IMG_0144.JPG",
+                "bundle://Assets/score/sample/IMG_0063.JPG",
             ]
             
             let testResults = [
@@ -565,14 +566,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "",
                 "",
                 "",
+                "",
             ]
             
             var numCorrect = 0
             
             //let i = 23
             //testImages.count
-            //for i in 0..<testImages.count {
-            for i in [20,24] {
+            for i in 0..<testImages.count {
+            //for i in [28] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
