@@ -522,6 +522,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0133.JPG",
                 "bundle://Assets/score/sample/IMG_0136.JPG",
                 "bundle://Assets/score/sample/IMG_0140.JPG",
+                
+                "bundle://Assets/score/sample/IMG_0064.JPG",
+                "bundle://Assets/score/sample/IMG_0065.JPG",
+                "bundle://Assets/score/sample/IMG_0066.JPG",
  
                 // no false positives...
                 "bundle://Assets/score/sample/IMG_0142.JPG",
@@ -563,6 +567,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "3579830",
                 "1362700",
                 
+                "286410",
+                "684580",
+                "688620",
+                
                 "",
                 "",
                 "",
@@ -574,7 +582,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             //let i = 23
             //testImages.count
             for i in 0..<testImages.count {
-            //for i in [28] {
+            //for i in [27,26,25] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
@@ -816,10 +824,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             return (0,false)
         }
         
-        if ocrMatch(border, accuracy, 0, 0, 8, dotmatrix).0 {
-            if (verbose >= 1) { print("matched FLAG at \(0),\(0)") }
-            return (0,false)
-        }
+        //if ocrMatch(border, accuracy, 0, 0, 8, dotmatrix).0 {
+        //    if (verbose >= 1) { print("matched BORDER at \(0),\(0)") }
+        //    return (0,false)
+        //}
         
         
         for y in 0..<dotheight {
@@ -1276,8 +1284,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         if screenText == "" {
             let (tpPlayer, tpScore, scoreWasFound) = self.ocrTPScore(dotmatrix)
             if scoreWasFound {
-                currentPlayer = tpPlayer-1
-                if tpScore > lastHighScoreByPlayer[currentPlayer] {
+                
+                if tpScore > lastHighScoreByPlayer[currentPlayer] || currentPlayer != tpPlayer-1 {
+                    currentPlayer = tpPlayer-1
                     updateType = "m"
                     screenText = "\(currentPlayer+1),\(tpScore)"
                     
@@ -1289,8 +1298,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         if screenText == "" {
             let (mpPlayer, mpScore, scoreWasFound) = self.ocrMPScore(dotmatrix)
             if scoreWasFound {
-                currentPlayer = mpPlayer-1
-                if mpScore > lastHighScoreByPlayer[currentPlayer] {
+                
+                if mpScore > lastHighScoreByPlayer[currentPlayer] || currentPlayer != mpPlayer-1 {
+                    currentPlayer = mpPlayer-1
                     updateType = "m"
                     screenText = "\(currentPlayer+1),\(mpScore)"
                     
