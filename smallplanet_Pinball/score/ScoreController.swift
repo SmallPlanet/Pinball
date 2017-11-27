@@ -154,8 +154,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             ga.breedOrganisms = { (organismA, organismB, child, prng) in
                 
-                let localMaxHeight = maxHeight * max(1.0 - organismA.lastScore, 0.4)
-                let localMaxWidth = maxHeight * max(1.0 - organismA.lastScore, 0.4)
+                let localMaxHeight = maxHeight * max(1.0 - organismA.lastScore, 0.6)
+                let localMaxWidth = maxHeight * max(1.0 - organismA.lastScore, 0.6)
                 let localHalfWidth:CGFloat = localMaxWidth / 2
                 let localHalfHeight:CGFloat = localMaxHeight / 2
                 
@@ -372,8 +372,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         // NOTE: we want to comment this out if testing not at a machine...
         if shouldBeCalibrating {
-            //calibrationImage = originalImage
-            sleep(1)
+            calibrationImage = originalImage
+            usleep(72364)
         }
         
         DispatchQueue.main.async {
