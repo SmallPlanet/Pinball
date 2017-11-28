@@ -167,9 +167,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     if prng.getRandomNumberf() < 0.2 {
                         if prng.getRandomNumberf() < 0.5 {
-                            child.cutoff = organismA.cutoff + Int(prng.getRandomNumber(min: 0, max: 20)) - 10
+                            child.cutoff = organismA.cutoff + Int(prng.getRandomNumber(min: 0, max: 120)) - 60
                         } else {
-                            child.cutoff = organismB.cutoff + Int(prng.getRandomNumber(min: 0, max: 20)) - 10
+                            child.cutoff = organismB.cutoff + Int(prng.getRandomNumber(min: 0, max: 120)) - 60
                         }
                     } else {
                         let n = prng.getRandomNumberi(min:1, max:4)
