@@ -58,9 +58,6 @@ class EvaluationMonitor(Callback):
 
 
 
-batch_size = 12
-epochs = 10
-
 permanent_path = "./pmemory/"
 permanent_max_size = 0
 
@@ -121,8 +118,10 @@ def Learn():
         
         em = EvaluationMonitor()
         
-        waste_max_size = len(train_imgs)//3
+        waste_max_size = len(train_imgs)//6
         waste_imgs = images.generate_image_array(waste_path, waste_max_size)
+        
+        epochs = 10
                                         
         # then let's train the network on the altered images
         print("Training the long term memories...")
@@ -181,7 +180,7 @@ def Learn():
 
             cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
                     steps_per_epoch=len(total_imgs) // batch_size,
-                    epochs=epochs,
+                    epochs=epochs / 2,
                     callbacks=[wlr,em])
                     
             cnn_model.fit(total_imgs, total_labels,
@@ -190,6 +189,8 @@ def Learn():
                       verbose=1,
                       callbacks=[wlr,em],
                       )
+            
+            epochs += 1
                 
         print("Training finished...")
         
