@@ -21,10 +21,16 @@
     <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80" />
     
     <Button id="saveImageButton" title="Save Image" styleId="ButtonStd" />
-    <Constraint firstItem="saveImageButton" firstAttribute="width" constant="200"/>
-    <Constraint firstItem="saveImageButton" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="saveImageButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" constant="0" />
+    <Constraint firstItem="saveImageButton" firstAttribute="width" constant="120"/>
+    <Constraint firstItem="saveImageButton" firstAttribute="height" constant="100"/>
+    <Constraint firstItem="saveImageButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" constant="-90" />
     <Constraint firstItem="saveImageButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
+    
+    <Button id="calibrateButton" title="Calibrate" styleId="ButtonStd" />
+    <Constraint firstItem="calibrateButton" firstAttribute="width" constant="120"/>
+    <Constraint firstItem="calibrateButton" firstAttribute="height" constant="100"/>
+    <Constraint firstItem="calibrateButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" constant="90" />
+    <Constraint firstItem="calibrateButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
     
     
     
@@ -51,6 +57,15 @@
      <Constraint firstItem="downButton" firstAttribute="height" constant="60"/>
      <Constraint firstItem="downButton" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="5" />
      <Constraint firstItem="downButton" firstAttribute="centerX" secondItem="preview" secondAttribute="centerX" constant="0" />
+     
+     
+     
+     
+     <View id="calibrationBlocker" backgroundColor="#003300EE" hidden="true" >
+         <Label id="calibrationLabel" styleId="LabelBld" numberOfLines="2" fontSize="48" textColor="#FFFFFFFF" text="" textAlignment="center" />
+         <Constraint firstItem="calibrationLabel" ruleSet="fillSuperview" />
+     </View>
+     <Constraint firstItem="calibrationBlocker" ruleSet="fillSuperview" />
     
 
 </Scene>

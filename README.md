@@ -36,12 +36,12 @@ Implement supervised learning such that the AI can intelligently hit the pinball
 6. ~~activate the start button~~
 
 ### Phase 2
-Implement unsupervised learning/Deep Q-Learning such that the AI can play well
+Implement unsupervised learning/reinforcement learning/DeepQ learning such that the AI can play well
 
-1. train model to read score off of the machine's display
-2. provide a play & capture mode to flip the flippers while capturing training material
-3. perform continuous learning on a machine on the same network as the app (ie don't attempt to train on the phone)
-4. upload new CoreML models dynamically
+1. ~~add the ability to OCR the contents of the dotmatrix display for use in learning~~
+2. ~~be able too allow the AI to play and learn from its play continuously~~
+3. ~~upload new CoreML models dynamically~~
+4. continue training and retraining to create a model which can reach superhuman capabilities (ie beat the best known human high score for the machine in question)
 
 
 # Cool stuff
