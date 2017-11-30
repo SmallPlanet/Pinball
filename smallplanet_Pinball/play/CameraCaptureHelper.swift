@@ -279,7 +279,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         if self.delegateWantsTemporalImages {
             self.motionBlurFrames.append(cameraImage)
             
-            let numberOfFrames = 2
+            let numberOfFrames = 3
             
             while self.motionBlurFrames.count > numberOfFrames {
                 self.motionBlurFrames.remove(at: 0)

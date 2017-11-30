@@ -20,9 +20,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case Observe    // AI will never cause actions to happen
         case ObserveAndPlay // AI will player as player 2, allowing human to play as player 1
         case Play    // AI will play as player 1 over and over
+        case PlayNoRecord    // AI will play but will not learn anything
     }
     
-    let playMode:PlayMode = .ObserveAndPlay
+    let playMode:PlayMode = .PlayNoRecord
     
     var currentPlayer = 1
     
@@ -146,11 +147,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         rightFlipperCounter -= 1
         
         // really, we don't want the start button
-        if lastFrame != nil && (send_leftButton == 1 || send_rightButton == 1 || send_ballKickerButton == 1) {
-            sendCameraFrame(lastFrame!, send_leftButton, send_rightButton, 0, send_ballKickerButton)
-            send_leftButton = 0
-            send_rightButton = 0
-            send_ballKickerButton = 0
+        if playMode != .PlayNoRecord {
+            if lastFrame != nil && (send_leftButton == 1 || send_rightButton == 1 || send_ballKickerButton == 1) {
+                sendCameraFrame(lastFrame!, send_leftButton, send_rightButton, 0, send_ballKickerButton)
+                send_leftButton = 0
+                send_rightButton = 0
+                send_ballKickerButton = 0
+            }
         }
         
         lastFrame = image
@@ -176,18 +179,19 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             //print("\(leftObservation!.confidence)  \(rightObservation!.confidence)  \(ballKickerObservation!.confidence)")
-            let canPlay = self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
+            let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
             // TODO: For now we're neutered the ability for the AI to affect the machine
-            let experimental:Float = 0.1
-            let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
-            let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
-            //let cutoff1 = 1.0 - rand1 * experimental
-            //let cutoff2 = 1.0 - rand2 * experimental
+            //let experimental:Float = 0.1
+            //let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
+            //let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
             
-            let f:Float = Float(frameNumber) / 500.0
-            let cutoff1:Float = 0.95 + sin(f) * 0.01
-            let cutoff2:Float = 0.95 + sin(f) * 0.01
+            //let f:Float = Float(frameNumber) / 500.0
+            //let cutoff1:Float = 0.95 + sin(f) * 0.01
+            //let cutoff2:Float = 0.95 + sin(f) * 0.01
+            
+            let cutoff1:Float = 0.94
+            let cutoff2:Float = 0.94
             
             if leftObservation!.confidence > cutoff1 {
                 if canPlay && self?.pinball.leftButtonPressed == false {

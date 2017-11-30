@@ -265,7 +265,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
-                if self.shouldBeCalibrating == false || score > 0.999 {
+                if self.shouldBeCalibrating == false || score > 0.9999 {
                     self.shouldBeCalibrating = false
                     return true
                 }
@@ -478,9 +478,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         ResetGame()
         
-        let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate.jpg")))
-        
-        let result = ocrReadScreen(testImage!)
+        //let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate.jpg")))
+        //let result = ocrReadScreen(testImage!)
         
         if false {
         
@@ -526,6 +525,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0064.JPG",
                 "bundle://Assets/score/sample/IMG_0065.JPG",
                 "bundle://Assets/score/sample/IMG_0066.JPG",
+                
+                "bundle://Assets/score/sample/IMG_0069.JPG",
  
                 // no false positives...
                 "bundle://Assets/score/sample/IMG_0142.JPG",
@@ -571,6 +572,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "684580",
                 "688620",
                 
+                "957860",
+                
                 "",
                 "",
                 "",
@@ -581,8 +584,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             //let i = 23
             //testImages.count
-            for i in 0..<testImages.count {
-            //for i in [27,26,25] {
+            //for i in 0..<testImages.count {
+            for i in [28] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
@@ -632,7 +635,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         for y in 1..<6 {
             for x in 2..<7 {
                 if ocrMatch(push_start, 0.9, x, y, 24, dotmatrix).0 {
-                    print("matched PUSH START at \(x),\(y), should be 4,4")
+                    //print("matched PUSH START at \(x),\(y), should be 4,4")
                     return true
                 }
             }
@@ -1262,7 +1265,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
             return ""
         }
-        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 35, &dotmatrixA)
+        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 32, &dotmatrixA)
         var screenText = ""
         var updateType = ""
         
