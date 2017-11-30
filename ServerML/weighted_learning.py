@@ -12,6 +12,7 @@ class WeightedLR(Callback):
         self.base_lr = base_lr
         self.max_lr = max_lr
         self.max_weight = max(image_weights)
+        self.min_weight = min(image_weights)
         
                 
     def on_epoch_begin(self, epoch, logs):
@@ -32,7 +33,7 @@ class WeightedLR(Callback):
         
         avg /= log_size
         
-        normalized_weight = avg / self.max_weight
+        normalized_weight = (avg - self.min_weight) / (self.max_weight - self.min_weight)
         
         weighted_lr = self.base_lr + (self.max_lr - self.base_lr) * normalized_weight
         

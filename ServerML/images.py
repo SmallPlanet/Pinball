@@ -49,7 +49,6 @@ def load_images(imgs, labels, weights, dir_path, max_size):
     for img_path in all_img_paths:
         if n % 10000 == 1:
             gc.collect()
-            print(n)
         load_image(n, imgs, labels, weights, img_path)
         n = n + 1
         if max_size != 0 and len(labels) >= max_size:

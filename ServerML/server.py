@@ -25,10 +25,10 @@ shortTermMemoryDuration = 30
 longTermMemoryMaxSize = 50000
 
 # if an action does not score more than this it will not be considered for long term memory storage
-longTermMemoryMinimumReward = 30000
+longTermMemoryMinimumReward = 70000
 
 # when a player loses a ball, that should negatively impact actions taken before the lost ball
-penaltyForLostBall = -200000
+penaltyForLostBall = -1000000
 
 class ScoreEvent:
     def __init__(self, player, differentialScore):
@@ -125,15 +125,16 @@ class Memory:
             f = open(self.filePath, 'wb')
             f.write(x.jpeg)
             f.close()
-        else:
+        elif self.reward < -10000:
+            # save to waste if this was the ball which killed us?
             print("  -> waste bin:", self.reward, self.left, self.right, self.start, self.ballKicker)
             
-            #self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.waste_path, 0, 0, 0, 0, 0, str(uuid.uuid4()))
-            #print (self.filePath)
+            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.waste_path, 0, 0, 0, 0, 0, str(uuid.uuid4()))
+            print (self.filePath)
         
-            #f = open(self.filePath, 'wb')
-            #f.write(x.jpeg)
-            #f.close()
+            f = open(self.filePath, 'wb')
+            f.write(x.jpeg)
+            f.close()
             
             
         
