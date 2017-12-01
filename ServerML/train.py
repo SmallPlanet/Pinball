@@ -152,7 +152,6 @@ def Learn():
                 total_weights = permanent_weights
                 
             
-            
             # free up whatever memory we can before training
             gc.collect()
             
@@ -171,22 +170,42 @@ def Learn():
             em.cnn_model = cnn_model
             
             
+            # take into account the weight of classes
+            class_weight_dict = {0:0,1:0,2:0,3:0}
+            for i in range(0,len(total_labels)):
+                class_weight_dict[0] += total_labels[i][0]
+                class_weight_dict[1] += total_labels[i][1]
+                class_weight_dict[2] += total_labels[i][2]
+                class_weight_dict[3] += total_labels[i][3]
+                
+            max_weight = max(class_weight_dict.values())
+            
+            class_weight_dict[0] /= max_weight
+            class_weight_dict[1] /= max_weight
+            class_weight_dict[2] /= max_weight
+            class_weight_dict[3] /= max_weight
+            
+            
+            # randomize the batch size            
             batch_size = int(random.random() * 32 + 6)
             
             if batch_size > len(total_imgs):
                 batch_size = len(total_imgs)
-                                                                
+            
+            # adjust the learning rate based on individual memory scores
             wlr = WeightedLR(total_weights)
 
             cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
                     steps_per_epoch=len(total_imgs) // batch_size,
                     epochs=epochs / 2,
+                    class_weight=class_weight_dict,
                     callbacks=[wlr,em])
                     
             cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
                       epochs=epochs,
                       verbose=1,
+                      class_weight=class_weight_dict,
                       callbacks=[wlr,em],
                       )
             
