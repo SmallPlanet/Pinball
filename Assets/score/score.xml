@@ -61,10 +61,10 @@
      
      
      
-     <View id="calibrationBlocker" backgroundColor="#003300EE" hidden="true" >
+     <ImageView id="calibrationBlocker" backgroundColor="#003300EE" hidden="true" >
          <Label id="calibrationLabel" styleId="LabelBld" numberOfLines="2" fontSize="48" textColor="#FFFFFFFF" text="" textAlignment="center" />
          <Constraint firstItem="calibrationLabel" ruleSet="fillSuperview" />
-     </View>
+     </ImageView>
      <Constraint firstItem="calibrationBlocker" ruleSet="fillSuperview" />
     
 
