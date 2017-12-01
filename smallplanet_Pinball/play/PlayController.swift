@@ -134,9 +134,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             cameraCaptureHelper.perspectiveImagesCoords = [
                 "inputTopLeft":CIVector(x: round((149+x) * scale), y: round((566+y) * scale)),
-                "inputTopRight":CIVector(x: round((553+x) * scale), y: round((566+y) * scale)),
+                "inputTopRight":CIVector(x: round((316+x) * scale), y: round((566+y) * scale)),
                 "inputBottomLeft":CIVector(x: round((149+x) * scale), y: round((145+y) * scale)),
-                "inputBottomRight":CIVector(x: round((553+x) * scale), y: round((145+y) * scale))
+                "inputBottomRight":CIVector(x: round((316+x) * scale), y: round((145+y) * scale))
             ]
             return
         }
@@ -187,11 +187,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             //let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
             
             //let f:Float = Float(frameNumber) / 500.0
-            //let cutoff1:Float = 0.95 + sin(f) * 0.01
-            //let cutoff2:Float = 0.95 + sin(f) * 0.01
+            //let cutoff1:Float = 0.975 + sin(f) * 0.0075
+            //let cutoff2:Float = 0.975 + sin(f) * 0.0075
             
-            let cutoff1:Float = 0.94
-            let cutoff2:Float = 0.94
+            let cutoff1:Float = 0.999
+            let cutoff2:Float = 0.999
             
             if leftObservation!.confidence > cutoff1 {
                 if canPlay && self?.pinball.leftButtonPressed == false {
@@ -296,7 +296,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegateWantsPerspectiveImages = true
         captureHelper.delegateWantsPictureInPictureImages = true
         
-        captureHelper.scaledImagesSize = CGSize(width: 80, height: 80)
+        captureHelper.scaledImagesSize = CGSize(width: 32, height: 80)
         captureHelper.delegateWantsScaledImages = true
         
         captureHelper.delegateWantsHiSpeedCamera = true
@@ -305,7 +305,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.delegateWantsTemporalImages = true
         
-        captureHelper.constantFPS = 70
+        captureHelper.constantFPS = 60
         captureHelper.delegateWantsConstantFPS = true
         
         UIApplication.shared.isIdleTimerDisabled = true
@@ -320,8 +320,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
+            if self.pinball.leftButtonPressed == false && self.pinball.rightButtonPressed == false {
+                self.send_rightButton = 1
+            }
             self.pinball.rightButtonStart()
-            self.send_rightButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
@@ -329,8 +331,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
+            if self.pinball.leftButtonPressed == false && self.pinball.rightButtonPressed == false {
+                self.send_leftButton = 1
+            }
             self.pinball.leftButtonStart()
-            self.send_leftButton = 1
         })
         
         observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonUp.rawValue), object:nil, queue:nil) {_ in
