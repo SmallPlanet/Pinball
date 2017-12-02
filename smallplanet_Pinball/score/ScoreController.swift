@@ -167,9 +167,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     if prng.getRandomNumberf() < 0.2 {
                         if prng.getRandomNumberf() < 0.5 {
-                            child.cutoff = organismA.cutoff + Int(prng.getRandomNumber(min: 0, max: 120)) - 60
+                            child.cutoff = organismA.cutoff + Int(prng.getRandomNumber(min: 0, max: 80)) - 40
                         } else {
-                            child.cutoff = organismB.cutoff + Int(prng.getRandomNumber(min: 0, max: 120)) - 60
+                            child.cutoff = organismB.cutoff + Int(prng.getRandomNumber(min: 0, max: 80)) - 40
                         }
                     } else {
                         let n = prng.getRandomNumberi(min:1, max:4)
@@ -265,7 +265,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
-                if self.shouldBeCalibrating == false || score > 0.9999 {
+                if self.shouldBeCalibrating == false || score > 0.995 {
                     self.shouldBeCalibrating = false
                     return true
                 }
@@ -1265,7 +1265,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
             return ""
         }
-        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 32, &dotmatrixA)
+        //Defaults[.calibrate_cutoff] + 32
+        let dotmatrix = self.getDotMatrix(cgImage, 125, &dotmatrixA)
         var screenText = ""
         var updateType = ""
         

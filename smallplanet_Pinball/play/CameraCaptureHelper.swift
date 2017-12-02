@@ -229,6 +229,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var motionBlurFrames:[CIImage] = []
     
+    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
+    
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {
         let localPlayFrameNumber = playFrameNumber
@@ -247,65 +249,70 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             ballKicker = (self.pinball!.ballKickerPressed ? 1 : 0)
         }
         
-        var bufferCopy : CMSampleBuffer?
-        let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
-        if err != noErr {
-            return
-        }
         
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else
-        {
-            return
-        }
-
-        var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let originalImage = cameraImage
-        
-        if self.delegateWantsPerspectiveImages && perspectiveImagesCoords.count > 0 {
-            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perspectiveImagesCoords)
-        }
-        
-        if self.delegateWantsPictureInPictureImages && pipImagesCoords.count > 0 {
-            var pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: pipImagesCoords)            
-            cameraImage = pipImage.composited(over: cameraImage)
-        }
-        
-        
-        if self.delegateWantsScaledImages {
-            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
-        }
-        
-        var lastBlurFrame = cameraImage
-        if self.delegateWantsTemporalImages {
-            self.motionBlurFrames.append(cameraImage)
-            
-            let numberOfFrames = 3
-            
-            while self.motionBlurFrames.count > numberOfFrames {
-                self.motionBlurFrames.remove(at: 0)
-            }
-            
-            if self.motionBlurFrames.count < numberOfFrames {
-                // we don't have enough images, abort
+        playQueue.async {
+            var bufferCopy : CMSampleBuffer?
+            let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
+            if err != noErr {
                 return
             }
             
-            // instead of blurring them, let's just stack them horizontally
-            lastBlurFrame = self.motionBlurFrames[0]
-            for i in 1..<self.motionBlurFrames.count {
-                let otherFrame = self.motionBlurFrames[i]
-                lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i) * otherFrame.extent.width, y: 0)))
+            guard let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else
+            {
+                return
+            }
+
+            var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
+            let originalImage = cameraImage
+            
+            if self.delegateWantsPerspectiveImages && self.perspectiveImagesCoords.count > 0 {
+                cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: self.perspectiveImagesCoords)
             }
             
-            if localPlayFrameNumber % numberOfFrames == 0 {
-                self.motionBlurFrames.removeLast()
+            if self.delegateWantsPictureInPictureImages && self.pipImagesCoords.count > 0 {
+                let pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: self.pipImagesCoords)
+                cameraImage = pipImage.composited(over: cameraImage)
             }
             
-        }
-        
-        
-        if self.delegateWantsPlayImages {
-            self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: originalImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+            
+            if self.delegateWantsScaledImages {
+                cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: self.scaledImagesSize.width / cameraImage.extent.width, y: self.scaledImagesSize.height / cameraImage.extent.height))
+            }
+            
+            var lastBlurFrame = cameraImage
+            if self.delegateWantsTemporalImages {
+                self.motionBlurFrames.append(cameraImage)
+                
+                // it may seem weird that we're skipping the first (most recent) frame below and have +1 to numberOfFrames, but it is my theory
+                // that this will account for network lag and give the AI a chance to react a little sooner
+                let numberOfFrames = 2 + 1
+
+                while self.motionBlurFrames.count > numberOfFrames {
+                    self.motionBlurFrames.remove(at: 0)
+                }
+                
+                if self.motionBlurFrames.count < numberOfFrames {
+                    // we don't have enough images, abort
+                    return
+                }
+                
+                // instead of blurring them, let's just stack them horizontally
+                lastBlurFrame = self.motionBlurFrames[1]
+                for i in 2..<self.motionBlurFrames.count {
+                    let otherFrame = self.motionBlurFrames[i]
+                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * otherFrame.extent.width, y: 0)))
+                }
+                
+                if localPlayFrameNumber % numberOfFrames == 0 {
+                    self.motionBlurFrames.removeLast()
+                }
+                
+            }
+            
+            
+            if self.delegateWantsPlayImages {
+                self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: originalImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+            }
         }
  
         fpsCounter += 1
