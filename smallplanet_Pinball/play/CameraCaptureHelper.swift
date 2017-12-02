@@ -285,7 +285,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 
                 // it may seem weird that we're skipping the first (most recent) frame below and have +1 to numberOfFrames, but it is my theory
                 // that this will account for network lag and give the AI a chance to react a little sooner
-                let numberOfFrames = 3 + 1
+                let numberOfFrames = 2 + 1
 
                 while self.motionBlurFrames.count > numberOfFrames {
                     self.motionBlurFrames.remove(at: 0)

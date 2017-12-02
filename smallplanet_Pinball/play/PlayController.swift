@@ -25,6 +25,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     let playMode:PlayMode = .PlayNoRecord
     
+    let shouldExperiment = true
+    
+    var calibratedLeftCutoff:Float = 0.9
+    var calibratedRightCutoff:Float = 0.9
+    
+    
     var currentPlayer = 1
     
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
@@ -76,6 +82,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 print(error)
             }
         })
+        
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -146,22 +153,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
         
-        // really, we don't want the start button
-        if playMode != .PlayNoRecord {
-            if lastFrame != nil && (send_leftButton == 1 || send_rightButton == 1 || send_ballKickerButton == 1) {
-                sendCameraFrame(lastFrame!, send_leftButton, send_rightButton, 0, send_ballKickerButton)
-                send_leftButton = 0
-                send_rightButton = 0
-                send_ballKickerButton = 0
-            }
-        }
-        
-        lastFrame = image
-        
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
             guard let results = request.results as? [VNClassificationObservation] else {
                 return
             }
+            
+            self?.lastFrame = image
             
             // find the results which match each flipper
             var leftObservation:VNClassificationObservation? = nil
@@ -186,12 +183,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             //let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
             //let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
             
-            //let f:Float = Float(frameNumber) / 500.0
-            //let cutoff1:Float = 0.975 + sin(f) * 0.0075
-            //let cutoff2:Float = 0.975 + sin(f) * 0.0075
+            var cutoff1:Float = self!.calibratedLeftCutoff
+            var cutoff2:Float = self!.calibratedRightCutoff
             
-            let cutoff1:Float = 0.999
-            let cutoff2:Float = 0.999
+            if self?.shouldExperiment == true {
+                cutoff1 = 0.96
+                cutoff2 = 0.96
+            }
+            
+            
             
             if leftObservation!.confidence > cutoff1 {
                 if canPlay && self?.pinball.leftButtonPressed == false {
@@ -213,7 +213,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
                 }
             }
-            if ballKickerObservation!.confidence > 0.99 {
+            if ballKickerObservation!.confidence > cutoff2 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
                 if canPlay && self?.pinball.ballKickerPressed == false {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
@@ -223,6 +223,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerUp.rawValue), object: nil, userInfo: nil)
                 }
             }
+            
+            if self?.playMode != .PlayNoRecord {
+                if self?.send_leftButton == 1 || self?.send_rightButton == 1 || self?.send_ballKickerButton == 1 {
+                    self?.sendCameraFrame(image, self!.send_leftButton, self!.send_rightButton, 0, self!.send_ballKickerButton)
+                    self?.send_leftButton = 0
+                    self?.send_rightButton = 0
+                    self?.send_ballKickerButton = 0
+                }
+            }
+            
         }
         
         // Run the Core ML classifier on global dispatch queue
@@ -281,7 +291,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
     
-    
+    func allFilesInFolder(_ folderPath:String) -> [String]?
+    {
+        return try? FileManager.default.contentsOfDirectory(atPath:folderPath)
+    }
 
     var currentValidationURL:URL?
     override func viewDidLoad() {
@@ -296,7 +309,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegateWantsPerspectiveImages = true
         captureHelper.delegateWantsPictureInPictureImages = true
         
-        captureHelper.scaledImagesSize = CGSize(width: 32, height: 80)
+        captureHelper.scaledImagesSize = CGSize(width: 48, height: 120)
         captureHelper.delegateWantsScaledImages = true
         
         captureHelper.delegateWantsHiSpeedCamera = true
@@ -359,21 +372,73 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         // Load the ML model through its generated class
         model = try? VNCoreMLModel(for: pinballModel().model)
         
+        captureHelper.pinball = pinball
         
-        // load the overlay so we can manmually line up the flippers
-        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
-        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
-        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRG8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
+        
+        // calibrate the cutoffs by showing the model known images and seeing what it returns
+        guard let model = model else {
             return
         }
-        overlay.imageView.image = UIImage(data:tiffData)
         
-        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
-        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
-        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
+        let leftImages = allFilesInFolder(String(bundlePath: "bundle://Assets/play/calibrate/left/"))
+        let rightImages = allFilesInFolder(String(bundlePath: "bundle://Assets/play/calibrate/right/"))
         
-        captureHelper.pinball = pinball
+        var leftAverage:Float = 0.0
+        for imgPath in leftImages! {
+            let img = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate/left/"+imgPath)))!
+
+            let handler = VNImageRequestHandler(ciImage: img)
+            do {
+                try handler.perform([VNCoreMLRequest(model: model) { request, error in
+                    guard let results = request.results as? [VNClassificationObservation] else {
+                        return
+                    }
+                    for result in results {
+                        if result.identifier == "left" {
+                            leftAverage = leftAverage + Float(result.confidence)
+                        }
+                    }
+                    }])
+            } catch {
+                print(error)
+            }
+        }
+        calibratedLeftCutoff = leftAverage / Float(leftImages!.count)
+        print("Calibrated Left Cutoff: \(calibratedLeftCutoff)")
+        
+        
+        var rightAverage:Float = 0.0
+        for imgPath in rightImages! {
+            let img = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate/right/"+imgPath)))!
+            
+            let handler = VNImageRequestHandler(ciImage: img)
+            do {
+                try handler.perform([VNCoreMLRequest(model: model) { request, error in
+                    guard let results = request.results as? [VNClassificationObservation] else {
+                        return
+                    }
+                    for result in results {
+                        if result.identifier == "right" {
+                            rightAverage = rightAverage + Float(result.confidence)
+                        }
+                    }
+                    }])
+            } catch {
+                print(error)
+            }
+        }
+        calibratedRightCutoff = rightAverage / Float(rightImages!.count)
+        print("Calibrated Right Cutoff: \(calibratedRightCutoff)")
+
+        
+        
+        // sanity
+        if calibratedLeftCutoff < 0.5 {
+           calibratedLeftCutoff = 0.5
+        }
+        if calibratedRightCutoff < 0.5 {
+            calibratedRightCutoff = 0.5
+        }
     }
         
     override func viewDidDisappear(_ animated: Bool) {
