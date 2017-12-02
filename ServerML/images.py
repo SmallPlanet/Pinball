@@ -5,8 +5,8 @@ import os
 import glob
 import gc
 
-NUM_CLASSES = 4
-IMG_SIZE = [240,80,1]
+NUM_CLASSES = 3
+IMG_SIZE = [48*2,120,1]
 
 K.set_image_data_format('channels_last')
 
@@ -18,13 +18,13 @@ def get_score(img_path):
 def get_labels_and_score(img_path):
     filename = img_path.split('/')[-1]
     buttons = filename.split('_')
-    retVal = [int(buttons[0]),int(buttons[1]),int(buttons[2]),int(buttons[3]),int(buttons[4])]
+    retVal = [int(buttons[0]),int(buttons[1]),int(buttons[2]),int(buttons[3])]
     return retVal
 
 def get_labels(img_path):
     filename = img_path.split('/')[-1]
     buttons = filename.split('_')
-    retVal = [int(buttons[1]),int(buttons[2]),int(buttons[3]),int(buttons[4])]
+    retVal = [int(buttons[1]),int(buttons[2]),int(buttons[3])]
     return retVal
 
 def generate_image_array(dir_path, max_size):

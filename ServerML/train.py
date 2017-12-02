@@ -27,6 +27,7 @@ class EvaluationMonitor(Callback):
     cnn_model = None
     imgs = []
     labels = []
+    weights = []
     didSaveModel = False
     minSaveAccuracy = 0.97
     
@@ -37,12 +38,19 @@ class EvaluationMonitor(Callback):
 
     def calc_predict(self, predictions, value):
         numCorrect = 0
+        numTotal = 0
+        
+        # we only care about the good memories and the perm memories
         for i in range(0,len(self.labels)):
+            #if self.weights[i] > 300000 or self.weights[i] == 999:
             numCorrect += (self.round2(predictions[i][0], value) == round(self.labels[i][0]) and 
                             self.round2(predictions[i][1], value) == round(self.labels[i][1]) and 
-                            self.round2(predictions[i][2], value) == round(self.labels[i][2]) and
-                            self.round2(predictions[i][3], value) == round(self.labels[i][3]))
-        acc = numCorrect / len(self.labels)
+                            self.round2(predictions[i][2], value) == round(self.labels[i][2]) )
+            numTotal += 1
+        if numTotal == 0:
+            return 0
+        print("numTotal", numTotal)
+        acc = numCorrect / numTotal
         return acc
     
     def on_epoch_end(self, epoch, logs={}): 
@@ -75,8 +83,8 @@ waste_max_size = 0
 print("Allocating the image data generator...")
 datagen = ImageDataGenerator(featurewise_center=False,
                              featurewise_std_normalization=False,
-                             width_shift_range=0.04,
-                             height_shift_range=0.04,
+                             width_shift_range=0.08,
+                             height_shift_range=0.08,
                              )
 
 coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
@@ -109,6 +117,10 @@ def Learn():
     
     images.load_images(permanent_imgs, permanent_labels, permanent_weights, permanent_path, permanent_max_size)
     
+    waste_imgs = images.generate_image_array(waste_path, waste_max_size)
+    waste_labels = []
+    waste_weights = []
+    images.load_images(waste_imgs, waste_labels, waste_weights, waste_path, waste_max_size)
                     
     if len(permanent_imgs) + len(train_imgs) >= 6:
         
@@ -118,8 +130,7 @@ def Learn():
         
         em = EvaluationMonitor()
         
-        waste_max_size = len(train_imgs)//6
-        waste_imgs = images.generate_image_array(waste_path, waste_max_size)
+        
         
         epochs = 10
                                         
@@ -127,12 +138,7 @@ def Learn():
         print("Training the long term memories...")
         while em.didSaveModel == False:
             
-            # load a new set of wasted images each time through the training loop
-            print("Reload new wasted memories...")
-            waste_labels = []
-            waste_weights = []
-    
-            images.load_images(waste_imgs, waste_labels, waste_weights, waste_path, waste_max_size)
+            # load a new set of wasted images each time through the training loop            
     
             if len(train_labels) > 0 and len(waste_labels) > 0:
                 total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
@@ -167,25 +173,35 @@ def Learn():
             # make the evaluator point to the updated arrays
             em.imgs = total_imgs
             em.labels = total_labels
+            em.weights = total_weights
             em.cnn_model = cnn_model
             
             
             # take into account the weight of classes
-            class_weight_dict = {0:0,1:0,2:0,3:0}
+            class_weight_dict = {0:1,1:1,2:1,3:1}
             for i in range(0,len(total_labels)):
                 class_weight_dict[0] += total_labels[i][0]
                 class_weight_dict[1] += total_labels[i][1]
                 class_weight_dict[2] += total_labels[i][2]
-                class_weight_dict[3] += total_labels[i][3]
                 
-            max_weight = max(class_weight_dict.values())
+            class_max_weight = max(class_weight_dict.values())
             
-            class_weight_dict[0] /= max_weight
-            class_weight_dict[1] /= max_weight
-            class_weight_dict[2] /= max_weight
-            class_weight_dict[3] /= max_weight
-            
-            
+            if class_max_weight != 0:
+                class_weight_dict[0] /= class_max_weight
+                class_weight_dict[1] /= class_max_weight
+                class_weight_dict[2] /= class_max_weight
+                        
+            # normalize the sample weights
+            normalized_weights = np.zeros(len(total_weights), dtype='float32')
+            max_weight = max(total_weights)
+            for i in range(0,len(total_weights)):
+                if total_weights[i] == 999:
+                    normalized_weights[i] = 1.0
+                else:
+                    normalized_weights[i] = total_weights[i] / max_weight
+                    if normalized_weights[i] < 0:
+                        normalized_weights[i] = -normalized_weights[i]
+                        
             # randomize the batch size            
             batch_size = int(random.random() * 32 + 6)
             
@@ -206,14 +222,15 @@ def Learn():
                       epochs=epochs,
                       verbose=1,
                       class_weight=class_weight_dict,
-                      callbacks=[wlr,em],
+                      sample_weight=normalized_weights,
+                      callbacks=[em],
                       )
             
             epochs += 1
                 
         print("Training finished...")
         
-        output_labels = ['left','right','start','ballkicker'] 
+        output_labels = ['left','right','ballkicker'] 
         coreml_model = coremltools.converters.keras.convert('model.h5',input_names='image',image_input_names = 'image',class_labels = output_labels)   
         coreml_model.author = 'Rocco Bowling'   
         coreml_model.short_description = 'RL Pinball model'

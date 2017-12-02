@@ -10,10 +10,12 @@ import images
 import struct
 import os
 import glob
+import numpy as np
+import copy
 
 # how far reaching into the past scores earned should affect the reward value associated with
 # actions.  1 means its stretches far, 0 means its very near sighted
-shortTermLearningRate = 0.8
+shortTermLearningRate = 0.98
 
 # the absolaute maximum number of seconds a memory can be affected by new scores; when a short
 # term memory exceeeds this threashold is it converted to a long term memory
@@ -25,10 +27,10 @@ shortTermMemoryDuration = 30
 longTermMemoryMaxSize = 50000
 
 # if an action does not score more than this it will not be considered for long term memory storage
-longTermMemoryMinimumReward = 70000
+longTermMemoryMinimumReward = 0
 
 # when a player loses a ball, that should negatively impact actions taken before the lost ball
-penaltyForLostBall = -1000000
+penaltyForLostBall = -10000000
 
 class ScoreEvent:
     def __init__(self, player, differentialScore):
@@ -82,15 +84,14 @@ longTermMemory = []
 class Memory:
     
     def __repr__(self):
-        return '%d:%d,%d,%d,%d' % (self.reward, self.left, self.right, self.start, self.ballKicker)
+        return '%d:%d,%d,%d' % (self.reward, self.left, self.right, self.ballKicker)
         
-    def __init__(self, filePath=None, jpeg=None, diffScore=0, left=None, right=None, start=None, ballKicker=None):
+    def __init__(self, filePath=None, jpeg=None, diffScore=0, left=None, right=None, ballKicker=None):
         self.startEpoc = time.time()
         self.reward = 0
         self.jpeg = jpeg
         self.left = left
         self.right = right
-        self.start = start
         self.ballKicker = ballKicker
         self.filePath = filePath
     
@@ -114,26 +115,26 @@ class Memory:
                 
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
         if self.reward > longTermMemoryMinimumReward:
-            print("  -> long term memory:", self.reward, self.left, self.right, self.start, self.ballKicker)
+            print("  -> long term memory:", self.reward, self.left, self.right, self.ballKicker)
             
             longTermMemory.append(self)
             longTermMemory.sort(reverse=False, key=GetMemoryKey)
             
-            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.train_path, self.reward, self.left, self.right, self.start, self.ballKicker, str(uuid.uuid4()))
+            self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.train_path, self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
             print (self.filePath)
         
             f = open(self.filePath, 'wb')
-            f.write(x.jpeg)
+            f.write(self.jpeg)
             f.close()
-        elif self.reward < -10000:
+        elif self.reward < 0:
             # save to waste if this was the ball which killed us?
-            print("  -> waste bin:", self.reward, self.left, self.right, self.start, self.ballKicker)
+            print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
             
-            self.filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.waste_path, 0, 0, 0, 0, 0, str(uuid.uuid4()))
+            self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.waste_path, self.reward, 0, 0, 0, str(uuid.uuid4()))
             print (self.filePath)
         
             f = open(self.filePath, 'wb')
-            f.write(x.jpeg)
+            f.write(self.jpeg)
             f.close()
             
             
@@ -155,7 +156,7 @@ def LoadLongTermMemory():
     for img_path in all_img_paths:
         labels = images.get_labels_and_score(img_path)
         
-        longTermMemory.append(Memory(img_path, None, labels[0], labels[1], labels[2], labels[3], labels[4]))
+        longTermMemory.append(Memory(img_path, None, labels[0], labels[1], labels[2], labels[3]))
     
     longTermMemory.sort(reverse=True, key=GetMemoryKey)
     print("loaded " + str(len(longTermMemory)) + " memories from disk")
@@ -278,6 +279,7 @@ def HandleTrainingImages(msg):
     # byte for start button is activated
     # byte for ball kicker button is activated
     sizeOfJPEG = struct.unpack("<L", msg[:4])[0]
+    #jpeg = copy.deepcopy(msg[4:4+sizeOfJPEG])
     jpeg = msg[4:4+sizeOfJPEG]
     
     s = 4+sizeOfJPEG
@@ -293,7 +295,7 @@ def HandleTrainingImages(msg):
         print("  -> permanent memory:", len(jpeg), left, right, start, ballKicker)
         
         # permanent memories get saved automatically to the permanent memory path
-        filePath = '%s/%d_%d_%d_%d_%d_%s.jpg' % (train.permanent_path, 999, left, right, start, ballKicker, str(uuid.uuid4()))
+        filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.permanent_path, 999, left, right, ballKicker, str(uuid.uuid4()))
         print (filePath)
     
         f = open(filePath, 'wb')
@@ -303,8 +305,8 @@ def HandleTrainingImages(msg):
     else:
         # save this in memory for x number of seconds, after which tag it with how much the
         # score changed and then save it to long term memory if it good enough to do so
-        print("  -> short term memory:", len(jpeg), left, right, start, ballKicker)
-        shortTermMemory.append(Memory(None, jpeg, 0, left, right, start, ballKicker))
+        print("  -> short term memory:", len(jpeg), left, right, ballKicker)
+        shortTermMemory.append(Memory(None, jpeg, 0, left, right, ballKicker))
     
 comm.subscriber(comm.endpoint_sub_TrainingImages, HandleTrainingImages)
 
