@@ -68,8 +68,9 @@ struct Display {
 //        [0x90000026, 0x93f8006f, 0x97fc0049, 0x9404007f, 0xf7dc003e], // 9
 //    ]
 
-    static func findDigits(cols: [UInt32], font: DisplayFont) -> (Int?, Double) {
+    static func findDigits(cols: [UInt32], pixelsDown: Int, font: DisplayFont) -> (Int?, Double) {
         
+        let mask = (UInt32(1 << font.height) - 1) << pixelsDown
         
         func findDigit(col: Int) -> (Int?, Double) {
             guard col + font.width < cols.count else { return (nil, 0) }
@@ -81,19 +82,20 @@ struct Display {
                 matches = 0
                 digitBytes.enumerated().forEach { (arg) in
                     let (offset, element) = arg
-                    let col8 = UInt32(cols[col + offset] & 0x000000ff)
-                    matches += UInt32(element ^ col8).bitCount
+                    let col8 = UInt32(cols[col + offset]) & mask
+                    matches += UInt32(element << pixelsDown ^ col8).bitCount
+//                    print("\(String(element << pixelsDown, radix: 2)) \(String(col8, radix: 2))")
                 }
                 let wrongBits = totalBits - Int(matches)
                 let accuracy = Double(wrongBits)/Double(totalBits)
-                if accuracy > 0.85 {
-                    print("match: \(digit) \(accuracy*100.0)%  \(accuracy > 0.70 ? "*" : "")\(accuracy > 0.80 ? "*" : "")\(accuracy > 0.90 ? "*" : "")\(accuracy > 0.95 ? "*" : "")")
-                }
+//                if accuracy > 0.85 {
+//                    print("match: \(digit) \(accuracy*100.0)%  \(accuracy > 0.70 ? "*" : "")\(accuracy > 0.80 ? "*" : "")\(accuracy > 0.90 ? "*" : "")\(accuracy > 0.95 ? "*" : "")")
+//                }
                 if accuracy > 0.93 && bestMatch.1 < accuracy {
                     bestMatch = (digit, accuracy)
                 }
             }
-            print("bestMatch: \(bestMatch)")
+//            print("bestMatch: \(bestMatch)")
             return bestMatch
         }
         
@@ -105,7 +107,6 @@ struct Display {
         let fontSize = Double(font.width * font.height) // pixels per character
         
         while col < cols.count - font.width {
-            print("col \(col)")
             let (digit, wrongs) = findDigit(col: col)
             if let digit = digit, (lastCol < 0 || lastCol + font.width < col) {
                 wrongBits += Int((1.0-wrongs) * fontSize)
@@ -120,6 +121,14 @@ struct Display {
         return foundDigits > 0 ? (value, (fontSize-Double(wrongBits))/fontSize) : (nil, 0.0)
     }
     
+    static func findDigits(cols: [UInt32]) -> (Int?, Double) {
+        let results = [
+            findDigits(cols: cols, pixelsDown: 0, font: digits5x7Bold),
+            findDigits(cols: cols, pixelsDown: 3, font: digits9x20),
+        ]
+        let best = results.sorted { $0.1 > $1.1 }
+        return best.first ?? (nil, .nan)
+    }
     
     // 4x7 pixel font used in top-line score display
 //    let digits4x7: [[UInt32]] = [

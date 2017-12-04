@@ -333,7 +333,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             // force a score of the final result so we can fill the dotmatrix
             let finalAccuracy = ga.scoreOrganism(finalResult, 1, PRNG())
             
-            print("final accuracy: \(finalAccuracy)")
+            print("final accuracy: \(finalAccuracy)  cutoff: \(finalResult.cutoff)")
             for y in 0..<self.dotheight {
                 for x in 0..<self.dotwidth {
                     if self.dotmatrixB[y * self.dotwidth + x] == Display.calibration[y * self.dotwidth + x] {
@@ -417,7 +417,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        print("Cutoff: \(Defaults[.calibrate_cutoff])")
 //        resetDefaults()
         
 // The following line will save a cropped photo of the screen display 2x/sec to the camera roll
@@ -1424,9 +1424,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 //                let bits = dots.bits().map { String(format: "0x%08x, ", $0) }.reduce("", +)
 //                print("[\(bits)]")
                 
-                let (score, accuracy) = Display.findDigitsBold(cols: dots.bits())
+                let (score, accuracy) = Display.findDigits(cols: dots.bits())
                 if let score = score {
-                    print("Found score: \(score) \(accuracy)")
+                    print(dots)
+                    print("Found score: \(score) \(accuracy)\n")
                 }
                 
             }
