@@ -55,19 +55,6 @@ struct Display {
         1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,
         ]
     
-    let digits: [[UInt32]] = [
-        [0xf8000f80, 0xf8001040, 0xf8001040, 0xf8000f80], // 0
-        [0xf8200000, 0xf8000080, 0xf8001fc0, 0xf8000000], // 1
-        [0xf8001880, 0xf8001440, 0xf8001240, 0xf8009180], // 2
-        // 3
-        // 4
-        // 5
-        [0xf8400f80, 0xf8401140, 0xf8001140, 0xf8000e40], // 6
-        // 7
-        [], // 8
-        [], // 9
-    ]
-    
 //    let digitsBold: [[UInt32]] = [
 //        [0x9000803e, 0x9004007f, 0x90040041, 0x97fc007f, 0x97fc103e], // 0
 //        [0x07fc8000, 0x07b80006, 0xf000007f, 0xf000007f, 0x90000000], // 1
@@ -81,50 +68,92 @@ struct Display {
 //        [0x90000026, 0x93f8006f, 0x97fc0049, 0x9404007f, 0xf7dc003e], // 9
 //    ]
 
-    static func findDigitsBold(cols: [UInt32]) -> (Int?, Double) {
-        func findDigit(col: Int) -> (Int?, Int) {
-            guard col + digitsBold[0].count < cols.count else { return (nil, 0) }
+    static func findDigits(cols: [UInt32], font: DisplayFont) -> (Int?, Double) {
+        
+        
+        func findDigit(col: Int) -> (Int?, Double) {
+            guard col + font.width < cols.count else { return (nil, 0) }
             var matches = UInt(0)
-            let totalBits = digitsBold[0].count * 8
-            for digit in 0..<digitsBold.count {
-                let digitBytes = digitsBold[digit]
+            var bestMatch: (Int?, Double) = (nil, 0.0)
+            let totalBits = font.width * font.height
+            for digit in 0..<font.pixels.count {
+                let digitBytes = font.pixels[digit]
                 matches = 0
                 digitBytes.enumerated().forEach { (arg) in
                     let (offset, element) = arg
-                    let col8 = UInt8(cols[col + offset] & 0x000000ff)
+                    let col8 = UInt32(cols[col + offset] & 0x000000ff)
                     matches += UInt32(element ^ col8).bitCount
                 }
                 let wrongBits = totalBits - Int(matches)
                 let accuracy = Double(wrongBits)/Double(totalBits)
                 if accuracy > 0.85 {
-                    return (digit, wrongBits)
+                    print("match: \(digit) \(accuracy*100.0)%  \(accuracy > 0.70 ? "*" : "")\(accuracy > 0.80 ? "*" : "")\(accuracy > 0.90 ? "*" : "")\(accuracy > 0.95 ? "*" : "")")
+                }
+                if accuracy > 0.93 && bestMatch.1 < accuracy {
+                    bestMatch = (digit, accuracy)
                 }
             }
-            return (nil, 0)
+            print("bestMatch: \(bestMatch)")
+            return bestMatch
         }
         
         var col = 0
         var value = 0
         var wrongBits = 0
         var lastCol = -1
-        var foundDigit = false
+        var foundDigits = 0
+        let fontSize = Double(font.width * font.height) // pixels per character
         
-        while col < cols.count - 5 {
+        while col < cols.count - font.width {
+            print("col \(col)")
             let (digit, wrongs) = findDigit(col: col)
-            if let digit = digit, (lastCol < 0 || lastCol + 8 < col) {
-                wrongBits += wrongs
+            if let digit = digit, (lastCol < 0 || lastCol + font.width < col) {
+                wrongBits += Int((1.0-wrongs) * fontSize)
                 value = value * 10 + digit
                 lastCol = col
-                col += 6
-                foundDigit = true
+                col += 1
+                foundDigits += 1
             } else {
                 col += 1
             }
         }
-        return (foundDigit ? value : nil, 0.0)
+        return foundDigits > 0 ? (value, (fontSize-Double(wrongBits))/fontSize) : (nil, 0.0)
     }
     
-    static let digitsBold: [[UInt8]] = [
+    
+    // 4x7 pixel font used in top-line score display
+//    let digits4x7: [[UInt32]] = [
+//        [0xf8000f80, 0xf8001040, 0xf8001040, 0xf8000f80], // 0
+//        [0xf8200000, 0xf8000080, 0xf8001fc0, 0xf8000000], // 1
+//        [0x62, 0x51, 0x49, 0x46], // 2
+//        [0xf8001880, 0xf8001440, 0xf8001240, 0xf8009180], // 2
+//        // 3
+//        // 4
+//        // 5
+//        [0xf8400f80, 0xf8401140, 0xf8001140, 0xf8000e40], // 6
+//        // 7
+//        [], // 8
+//        [], // 9
+//    ]
+
+    typealias DisplayFont = (width: Int, height: Int, pixels: [[UInt32]])
+    
+    let digits4x7: DisplayFont = (width: 4, height: 7, pixels: [
+        [0x3E, 0x41, 0x41, 0x3E,], // 0
+        [0x00, 0x02, 0x7F, 0x00,], // 1
+        [0x62, 0x51, 0x49, 0x46], // 2
+        [], // 2
+        [], // 3
+        [0x1E, 0x10, 0x7F, 0x10,], // 4
+        [], // 5
+        [0x3E, 0x45, 0x45, 0x39,], // 6
+        [], // 7
+        [], // 8
+        [0x26, 0x49, 0x49, 0x3F,], // 9
+    ])
+    
+    // 5x7 pixel bold font used in top-line score display (and elsewhere?)
+    static let digits5x7Bold: DisplayFont = (width: 5, height: 7, pixels: [
         [0x3e, 0x7f, 0x41, 0x7f, 0x3e], // 0
         [0x00, 0x06, 0x7f, 0x7f, 0x00], // 1
         [0x62, 0x73, 0x59, 0x4f, 0x46], // 2
@@ -135,8 +164,67 @@ struct Display {
         [0x03, 0x63, 0x79, 0x1f, 0x07], // 7
         [0x36, 0x7f, 0x49, 0x7f, 0x36], // 8
         [0x26, 0x6f, 0x49, 0x7f, 0x3e], // 9
-    ]
+    ])
+    
+    // 6x7 pixel heavy font used in top-line score display (rare)
+    static let digitsBold6Wide: DisplayFont = (width: 6, height: 7, pixels: [
+        [0x3E, 0x7F, 0x41, 0x41, 0x7F, 0x3E,], // 0
+        [0x00, 0x00, 0x06, 0x7F, 0x7F, 0x00,], // 1 - Guess
+        [0x62, 0x73, 0x59, 0x49, 0x4F, 0x46,], // 2
+        [], // 3
+        [0x1E, 0x1E, 0x10, 0x7F, 0x7F, 0x10,], // 4
+        [0x2F, 0x6F, 0x45, 0x45, 0x7D, 0x39,], // 5
+        [], // 6
+        [], // 7
+        [0x36, 0x7F, 0x49, 0x49, 0x7F, 0x36],  // 8
+        [0x26, 0x6F, 0x49, 0x49, 0x7F, 0x36,], // 9 - Guess
+    ])
+    
+    // 5x9 pixel font used for score display in asteroid mode
+    static let digits5x9: DisplayFont = (width: 5, height: 9, pixels: [
+        [0x00FE,    0x01FF,    0x0101,    0x01FF,    0x00FE], // 0
+        [0x0000,    0x0006,    0x01FF,    0x01FF,    0x0000], // 1
+        [0x01C6,    0x01E7,    0x01B1,    0x019F,    0x018E], // 2
+        [0x0082,    0x0183,    0x0111,    0x01FF,    0x00EE], // 3
+        [0x003C,    0x003C,    0x0020,    0x01FF,    0x01FF], // 4
+        [0x009F,    0x019F,    0x0109,    0x01F9,    0x00F1], // 5
+        [0x00EE,    0x01FF,    0x0111,    0x01F3,    0x00E2], // 6
+        [0x0007,    0x0187,    0x01E1,    0x007F,    0x001F], // 7
+        [0x00EE,    0x01FF,    0x0111,    0x01FF,    0x00EE], // 8 - Guess
+        [0x008E,    0x019F,    0x0111,    0x01FF,    0x00FE], // 9
+    ])
+    
+    // 9x20 pixel font used for score during play
+    static let digits9x20: DisplayFont = (width: 9, height: 20, pixels: [
+        [0x03FFFC, 0x07FFFE, 0x0FFFFF, 0x0FFFFF, 0x0C0003, 0x0FFFFF, 0x0FFFFF, 0x07FFFE, 0x03FFFC], // 0
+        [0x000000, 0x000000, 0x00003E, 0x0FFFFF, 0x0FFFFF, 0x0FFFFF, 0x0FFFFF, 0x000000, 0x000000], // 1
+        [0x0F003C, 0x0FC03E, 0x0FF03F, 0x0FFC3F, 0x0EFF03, 0x0E3FFF, 0x0E0FFF, 0x0E03FE, 0x0E00FC], // 2
+        [0x03C03C, 0x07C03E, 0x0FC03F, 0x0FC73F, 0x0C0703, 0x0FFFFF, 0x0FFFFF, 0x07FFFE, 0x03F8FC], // 3
+        [0x0007FC, 0x0007FC, 0x0007FC, 0x000700, 0x0FFFFF, 0x0FFFFF, 0x0FFFFF, 0x0FFFFF, 0x000700], // 4
+        [0x03C3FF, 0x07C3FF, 0x0FC3FF, 0x0FC3FF, 0x0C00C7, 0x0FFFC7, 0x0FFFC7, 0x07FF87, 0x03FF07], // 5
+        [0x03FFFC, 0x07FFFE, 0x0FFFFF, 0x0FFFFF, 0x0C0303, 0x0FFF1F, 0x0FFF1F, 0x07FE1E, 0x03FC1C], // 6
+        [0x0F001F, 0x0FC01F, 0x0FF01F, 0x0FFC1F, 0x00FF0F, 0x003FFF, 0x000FFF, 0x0003FF, 0x0000FF], // 7
+        [0x03FC7C, 0x07FEFE, 0x0FFFFF, 0x0FFFFF, 0x0C0303, 0x0FFFFF, 0x0FFFFF, 0x07FEFE, 0x03FC7C], // 8
+        [0x03C0FC, 0x07C1FE, 0x0FC3FF, 0x0FC3FF, 0x0C0303, 0x0FFFFF, 0x0FFFFF, 0x07FFFE, 0x03FFFC], // 9
+    ])
+    
+    // 7x13 pixel font used for score display during search mission
+    static let digits7x13: DisplayFont = (width: 7, height: 13, pixels: [
+        [0x0FFE,    0x1FFF,    0x1FFF,    0x1803,    0x1FFF,    0x1FFF,    0x0FFE], // 0
+        [0x0000,    0x000E,    0x1FFF,    0x1FFF,    0x1FFF,    0x0000,    0x0000], // 1
+        [0x1E06,    0x1F87,    0x1FC7,    0x19E3,    0x187F,    0x183F,    0x181E], // 2
+        [0x0E06,    0x1E07,    0x1E67,    0x1063,    0x1FFF,    0x1FDF,    0x0F8E], // 3
+        [0x007C,    0x007C,    0x0060,    0x1FFF,    0x1FFF,    0x1FFF,    0x0060], // 4
+        [0x0CFF,    0x1CFF,    0x1CFF,    0x1863,    0x1FE3,    0x1FE3,    0x0FC3], // 5
+        [0x0FFE,    0x1FFF,    0x1FFF,    0x1863,    0x1FE7,    0x1FE7,    0x0FC6], // 6
+        [0x0007,    0x0007,    0x1E07,    0x1FE3,    0x1FFF,    0x01FF,    0x001F], // 7
+        [0x0F1E,    0x1FBF,    0x1FFF,    0x18E3,    0x1FFF,    0x1FBF,    0x0F1E], // 8
+        [0x0C3E,    0x1C7F,    0x1C7F,    0x1863,    0x1FFF,    0x1FFF,    0x0FFE], // 9
+    ])
+    
 
+
+    
     
 }
 

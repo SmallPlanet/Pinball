@@ -34,11 +34,10 @@ extension DefaultsKeys {
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let bottomRight = (CGFloat(2802), CGFloat(1492))
-    let bottomLeft = (CGFloat(2823), CGFloat(896))
-    let topRight = (CGFloat(470), CGFloat(1514))
-    let topLeft = (CGFloat(434), CGFloat(919))
-    let originalImageHeight = 2448.0
+    let topLeft = (CGFloat(2857), CGFloat(1910))
+    let topRight = (CGFloat(2847), CGFloat(1330))
+    let bottomLeft = (CGFloat(466), CGFloat(1941))
+    let bottomRight = (CGFloat(465), CGFloat(1351))
     
     let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
@@ -88,32 +87,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 return content![index]
             }
             set(newElm) {
-                content![index] = newElm
+                content![index] = newElm;
             }
         }
-        
-    }
-    
-    func adjust(image: CIImage, organism: Organism) -> CIImage {
-        let scale = calibrationImage!.extent.height / CGFloat(originalImageHeight)
-        let x1 = organism.content![0]
-        let y1 = organism.content![1]
-        let x2 = organism.content![2]
-        let y2 = organism.content![3]
-        let x3 = organism.content![4]
-        let y3 = organism.content![5]
-        let x4 = organism.content![6]
-        let y4 = organism.content![7]
-        
-        let perspectiveImagesCoords = [
-            "inputTopLeft":CIVector(x: round((topLeft.0+x1) * scale), y: round((topLeft.1+y1) * scale)),
-            "inputTopRight":CIVector(x: round((topRight.0+x2) * scale), y: round((topRight.1+y2) * scale)),
-            "inputBottomLeft":CIVector(x: round((bottomLeft.0+x3) * scale), y: round((bottomLeft.1+y3) * scale)),
-            "inputBottomRight":CIVector(x: round((bottomRight.0+x4) * scale), y: round((bottomRight.1+y4) * scale))
-        ]
-        
-        let adjusted = self.calibrationImage!.applyingFilter("CIPerspectiveCorrection", parameters: perspectiveImagesCoords)
-        return adjusted
     }
     
     @objc func CancelCalibration(_ sender: UITapGestureRecognizer) {
@@ -125,7 +101,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         shouldBeCalibrating = true
         
         calibrationBlocker.view.isHidden = false
-        calibrationBlocker.imageView.contentMode = .scaleAspectFit
         
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
@@ -134,6 +109,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
 
+            
             var bestCalibrationAccuracy:Float = 0.0
             
             let timeout = 9000000
@@ -188,16 +164,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         child [i] = organismA [i]
                     }
                     
-                    func newCutoff(_ old: Int) -> Int {
-                        let cutoff = old + Int(prng.getRandomNumber(min: 0, max: 80)) - 40
-                        return min(max(cutoff, 20), 240)
-                    }
                     
                     if prng.getRandomNumberf() < 0.2 {
                         if prng.getRandomNumberf() < 0.5 {
-                            child.cutoff = newCutoff(organismA.cutoff)
+                            child.cutoff = organismA.cutoff + Int(prng.getRandomNumber(min: 0, max: 20)) - 10
                         } else {
-                            child.cutoff = newCutoff(organismB.cutoff)
+                            child.cutoff = organismB.cutoff + Int(prng.getRandomNumber(min: 0, max: 20)) - 10
                         }
                     } else {
                         let n = prng.getRandomNumberi(min:1, max:4)
@@ -254,7 +226,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 var accuracy:Double = 0
                 
                 autoreleasepool { () -> Void in
-                    let scale = self.calibrationImage!.extent.height / CGFloat(self.originalImageHeight)
+                    let scale = self.calibrationImage!.extent.height / 1936.0
                     
                     let x1 = organism.content![0]
                     let y1 = organism.content![1]
@@ -274,12 +246,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     let adjustedImage = self.calibrationImage!.applyingFilter("CIPerspectiveCorrection", parameters: perspectiveImagesCoords)
                     
+                    guard let cgImage = self.ciContext.createCGImage(adjustedImage, from: adjustedImage.extent) else {
+                        return
+                    }
+                    
                     if threadIdx == 0 {
-                        self.dotmatrixA = self.getDotMatrix(adjustedImage, organism.cutoff, &self.dotmatrixA)
-                        accuracy = Display.calibrationAccuracy(bits: self.dotmatrixA)
+                        let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff, &self.dotmatrixA)
+                        accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
                     } else {
-                        self.dotmatrixB = self.getDotMatrix(adjustedImage, organism.cutoff, &self.dotmatrixB)
-                        accuracy = Display.calibrationAccuracy(bits: self.dotmatrixB)
+                        let dotmatrix = self.getDotMatrix(cgImage, organism.cutoff, &self.dotmatrixB)
+                        accuracy = self.ocrMatch(self.calibrate2, 0, 0, 0, 31, dotmatrix).1
                     }
                     
                     organism.lastScore = CGFloat(accuracy)
@@ -288,18 +264,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 return Float(accuracy)
             }
             
-            var counter = 0
-            
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
                 if self.shouldBeCalibrating == false || score > 0.999 {
                     self.shouldBeCalibrating = false
                     return true
                 }
                 
-                counter += 1
-                
-                if score > bestCalibrationAccuracy || counter > 100 {
-                    counter = 0
+                if score > bestCalibrationAccuracy {
                     bestCalibrationAccuracy = score
                     
                     let x1 = organism.content![0]
@@ -316,10 +287,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     let statusString = "Calibrating\n\(Int(score*100))%"
                     DispatchQueue.main.async {
                         self.calibrationLabel.label.text = statusString
-                        let image = self.adjust(image: self.calibrationImage!, organism: organism)
-//                        let dots = try! self.dotMatrixReader.process(image: image)
-//                        print(dots)
-                        self.calibrationBlocker.imageView.image = UIImage(ciImage: image)
                     }
                 }
                 
@@ -336,7 +303,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             print("final accuracy: \(finalAccuracy)")
             for y in 0..<self.dotheight {
                 for x in 0..<self.dotwidth {
-                    if self.dotmatrixB[y * self.dotwidth + x] == Display.calibration[y * self.dotwidth + x] {
+                    if self.dotmatrixB[y * self.dotwidth + x] == self.calibrate2[y * self.dotwidth + x] {
                         if self.dotmatrixB[y * self.dotwidth + x] == 0 {
                             print("-", terminator:"")
                         }else{
@@ -367,18 +334,21 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             print("** End PerformCalibration **")
             
+            
             DispatchQueue.main.async {
                 self.calibrationBlocker.view.isHidden = true
             }
+            
         }
     }
+    
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
         // 2448x3264
         
-        let scale = originalImage.extent.height / CGFloat(originalImageHeight)
+        let scale = originalImage.extent.height / 2448.0
         let x1 = CGFloat(Defaults[.calibrate_x1])
         let x2 = CGFloat(Defaults[.calibrate_x2])
         let x3 = CGFloat(Defaults[.calibrate_x3])
@@ -413,15 +383,14 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
     var currentValidationURL:URL?
-    var saveTimer: Timer?
+    var saveTimer: Timer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
 //        resetDefaults()
         
-// The following line will save a cropped photo of the screen display 2x/sec to the camera roll
-//        saveTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(savePreviewImage), userInfo: nil, repeats: true)
+        saveTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(savePreviewImage), userInfo: nil, repeats: true)
 
         title = "Score Mode"
         
@@ -472,7 +441,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             self.savePreviewImage()
         }
         
-        self.calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate_tng.JPG")))
+        self.calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/score/calibrate_test.JPG")))
         calibrateButton.button.add(for: .touchUpInside) {
             self.PerformCalibration()
         }
@@ -512,7 +481,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
         captureHelper.stop()
-        saveTimer?.invalidate()
+        saveTimer.invalidate()
         
         for observer in observers {
             NotificationCenter.default.removeObserver(observer)
@@ -1282,9 +1251,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         for y in 0..<width {
             for x in 0..<height {
-                let a = (startY+y) * dotwidth + (startX+x)
-                let b = y * height + x
-                if dotmatrix[a] == letter[b] {
+                if dotmatrix[(startY+y) * dotwidth + (startX+x)] == letter[y * height + x] {
                     match += 1.0
                 } else {
                     bad += 1.0
@@ -1302,33 +1269,30 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return (matchAccuracy > accuracy,matchAccuracy)
     }
     
-    // TNG Game state
-    var score = 0
-    var done = false
-    
     func ocrReadScreen(_ croppedImage:CIImage) -> String {
         // TODO: Add support for score tally during game specific mode screens (like party in the infield)
         // TODO: Add support for changing of the current player
         // TODO: Add support for when the ball number changes
         
-        let dotmatrix = getDotMatrix(croppedImage, Defaults[.calibrate_cutoff] + 35, &dotmatrixA)
+        guard let cgImage = self.ciContext.createCGImage(croppedImage, from: croppedImage.extent) else {
+            return ""
+        }
+        let dotmatrix = self.getDotMatrix(cgImage, Defaults[.calibrate_cutoff] + 35, &dotmatrixA)
         var screenText = ""
         var updateType = ""
         
         // if this is not a score, check for other things...
-        if screenText == "" && ocrGameOver(dotmatrix) {
+        if screenText == "" &&  self.ocrGameOver(dotmatrix){
             updateType = "x"
             screenText = "GAME OVER"
-            done = true
             
             ResetGame()
         }
         
-        if screenText == "" && ocrPushStart(dotmatrix) {
+        if screenText == "" && self.ocrPushStart(dotmatrix) {
             updateType = "g"
             screenText = "PUSH START"
-            done = true
-
+            
             ResetGame()
         }
         
@@ -1414,24 +1378,102 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     lazy var dotmatrixA = [UInt8](repeating: 0, count: dotwidth * dotheight)
     lazy var dotmatrixB = [UInt8](repeating: 0, count: dotwidth * dotheight)
     
-    var dotMatrixReader = DotMatrixReader()
-    
-    func getDotMatrix(_ croppedImage:CIImage, _ cutoff:Int, _ dotmatrix:inout [UInt8]) -> [UInt8] {
-        let dots = try! dotMatrixReader.process(image: croppedImage, threshold: UInt8(cutoff))
-        if verbose >= 2 {
-            DispatchQueue.main.async {
-//                print(dots)
-//                let bits = dots.bits().map { String(format: "0x%08x, ", $0) }.reduce("", +)
-//                print("[\(bits)]")
+    func getDotMatrix(_ croppedImage:CGImage, _ cutoff:Int, _ dotmatrix:inout [UInt8]) -> [UInt8] {
+        
+        // 0. get access to the raw pixels
+        let width = croppedImage.width
+        let height = croppedImage.height
+        let bitsPerComponent = croppedImage.bitsPerComponent
+        let rowBytes = width * 4
+        let totalBytes = height * width * 4
+        
+        // only need to allocate this once for performance
+        //if rgbBytes.count != totalBytes {
+        var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
+        //}
+        
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        contextRef?.draw(croppedImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
+
+        let x_margin = 0.0
+        let y_margin = 0.0
+        
+        let x_step = Double(croppedImage.width) / Double(dotwidth)
+        let y_step = Double(croppedImage.height) / Double(dotheight-1)
+        
+        for y in 0..<dotheight {
+            
+            for x in 0..<dotwidth {
                 
-                let (score, accuracy) = Display.findDigitsBold(cols: dots.bits())
-                if let score = score {
-                    print("Found score: \(score) \(accuracy)")
+                let intensity_x = round(Double(x) * x_step + x_margin)
+                var intensity_y = round(Double(y) * y_step + y_margin)
+                
+                if y == dotheight-1 {
+                    intensity_y = intensity_y-2
                 }
                 
+                let intensity_i0 = Int(intensity_y) * rowBytes + (Int(intensity_x) * 4)
+                let intensity_i1 = intensity_i0 + 4
+                var intensity_i2 = intensity_i0 - 4
+                let intensity_i3 = intensity_i0 + (width * 4)
+                var intensity_i4 = intensity_i0 - (width * 4)
+                
+                if intensity_i2 < 0 {
+                    intensity_i2 = 0
+                }
+                if intensity_i4 < 0 {
+                    intensity_i4 = 0
+                }
+                
+                let intensity_i0g = intensity_i0 + 1
+                let intensity_i1g = intensity_i1 + 1
+                let intensity_i2g = intensity_i2 + 1
+                let intensity_i3g = intensity_i3 + 1
+                let intensity_i4g = intensity_i4 + 1
+                let intensity_i0b = intensity_i0 + 2
+                let intensity_i1b = intensity_i1 + 2
+                let intensity_i2b = intensity_i2 + 2
+                let intensity_i3b = intensity_i3 + 2
+                let intensity_i4b = intensity_i4 + 2
+                
+                let dot_i = y * dotwidth + x
+                
+                var avg:Int = 0
+                avg += Int(rgbBytes[intensity_i0g]) * 6
+                avg += Int(rgbBytes[intensity_i1g])
+                avg += Int(rgbBytes[intensity_i2g])
+                avg += Int(rgbBytes[intensity_i3g])
+                avg += Int(rgbBytes[intensity_i4g])
+                
+                avg += Int(rgbBytes[intensity_i0b]) * 6
+                avg += Int(rgbBytes[intensity_i1b])
+                avg += Int(rgbBytes[intensity_i2b])
+                avg += Int(rgbBytes[intensity_i3b])
+                avg += Int(rgbBytes[intensity_i4b])
+                avg /= 20
+                
+                //avg = Int(rgbBytes[intensity_i0b])
+                
+                if (verbose >= 2) {
+                    printValue(avg)
+                }
+                
+                if avg >= cutoff {
+                    dotmatrix[dot_i] = 1
+                } else {
+                    dotmatrix[dot_i] = 0
+                }
             }
+            
+            if (verbose >= 2) {
+                print("")
+            }
+            
+            
         }
-        return dots.ints.map{ $0 > cutoff ? 1 : 0 }
+        
+        return dotmatrix
     }
     
     func printValue(_ v:Int) {
@@ -1487,8 +1529,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return mainXmlView!.elementForId("calibrateButton")!.asButton!
     }
     
-    fileprivate var calibrationBlocker: ImageView {
-        return mainXmlView!.elementForId("calibrationBlocker")!.asImageView!
+    fileprivate var calibrationBlocker: View {
+        return mainXmlView!.elementForId("calibrationBlocker")!.asView!
     }
     
     fileprivate var calibrationLabel: Label {
@@ -2258,7 +2300,140 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         0,0,0,1,1,1,1,1,
         ]
     
+    
+    
+    fileprivate var calibrate2: [UInt8] = [
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,0,1,1,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0,1,0,1,1,
+        1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,1,1,0,1,0,1,1,1,1,0,1,0,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,1,0,1,0,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,0,0,1,0,0,1,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,0,0,0,0,1,0,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
+        0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,1,1,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,
+        0,0,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,0,0,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,0,0,0,1,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,0,0,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,0,1,0,1,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,
+        0,1,1,1,0,1,0,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
+        0,1,0,0,0,1,0,0,1,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,
+        0,1,0,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,
+        0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,0,0,1,1,1,0,0,0,1,1,1,1,0,1,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,1,0,0,0,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
+        0,1,0,1,0,1,0,0,1,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,1,0,0,0,1,0,0,1,1,1,0,0,0,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
+        0,1,1,1,1,1,0,0,1,1,1,0,0,0,0,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,
+        0,0,0,0,1,0,0,0,1,1,0,1,1,1,1,1,0,1,1,0,0,1,1,1,0,1,0,0,0,1,1,
+        0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,0,0,0,0,1,1,1,
+        0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,1,0,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,
+        0,1,0,0,0,0,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,
+        0,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        1,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
+        1,1,1,0,1,0,1,0,1,1,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,
+        1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
+        ]
+    
     
     /*
     fileprivate var calibrate1: [UInt8] = [
