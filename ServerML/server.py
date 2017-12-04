@@ -113,10 +113,13 @@ class Memory:
         # sort the long term memory such that the lowest diff score memory is first
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
         
+        # blurry images we should send to waste
         isBlurry = IsBlurryJPEG(self.jpeg, cutoff=3000)
+        if isBlurry:
+            self.reward = -20000
                 
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if isBlurry == False and self.reward > longTermMemoryMinimumReward:
+        if self.reward > longTermMemoryMinimumReward:
             print("  -> long term memory:", self.reward, self.left, self.right, self.ballKicker)
             
             longTermMemory.append(self)
@@ -128,7 +131,7 @@ class Memory:
             f = open(self.filePath, 'wb')
             f.write(self.jpeg)
             f.close()
-        elif isBlurry == True or self.reward < 0:
+        elif self.reward < 0:
             # If this shot somehow contributed to losing the ball, we want to put it into waste
             # If the image captured was blurry, we should also put it into waste
             print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
