@@ -11,7 +11,7 @@ import struct
 import os
 import glob
 import numpy as np
-import copy
+import blur
 
 # how far reaching into the past scores earned should affect the reward value associated with
 # actions.  1 means its stretches far, 0 means its very near sighted
@@ -112,9 +112,11 @@ class Memory:
                 
         # sort the long term memory such that the lowest diff score memory is first
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
+        
+        isBlurry = IsBlurryJPEG(self.jpeg, cutoff=3000)
                 
         # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if self.reward > longTermMemoryMinimumReward:
+        if isBlurry == False and self.reward > longTermMemoryMinimumReward:
             print("  -> long term memory:", self.reward, self.left, self.right, self.ballKicker)
             
             longTermMemory.append(self)
@@ -126,8 +128,9 @@ class Memory:
             f = open(self.filePath, 'wb')
             f.write(self.jpeg)
             f.close()
-        elif self.reward < 0:
-            # save to waste if this was the ball which killed us?
+        elif isBlurry == True or self.reward < 0:
+            # If this shot somehow contributed to losing the ball, we want to put it into waste
+            # If the image captured was blurry, we should also put it into waste
             print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
             
             self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.waste_path, self.reward, 0, 0, 0, str(uuid.uuid4()))
@@ -279,7 +282,6 @@ def HandleTrainingImages(msg):
     # byte for start button is activated
     # byte for ball kicker button is activated
     sizeOfJPEG = struct.unpack("<L", msg[:4])[0]
-    #jpeg = copy.deepcopy(msg[4:4+sizeOfJPEG])
     jpeg = msg[4:4+sizeOfJPEG]
     
     s = 4+sizeOfJPEG
