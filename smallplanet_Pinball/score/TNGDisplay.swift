@@ -124,26 +124,15 @@ struct Display {
     static func findDigits(cols: [UInt32]) -> (Int?, Double) {
         let results = [
             findDigits(cols: cols, pixelsDown: 0, font: digits5x7Bold),
+            findDigits(cols: cols, pixelsDown: 0, font: digits6x7Bold),
             findDigits(cols: cols, pixelsDown: 3, font: digits9x20),
+            findDigits(cols: cols, pixelsDown: 11, font: digits7x13), // may need adjustment after calibration
         ]
-        let best = results.sorted { $0.1 > $1.1 }
+//        let best = results.sorted { $0.1 > $1.1 }
+        let best = results.sorted { $0.1 > $1.1 }.sorted { ($0.0 ?? -1) > ($1.0 ?? -1) }
         return best.first ?? (nil, .nan)
     }
     
-    // 4x7 pixel font used in top-line score display
-//    let digits4x7: [[UInt32]] = [
-//        [0xf8000f80, 0xf8001040, 0xf8001040, 0xf8000f80], // 0
-//        [0xf8200000, 0xf8000080, 0xf8001fc0, 0xf8000000], // 1
-//        [0x62, 0x51, 0x49, 0x46], // 2
-//        [0xf8001880, 0xf8001440, 0xf8001240, 0xf8009180], // 2
-//        // 3
-//        // 4
-//        // 5
-//        [0xf8400f80, 0xf8401140, 0xf8001140, 0xf8000e40], // 6
-//        // 7
-//        [], // 8
-//        [], // 9
-//    ]
 
     typealias DisplayFont = (width: Int, height: Int, pixels: [[UInt32]])
     
@@ -151,13 +140,13 @@ struct Display {
         [0x3E, 0x41, 0x41, 0x3E,], // 0
         [0x00, 0x02, 0x7F, 0x00,], // 1
         [0x62, 0x51, 0x49, 0x46], // 2
-        [], // 2
-        [], // 3
+        [0xfeed], // 2
+        [0xfeed], // 3
         [0x1E, 0x10, 0x7F, 0x10,], // 4
-        [], // 5
+        [0xfeed], // 5
         [0x3E, 0x45, 0x45, 0x39,], // 6
-        [], // 7
-        [], // 8
+        [0xfeed], // 7
+        [0xfeed], // 8
         [0x26, 0x49, 0x49, 0x3F,], // 9
     ])
     
@@ -176,15 +165,15 @@ struct Display {
     ])
     
     // 6x7 pixel heavy font used in top-line score display (rare)
-    static let digitsBold6Wide: DisplayFont = (width: 6, height: 7, pixels: [
+    static let digits6x7Bold: DisplayFont = (width: 6, height: 7, pixels: [
         [0x3E, 0x7F, 0x41, 0x41, 0x7F, 0x3E,], // 0
         [0x00, 0x00, 0x06, 0x7F, 0x7F, 0x00,], // 1 - Guess
         [0x62, 0x73, 0x59, 0x49, 0x4F, 0x46,], // 2
-        [], // 3
+        [0xfeed], // 3
         [0x1E, 0x1E, 0x10, 0x7F, 0x7F, 0x10,], // 4
         [0x2F, 0x6F, 0x45, 0x45, 0x7D, 0x39,], // 5
-        [], // 6
-        [], // 7
+        [0xfeed], // 6
+        [0xfeed], // 7
         [0x36, 0x7F, 0x49, 0x49, 0x7F, 0x36],  // 8
         [0x26, 0x6F, 0x49, 0x49, 0x7F, 0x36,], // 9 - Guess
     ])
