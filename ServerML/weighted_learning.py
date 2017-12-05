@@ -33,7 +33,11 @@ class WeightedLR(Callback):
         
         avg /= log_size
         
-        normalized_weight = (avg - self.min_weight) / (self.max_weight - self.min_weight)
+        weight_range = (self.max_weight - self.min_weight)
+        if weight_range == 0:
+            weight_range = self.max_weight
+        
+        normalized_weight = (avg - self.min_weight) / weight_range
         
         weighted_lr = self.base_lr + (self.max_lr - self.base_lr) * normalized_weight
         

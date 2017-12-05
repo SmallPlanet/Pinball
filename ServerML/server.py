@@ -114,34 +114,32 @@ class Memory:
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
         
         # blurry images we should send to waste
-        isBlurry = IsBlurryJPEG(self.jpeg, cutoff=3000)
-        if isBlurry:
-            self.reward = -20000
-                
-        # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
-        if self.reward > longTermMemoryMinimumReward:
-            print("  -> long term memory:", self.reward, self.left, self.right, self.ballKicker)
+        isBlurry = blur.IsBlurryJPEG(np.frombuffer(self.jpeg, dtype='b'), cutoff=3000)
+        if isBlurry == False:
+            # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
+            if self.reward > longTermMemoryMinimumReward:
+                print("  -> long term memory:", self.reward, self.left, self.right, self.ballKicker)
             
-            longTermMemory.append(self)
-            longTermMemory.sort(reverse=False, key=GetMemoryKey)
+                longTermMemory.append(self)
+                longTermMemory.sort(reverse=False, key=GetMemoryKey)
             
-            self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.train_path, self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
-            print (self.filePath)
+                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.train_path, self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
+                print (self.filePath)
         
-            f = open(self.filePath, 'wb')
-            f.write(self.jpeg)
-            f.close()
-        elif self.reward < 0:
-            # If this shot somehow contributed to losing the ball, we want to put it into waste
-            # If the image captured was blurry, we should also put it into waste
-            print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
+                f = open(self.filePath, 'wb')
+                f.write(self.jpeg)
+                f.close()
+            elif self.reward < 0:
+                # If this shot somehow contributed to losing the ball, we want to put it into waste
+                # If the image captured was blurry, we should also put it into waste
+                print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
             
-            self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.waste_path, self.reward, 0, 0, 0, str(uuid.uuid4()))
-            print (self.filePath)
+                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.waste_path, self.reward, 0, 0, 0, str(uuid.uuid4()))
+                print (self.filePath)
         
-            f = open(self.filePath, 'wb')
-            f.write(self.jpeg)
-            f.close()
+                f = open(self.filePath, 'wb')
+                f.write(self.jpeg)
+                f.close()
             
             
         

@@ -29,7 +29,7 @@ class EvaluationMonitor(Callback):
     labels = []
     weights = []
     didSaveModel = False
-    minSaveAccuracy = 0.97
+    minSaveAccuracy = 0.98
     
     def round2(self, x, y):
         if x > y:
@@ -116,7 +116,7 @@ def Learn():
     permanent_weights = []
     
     images.load_images(permanent_imgs, permanent_labels, permanent_weights, permanent_path, permanent_max_size)
-    
+        
     waste_imgs = images.generate_image_array(waste_path, waste_max_size)
     waste_labels = []
     waste_weights = []
@@ -200,7 +200,7 @@ def Learn():
                 else:
                     normalized_weights[i] = total_weights[i] / max_weight
                     if normalized_weights[i] < 0:
-                        normalized_weights[i] = -normalized_weights[i]
+                        normalized_weights[i] = normalized_weights[i] * -0.25
                         
             # randomize the batch size            
             batch_size = int(random.random() * 32 + 6)
@@ -215,7 +215,7 @@ def Learn():
                     steps_per_epoch=len(total_imgs) // batch_size,
                     epochs=epochs / 2,
                     class_weight=class_weight_dict,
-                    callbacks=[wlr,em])
+                    callbacks=[wlr])
                     
             cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
