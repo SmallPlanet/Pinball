@@ -262,56 +262,12 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 return
             }
 
-            var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
-            let originalImage = cameraImage
-            
-            if self.delegateWantsPerspectiveImages && self.perspectiveImagesCoords.count > 0 {
-                cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: self.perspectiveImagesCoords)
-            }
-            
-            if self.delegateWantsPictureInPictureImages && self.pipImagesCoords.count > 0 {
-                let pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: self.pipImagesCoords)
-                cameraImage = pipImage.composited(over: cameraImage)
-            }
-            
-            
-            if self.delegateWantsScaledImages {
-                cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: self.scaledImagesSize.width / cameraImage.extent.width, y: self.scaledImagesSize.height / cameraImage.extent.height))
-            }
-            
-            var lastBlurFrame = cameraImage
-            if self.delegateWantsTemporalImages {
-                self.motionBlurFrames.append(cameraImage)
-                
-                // it may seem weird that we're skipping the first (most recent) frame below and have +1 to numberOfFrames, but it is my theory
-                // that this will account for network lag and give the AI a chance to react a little sooner
-                let numberOfFrames = 2 + 1
+            let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
 
-                while self.motionBlurFrames.count > numberOfFrames {
-                    self.motionBlurFrames.remove(at: 0)
-                }
-                
-                if self.motionBlurFrames.count < numberOfFrames {
-                    // we don't have enough images, abort
-                    return
-                }
-                
-                // instead of blurring them, let's just stack them horizontally
-                lastBlurFrame = self.motionBlurFrames[1]
-                for i in 2..<self.motionBlurFrames.count {
-                    let otherFrame = self.motionBlurFrames[i]
-                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * otherFrame.extent.width, y: 0)))
-                }
-                
-                if localPlayFrameNumber % numberOfFrames == 0 {
-                    self.motionBlurFrames.removeLast()
-                }
-                
-            }
-            
+            let lastBlurFrame = self.processCameraImage(cameraImage, self.perspectiveImagesCoords, self.pipImagesCoords, false)
             
             if self.delegateWantsPlayImages {
-                self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: originalImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+                self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: cameraImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             }
         }
  
@@ -325,6 +281,71 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         }
         
     }
+    
+    
+    let processCameraImageLock = NSLock()
+    
+    func processCameraImage(_ originalImage:CIImage, _ perImageCoords:[String:Any], _ pipImagesCoords:[String:Any], _ ignoreTemporalFrames:Bool) -> CIImage {
+        
+        processCameraImageLock.lock()
+        
+        var cameraImage = originalImage
+        
+        if self.delegateWantsPerspectiveImages && perImageCoords.count > 0 {
+            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perImageCoords)
+        }
+        
+        if self.delegateWantsPictureInPictureImages && pipImagesCoords.count > 0 {
+            let pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: pipImagesCoords)
+            cameraImage = pipImage.composited(over: cameraImage)
+        }
+        
+        
+        if self.delegateWantsScaledImages {
+            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: self.scaledImagesSize.width / cameraImage.extent.width, y: self.scaledImagesSize.height / cameraImage.extent.height))
+        }
+        
+        var lastBlurFrame = cameraImage
+        if self.delegateWantsTemporalImages {
+            let numberOfFrames = 2 + 1
+            
+            if ignoreTemporalFrames {
+                for i in 2..<numberOfFrames {
+                    lastBlurFrame = lastBlurFrame.composited(over: lastBlurFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * lastBlurFrame.extent.width, y: 0)))
+                }
+            } else {
+                self.motionBlurFrames.append(cameraImage)
+                
+                // it may seem weird that we're skipping the first (most recent) frame below and have +1 to numberOfFrames, but it is my theory
+                // that this will account for network lag and give the AI a chance to react a little sooner
+                while self.motionBlurFrames.count > numberOfFrames {
+                    self.motionBlurFrames.remove(at: 0)
+                }
+                
+                if self.motionBlurFrames.count < numberOfFrames {
+                    // we don't have enough images, abort
+                    processCameraImageLock.unlock()
+                    return lastBlurFrame
+                }
+                
+                // instead of blurring them, let's just stack them horizontally
+                lastBlurFrame = self.motionBlurFrames[1]
+                for i in 2..<self.motionBlurFrames.count {
+                    let otherFrame = self.motionBlurFrames[i]
+                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * otherFrame.extent.width, y: 0)))
+                }
+                
+                if playFrameNumber % numberOfFrames == 0 {
+                    self.motionBlurFrames.removeLast()
+                }
+            }
+        }
+        
+        processCameraImageLock.unlock()
+        
+        return lastBlurFrame
+    }
+    
 }
 
 protocol CameraCaptureHelperDelegate: class
