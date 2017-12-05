@@ -89,10 +89,15 @@ struct DotMatrixData: CustomDebugStringConvertible {
     }
     
     var ints: [UInt8] {
-        let min = dots.min() ?? 0.0
         let max = dots.max() ?? 1.0
+        let min = dots.min() ?? 0.0
         
-        return dots.map { UInt8(($0 - min)/(max - min) * 255.0) }
+        return dots.map { UInt8(($0 - min)/(max - min + 1.0) * 255.0) }
+    }
+    
+    var intsThresholded: [UInt8] {
+        guard let threshold = threshold else { return [] }
+        return ints.map { UInt8($0 > threshold ? 1 : 0) }
     }
     
     func bits(threshold: UInt8? = nil) -> [UInt32] {

@@ -122,13 +122,20 @@ struct Display {
     }
     
     static func findDigits(cols: [UInt32]) -> (Int?, Double) {
+        // TODO: make this look for long gaps in reading numbers (like 1st & 2nd player scores) and stop reading
+        // eventually make it aware of multiple player's scores
         let results = [
+            findDigits(cols: cols, pixelsDown: 0, font: digits4x7),
             findDigits(cols: cols, pixelsDown: 0, font: digits5x7Bold),
             findDigits(cols: cols, pixelsDown: 0, font: digits6x7Bold),
             findDigits(cols: cols, pixelsDown: 3, font: digits9x20),
-            findDigits(cols: cols, pixelsDown: 11, font: digits7x13), // may need adjustment after calibration
+            findDigits(cols: Array(cols[30..<cols.count]), pixelsDown: 11, font: digits7x13), // simulation. left side can misread
+            findDigits(cols: Array(cols[20..<111]), pixelsDown: 22, font: digits5x9), // shuttle simulation
         ]
 //        let best = results.sorted { $0.1 > $1.1 }
+        // Because a smaller font's 3 or 4 may match the next size up font's character exactly, it will
+        // return a single digit of a matched number's value with 100% accuracy while the real number is matched
+        // with a realistic, lower accuracy. This line favors longer results over smaller, more accurate ones
         let best = results.sorted { $0.1 > $1.1 }.sorted { ($0.0 ?? -1) > ($1.0 ?? -1) }
         return best.first ?? (nil, .nan)
     }
@@ -136,18 +143,17 @@ struct Display {
 
     typealias DisplayFont = (width: Int, height: Int, pixels: [[UInt32]])
     
-    let digits4x7: DisplayFont = (width: 4, height: 7, pixels: [
-        [0x3E, 0x41, 0x41, 0x3E,], // 0
-        [0x00, 0x02, 0x7F, 0x00,], // 1
+    static let digits4x7: DisplayFont = (width: 4, height: 7, pixels: [
+        [0x3E, 0x41, 0x41, 0x3E], // 0
+        [0x00, 0x02, 0x7F, 0x00], // 1
         [0x62, 0x51, 0x49, 0x46], // 2
-        [0xfeed], // 2
-        [0xfeed], // 3
-        [0x1E, 0x10, 0x7F, 0x10,], // 4
-        [0xfeed], // 5
-        [0x3E, 0x45, 0x45, 0x39,], // 6
-        [0xfeed], // 7
-        [0xfeed], // 8
-        [0x26, 0x49, 0x49, 0x3F,], // 9
+        [0x22, 0x49, 0x49, 0x36], // 3
+        [0x1E, 0x10, 0x7F, 0x10], // 4
+        [0x2F, 0x45, 0x45, 0x39], // 5
+        [0x3E, 0x45, 0x45, 0x39], // 6
+        [0x03, 0x61, 0x19, 0x07], // 7
+        [0x36, 0x49, 0x49, 0x36], // 8
+        [0x26, 0x49, 0x49, 0x3F], // 9
     ])
     
     // 5x7 pixel bold font used in top-line score display (and elsewhere?)
