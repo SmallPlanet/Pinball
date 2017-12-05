@@ -116,6 +116,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var send_startButton:Byte = 0
     var send_ballKickerButton:Byte = 0
     
+    var leftActivateTime:Date = Date()
+    var rightActivateTime:Date = Date()
+    
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
         // Create a Vision request with completion handler
@@ -186,36 +189,54 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             //let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
             //let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
             
-            var cutoff1:Float = self!.calibratedLeftCutoff
-            var cutoff2:Float = self!.calibratedRightCutoff
+            var cutoffLeft:Float = self!.calibratedLeftCutoff
+            var cutoffRight:Float = self!.calibratedRightCutoff
             
             if self?.shouldExperiment == true {
-                cutoff1 = cutoff1 - 0.01
-                cutoff2 = cutoff2 - 0.01
+                cutoffLeft = cutoffLeft - 0.01
+                cutoffRight = cutoffRight - 0.01
             }
             
             
+            // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
+            // artificially increase the cutoff value
+            if self!.leftActivateTime.timeIntervalSinceNow < -2.0 {
+                cutoffLeft = 1.1
+            }
             
-            if leftObservation!.confidence > cutoff1 {
-                if canPlay && self?.pinball.leftButtonPressed == false {
-                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
-                }
-                print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
-            } else {
-                if canPlay && self?.pinball.leftButtonPressed == true {
-                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+            if self!.rightActivateTime.timeIntervalSinceNow < -2.0 {
+                cutoffRight = 1.1
+            }
+            
+            
+            if self!.leftActivateTime.timeIntervalSinceNow > -0.1 {
+                if leftObservation!.confidence > cutoffLeft {
+                    if canPlay && self?.pinball.leftButtonPressed == false {
+                        self!.leftActivateTime = Date()
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
+                    }
+                    print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+                } else {
+                    if canPlay && self?.pinball.leftButtonPressed == true {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
                 }
             }
-            if rightObservation!.confidence > cutoff2 {
-                if canPlay && self?.pinball.rightButtonPressed == false {
-                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
-                }
-                print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
-            }else{
-                if canPlay && self?.pinball.rightButtonPressed == true {
-                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+            
+            if self!.rightActivateTime.timeIntervalSinceNow > -0.1 {
+                if rightObservation!.confidence > cutoffRight {
+                    if canPlay && self?.pinball.rightButtonPressed == false {
+                        self!.rightActivateTime = Date()
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
+                    }
+                    print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
+                }else{
+                    if canPlay && self?.pinball.rightButtonPressed == true {
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
                 }
             }
+            
             if ballKickerObservation!.confidence >= 0.999 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
                 if canPlay && self?.pinball.ballKickerPressed == false {
