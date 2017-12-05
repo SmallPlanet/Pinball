@@ -43,3 +43,27 @@ tests.enumerated().forEach { index, target in
 
 print("\n\(correct) correct of \(tests.count) -- \(100.0 * Double(correct) / Double(tests.count))%")
 print(results)
+
+
+// Game over!
+
+let screens = [
+    "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameover_1.JPG": Display.Screen.gameOver,
+    "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameover_2.JPG": Display.Screen.gameOver,
+    "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameover_3.JPG": Display.Screen.gameOver,
+]
+
+func testScreen(path: String) -> (Display.Screen, Double)? {
+    var data: DotMatrixData = reader.load(path: path)
+    data.threshold = 197
+//    print(data)
+//    print(data.bits().map{ "0x\(String($0, radix: 16))"}.joined(separator: ", "))
+    return Display.findScreen(cols: data.bits())
+}
+
+screens.forEach { (path, screen) in
+    let result = testScreen(path: path)
+    let name = result?.0.rawValue ?? "no match"
+    print("\(screen):\(name) @ \(result?.1 ?? 0.0) accuracy")
+}
+

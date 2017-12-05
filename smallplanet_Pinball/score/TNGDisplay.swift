@@ -9,6 +9,16 @@
 import Foundation
 
 struct Display {
+
+    enum Screen: String {
+        case gameOver
+        
+        var displayScreen: DisplayScreen {
+            switch self {
+            case .gameOver: return Display.gameOver
+            }
+        }
+    }
     
     static func calibrationAccuracy(bits: [UInt8]) -> Double {
         guard bits.count == calibration.count else { return .nan }
@@ -132,7 +142,7 @@ struct Display {
             findDigits(cols: Array(cols[30..<cols.count]), pixelsDown: 11, font: digits7x13), // simulation. left side can misread
             findDigits(cols: Array(cols[20..<111]), pixelsDown: 22, font: digits5x9), // shuttle simulation
         ]
-//        let best = results.sorted { $0.1 > $1.1 }
+
         // Because a smaller font's 3 or 4 may match the next size up font's character exactly, it will
         // return a single digit of a matched number's value with 100% accuracy while the real number is matched
         // with a realistic, lower accuracy. This line favors longer results over smaller, more accurate ones
@@ -142,6 +152,7 @@ struct Display {
     
 
     typealias DisplayFont = (width: Int, height: Int, pixels: [[UInt32]])
+    typealias DisplayScreen = (offset: Int, height: Int, pixelCols: [UInt32])
     
     static let digits4x7: DisplayFont = (width: 4, height: 7, pixels: [
         [0x3E, 0x41, 0x41, 0x3E], // 0
@@ -226,8 +237,25 @@ struct Display {
         [0x0C3E,    0x1C7F,    0x1C7F,    0x1863,    0x1FFF,    0x1FFF,    0x0FFE], // 9
     ])
     
+    static func find(screen: DisplayScreen, cols: [UInt32]) -> Double {
+        guard screen.pixelCols.count <= cols.count else { return 0.0 }
+        let totalBits = screen.pixelCols.count * screen.height
+        var matches = UInt(0)
+        for col in 0..<screen.pixelCols.count {
+            matches += UInt(screen.height) - UInt32(cols[col + screen.offset] ^ screen.pixelCols[col]).bitCount
+        }
+        return Double(matches) / Double(totalBits)
+    }
+    
+    static func findScreen(cols: [UInt32]) -> (Screen, Double)? {
+        let screens: [Screen] = [.gameOver]
+        let results = screens.map{ ($0, find(screen: $0.displayScreen, cols: cols)) }
+        return results.filter{ $0.1 > 0.9 }.sorted{ $0.1 > $1.1 }.first
+    }
 
-
+    static let gameOver: DisplayScreen = (offset: 30, height: 32, pixelCols: [
+        0x1ffff80, 0x3ffffc0, 0x3ffffc0, 0x30000c0, 0x30f87c0, 0x3ff87c0, 0x3ff8780, 0x0, 0x3ffff80, 0x3ffffc0, 0x3ffffc0, 0x70c0, 0x3ffffc0, 0x3ffffc0, 0x3ffff80, 0x1000, 0x3ffffc0, 0x3ffffc0, 0x3ffffc0, 0x3ff00, 0x7ff800, 0x3fe00, 0x83ffffc0, 0xc3ffffc0, 0x83ffffc0, 0x0, 0x3ffffc0, 0x3ffffc0, 0x3ffffc0, 0x30060c0, 0x30260c0, 0x4010000, 0x0, 0x4200, 0x100000, 0x0, 0x2000, 0x1ffff80, 0x3ffffc0, 0x3ffffc0, 0x434020c0, 0x3ffffc0, 0x3ffffc0, 0x1ffffa0, 0x0, 0x81fc0, 0x1ffc0, 0x5fffc0, 0xfff000, 0x3fc0000, 0xfff000, 0x1fffc0, 0x1ffc0, 0x201fe0, 0x0, 0x13ffffc0, 0x13ffffc0, 0x3ffffc0, 0x300e0c0, 0x30060c0, 0x0, 0x3ffffc0, 0x3ffffc0, 0x3ffffc0, 0xe0c0, 0x3ffffc0, 0x3ffbfc0, 0x3ff1f80
+        ])
     
     
 }
