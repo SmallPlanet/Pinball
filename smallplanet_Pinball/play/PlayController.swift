@@ -25,7 +25,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     let playMode:PlayMode = .PlayNoRecord
     
-    let shouldExperiment = true
+    let shouldExperiment = false
     
     var calibratedLeftCutoff:Float = 0.9
     var calibratedRightCutoff:Float = 0.9
@@ -77,6 +77,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     let compiledUrl = try MLModel.compileModel(at: fileURL)
                     let model = try MLModel(contentsOf: compiledUrl)
                     self.model = try? VNCoreMLModel(for: model)
+                    
+                    
+                    self.recalibrateFlipperCutoffs()
                 }
             } catch {
                 print(error)
@@ -126,10 +129,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let y:CGFloat = 0.0
             
             cameraCaptureHelper.pipImagesCoords = [
-                "inputTopLeft":CIVector(x: round((23+x) * scale), y: round((115+y) * scale)),
-                "inputTopRight":CIVector(x: round((98+x) * scale), y: round((115+y) * scale)),
-                "inputBottomLeft":CIVector(x: round((23+x) * scale), y: round((38+y) * scale)),
-                "inputBottomRight":CIVector(x: round((98+x) * scale), y: round((38+y) * scale))
+                "inputTopLeft":CIVector(x: round((116+x) * scale), y: round((72+y) * scale)),
+                "inputTopRight":CIVector(x: round((196+x) * scale), y: round((72+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((116+x) * scale), y: round((15+y) * scale)),
+                "inputBottomRight":CIVector(x: round((196+x) * scale), y: round((15+y) * scale))
             ]
             return
         }
@@ -140,10 +143,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let y:CGFloat = 0.0
             
             cameraCaptureHelper.perspectiveImagesCoords = [
-                "inputTopLeft":CIVector(x: round((149+x) * scale), y: round((566+y) * scale)),
-                "inputTopRight":CIVector(x: round((316+x) * scale), y: round((566+y) * scale)),
-                "inputBottomLeft":CIVector(x: round((149+x) * scale), y: round((145+y) * scale)),
-                "inputBottomRight":CIVector(x: round((316+x) * scale), y: round((145+y) * scale))
+                "inputTopLeft":CIVector(x: round((245+x) * scale), y: round((527+y) * scale)),
+                "inputTopRight":CIVector(x: round((404+x) * scale), y: round((527+y) * scale)),
+                "inputBottomLeft":CIVector(x: round((245+x) * scale), y: round((120+y) * scale)),
+                "inputBottomRight":CIVector(x: round((404+x) * scale), y: round((120+y) * scale))
             ]
             return
         }
@@ -187,8 +190,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var cutoff2:Float = self!.calibratedRightCutoff
             
             if self?.shouldExperiment == true {
-                cutoff1 = 0.96
-                cutoff2 = 0.96
+                cutoff1 = cutoff1 - 0.01
+                cutoff2 = cutoff2 - 0.01
             }
             
             
@@ -213,7 +216,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
                 }
             }
-            if ballKickerObservation!.confidence > cutoff2 {
+            if ballKickerObservation!.confidence >= 0.999 {
                 print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
                 if canPlay && self?.pinball.ballKickerPressed == false {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
@@ -374,7 +377,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.pinball = pinball
         
+        recalibrateFlipperCutoffs()
         
+    }
+    
+    func recalibrateFlipperCutoffs() {
         // calibrate the cutoffs by showing the model known images and seeing what it returns
         guard let model = model else {
             return
@@ -386,7 +393,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         var leftAverage:Float = 0.0
         for imgPath in leftImages! {
             let img = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate/left/"+imgPath)))!
-
+            
             let handler = VNImageRequestHandler(ciImage: img)
             do {
                 try handler.perform([VNCoreMLRequest(model: model) { request, error in
@@ -429,12 +436,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
         calibratedRightCutoff = rightAverage / Float(rightImages!.count)
         print("Calibrated Right Cutoff: \(calibratedRightCutoff)")
-
+        
         
         
         // sanity
         if calibratedLeftCutoff < 0.5 {
-           calibratedLeftCutoff = 0.5
+            calibratedLeftCutoff = 0.5
         }
         if calibratedRightCutoff < 0.5 {
             calibratedRightCutoff = 0.5

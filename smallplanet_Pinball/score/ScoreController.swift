@@ -34,10 +34,10 @@ extension DefaultsKeys {
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let topLeft = (CGFloat(1236), CGFloat(827))
-    let topRight = (CGFloat(1236), CGFloat(604))
-    let bottomLeft = (CGFloat(287), CGFloat(841))
-    let bottomRight = (CGFloat(299), CGFloat(617))
+    let topLeft = (CGFloat(1207), CGFloat(711))
+    let topRight = (CGFloat(1202), CGFloat(463))
+    let bottomLeft = (CGFloat(140), CGFloat(731))
+    let bottomRight = (CGFloat(149), CGFloat(476))
     
     let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
