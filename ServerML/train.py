@@ -75,6 +75,8 @@ train_max_size = 0
 waste_path = "./waste/"
 waste_max_size = 0
 
+temp_path = "./tmemory/"
+
 # if we have some pre-existing weights, load those first
 #if os.path.isfile("model.h5"):
 #    print("Loading previous model weights...")

@@ -12,6 +12,7 @@ import os
 import glob
 import numpy as np
 import blur
+import templateMatch
 
 # how far reaching into the past scores earned should affect the reward value associated with
 # actions.  1 means its stretches far, 0 means its very near sighted
@@ -113,8 +114,14 @@ class Memory:
         # sort the long term memory such that the lowest diff score memory is first
         longTermMemory.sort(reverse=False, key=GetMemoryKey)
         
+        jpegAsBinary = np.frombuffer(self.jpeg, dtype='b')
+        
         # blurry images we should send to waste
-        isBlurry = blur.IsBlurryJPEG(np.frombuffer(self.jpeg, dtype='b'), cutoff=3000)
+        isBlurry = blur.IsBlurryJPEG(jpegAsBinary, cutoff=3000)
+        
+        # images should always contain at least one ball (note: this is not the most accurate method for ball detection, but hopefully it is better than nothing)
+        hasBall = templateMatch.ContainsAtLeatOneBall(jpegAsBinary, 0.75)
+        
         if isBlurry == False:
             # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
             if self.reward > longTermMemoryMinimumReward:
@@ -123,7 +130,7 @@ class Memory:
                 longTermMemory.append(self)
                 longTermMemory.sort(reverse=False, key=GetMemoryKey)
             
-                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.train_path, self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
+                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.train_path if hasBall == True else train.temp_path, self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
                 print (self.filePath)
         
                 f = open(self.filePath, 'wb')
@@ -134,7 +141,7 @@ class Memory:
                 # If the image captured was blurry, we should also put it into waste
                 print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
             
-                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.waste_path, self.reward, 0, 0, 0, str(uuid.uuid4()))
+                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.waste_path if hasBall == True else train.temp_path, self.reward, 0, 0, 0, str(uuid.uuid4()))
                 print (self.filePath)
         
                 f = open(self.filePath, 'wb')
