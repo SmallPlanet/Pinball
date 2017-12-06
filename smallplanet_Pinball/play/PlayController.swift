@@ -531,6 +531,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     class Organism {
         let contentLength = 16
         var content : [CGFloat]?
+        var lastScore:CGFloat = 0
         
         init() {
             content = [CGFloat](repeating:0, count:contentLength)
@@ -559,8 +560,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 100
-            let maxHeight:CGFloat = 100
+            let maxWidth:CGFloat = 50
+            let maxHeight:CGFloat = 50
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
             
@@ -632,8 +633,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             ga.breedOrganisms = { (organismA, organismB, child, prng) in
                 
-                let localMaxHeight = maxHeight
-                let localMaxWidth = maxHeight
+                let localMaxHeight = maxHeight * max(1.0 - organismA.lastScore, 0.6)
+                let localMaxWidth = maxHeight * max(1.0 - organismA.lastScore, 0.6)
                 let localHalfWidth:CGFloat = localMaxWidth / 2
                 let localHalfHeight:CGFloat = localMaxHeight / 2
                 
@@ -763,8 +764,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     
                     
                     accuracy = Float(rgbBytes[0]) + Float(rgbBytes[1]) + Float(rgbBytes[2])
+                    accuracy = 1.0 - (accuracy / 765.0)
                     
-                    if -accuracy > bestCalibrationAccuracy {
+                    if accuracy > bestCalibrationAccuracy {
                         DispatchQueue.main.sync {
                             self.preview.imageView.image = UIImage(ciImage: subtractedImage)
                         }
@@ -772,7 +774,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     
                 }
                 
-                return -accuracy
+                organism.lastScore = CGFloat(accuracy)
+                
+                return accuracy
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
@@ -827,6 +831,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     
                     Defaults[.pip_calibrate_x4] = Double(x8)
                     Defaults[.pip_calibrate_y4] = Double(y8)
+                    
+                    Defaults.synchronize()
                 }
                 
                 return false
