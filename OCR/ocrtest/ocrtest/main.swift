@@ -27,30 +27,31 @@ let tests = [7287700: "/Users/quinnmchenry/Development/PinballML/smallplanet_Pin
 var results = ""
 var correct = 0
 
-tests.enumerated().forEach { index, target in
-    var data: DotMatrixData = reader.load(path: target.value)
-    data.threshold = cutoff
-    let n = Display.findDigits(cols: data.bits(threshold: cutoff))
-
-    print(data)
-    print(n)
-    
-    results += String("search: \(target.key) found: \(n.0 ?? -1)  \(n.1) accuracy\n")
-    if target.key == n.0 {
-        correct += 1
-    }
-}
-
-print("\n\(correct) correct of \(tests.count) -- \(100.0 * Double(correct) / Double(tests.count))%")
-print(results)
-
-
-// Game over!
+//tests.enumerated().forEach { index, target in
+//    var data: DotMatrixData = reader.load(path: target.value)
+//    data.threshold = cutoff
+//    let n = Display.findDigits(cols: data.bits(threshold: cutoff))
+//
+//    print(data)
+//    print(n)
+//
+//    results += String("search: \(target.key) found: \(n.0 ?? -1)  \(n.1) accuracy\n")
+//    if target.key == n.0 {
+//        correct += 1
+//    }
+//}
+//
+//print("\n\(correct) correct of \(tests.count) -- \(100.0 * Double(correct) / Double(tests.count))%")
+//print(results)
+//
+//
+//// Game over!
 
 let screens = [
     "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameover_1.JPG": Display.Screen.gameOver,
     "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameover_2.JPG": Display.Screen.gameOver,
     "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameover_3.JPG": Display.Screen.gameOver,
+    "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameStarted.JPG": Display.Screen.gameStarted,
 ]
 
 func testScreen(path: String) -> (Display.Screen, Double)? {
@@ -66,4 +67,12 @@ screens.forEach { (path, screen) in
     let name = result?.0.rawValue ?? "no match"
     print("\(screen):\(name) @ \(result?.1 ?? 0.0) accuracy")
 }
+
+
+//var data = reader.load(path: "/Users/quinnmchenry/Development/PinballML/smallplanet_Pinball/OCR/ocrtest/assets/gameStarted.JPG")
+//data.threshold = 197
+//print(data)
+//print(data.bits().map{ "0x\(String($0, radix: 16))"}.joined(separator: ", "))
+
+//print(Display.find(screen: Display.gameStarted, cols: data.bits()))
 

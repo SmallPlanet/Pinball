@@ -12,13 +12,22 @@ struct Display {
 
     enum Screen: String {
         case gameOver
+        case gameStarted
         
         var displayScreen: DisplayScreen {
             switch self {
             case .gameOver: return Display.gameOver
+            case .gameStarted: return Display.gameStarted
             }
         }
+        
+        static var all: [Screen] {
+            return [.gameOver, .gameStarted]
+        }
     }
+    
+    typealias DisplayFont = (width: Int, height: Int, pixels: [[UInt32]])
+    typealias DisplayScreen = (offset: Int, height: Int, mask: UInt32, pixelCols: [UInt32])
     
     static func calibrationAccuracy(bits: [UInt8]) -> Double {
         guard bits.count == calibration.count else { return .nan }
@@ -65,19 +74,6 @@ struct Display {
         1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,
         ]
     
-//    let digitsBold: [[UInt32]] = [
-//        [0x9000803e, 0x9004007f, 0x90040041, 0x97fc007f, 0x97fc103e], // 0
-//        [0x07fc8000, 0x07b80006, 0xf000007f, 0xf000007f, 0x90000000], // 1
-//        [0x90000062, 0x90000073, 0x90000059, 0x9000004f, 0x90400046], // 2
-//        [0x90000022, 0x9000006b, 0x90000049, 0x9000487f, 0x90000036], // 3
-//        [0x0000001e, 0x07fc001e, 0xf7fd0010, 0xf034007f, 0x97fc007f], // 4
-//        [0x9010002f, 0x97fc006f, 0x97fc0045, 0x9400007d, 0x94000039], // 5
-//        [0x9000003e, 0x9000407f, 0x90010045, 0x9000007d, 0x94000039], // 6
-//        [0x00000003, 0x00000063, 0xf0000079, 0xf000101f, 0x90010007], // 7
-//        [0x90000036, 0x9000007f, 0x90000049, 0x9000007f, 0x90000036], // 8
-//        [0x90000026, 0x93f8006f, 0x97fc0049, 0x9404007f, 0xf7dc003e], // 9
-//    ]
-
     static func findDigits(cols: [UInt32], pixelsDown: Int, font: DisplayFont) -> (Int?, Double) {
         
         let mask = (UInt32(1 << font.height) - 1) << pixelsDown
@@ -151,9 +147,6 @@ struct Display {
     }
     
 
-    typealias DisplayFont = (width: Int, height: Int, pixels: [[UInt32]])
-    typealias DisplayScreen = (offset: Int, height: Int, pixelCols: [UInt32])
-    
     static let digits4x7: DisplayFont = (width: 4, height: 7, pixels: [
         [0x3E, 0x41, 0x41, 0x3E], // 0
         [0x00, 0x02, 0x7F, 0x00], // 1
@@ -242,21 +235,24 @@ struct Display {
         let totalBits = screen.pixelCols.count * screen.height
         var matches = UInt(0)
         for col in 0..<screen.pixelCols.count {
-            matches += UInt(screen.height) - UInt32(cols[col + screen.offset] ^ screen.pixelCols[col]).bitCount
+            let m = UInt(screen.height) - (UInt32((cols[col + screen.offset] ^ screen.pixelCols[col])) & screen.mask).bitCount
+            matches += m
         }
         return Double(matches) / Double(totalBits)
     }
     
     static func findScreen(cols: [UInt32]) -> (Screen, Double)? {
-        let screens: [Screen] = [.gameOver]
-        let results = screens.map{ ($0, find(screen: $0.displayScreen, cols: cols)) }
+        let results = Screen.all.map{ ($0, find(screen: $0.displayScreen, cols: cols)) }
         return results.filter{ $0.1 > 0.9 }.sorted{ $0.1 > $1.1 }.first
     }
 
-    static let gameOver: DisplayScreen = (offset: 30, height: 32, pixelCols: [
+    static let gameOver: DisplayScreen = (offset: 30, height: 32, mask: 0xffffffff, pixelCols: [
         0x1ffff80, 0x3ffffc0, 0x3ffffc0, 0x30000c0, 0x30f87c0, 0x3ff87c0, 0x3ff8780, 0x0, 0x3ffff80, 0x3ffffc0, 0x3ffffc0, 0x70c0, 0x3ffffc0, 0x3ffffc0, 0x3ffff80, 0x1000, 0x3ffffc0, 0x3ffffc0, 0x3ffffc0, 0x3ff00, 0x7ff800, 0x3fe00, 0x83ffffc0, 0xc3ffffc0, 0x83ffffc0, 0x0, 0x3ffffc0, 0x3ffffc0, 0x3ffffc0, 0x30060c0, 0x30260c0, 0x4010000, 0x0, 0x4200, 0x100000, 0x0, 0x2000, 0x1ffff80, 0x3ffffc0, 0x3ffffc0, 0x434020c0, 0x3ffffc0, 0x3ffffc0, 0x1ffffa0, 0x0, 0x81fc0, 0x1ffc0, 0x5fffc0, 0xfff000, 0x3fc0000, 0xfff000, 0x1fffc0, 0x1ffc0, 0x201fe0, 0x0, 0x13ffffc0, 0x13ffffc0, 0x3ffffc0, 0x300e0c0, 0x30060c0, 0x0, 0x3ffffc0, 0x3ffffc0, 0x3ffffc0, 0xe0c0, 0x3ffffc0, 0x3ffbfc0, 0x3ff1f80
         ])
     
+    static let gameStarted: DisplayScreen = (offset:27, height:16, mask: 0x0000ffff, pixelCols: [
+         0xf3380000, 0x977c0000, 0x94440000, 0x97dc0000, 0x93980000, 0x90000000, 0x90040000, 0x90040000, 0x97fc0000, 0x97fc0000, 0x90040000, 0x90040000, 0x90000000, 0x97f80000, 0x97fc0000, 0x90240000, 0x97fc0000, 0x97f80000, 0x90000000, 0x97fc0000, 0x97fc0000, 0xf044003e, 0xf7fc007f, 0x7b80041, 0x41, 0xf004007f, 0xf004003e, 0x97fc0000, 0x97fc003e, 0x9004007f, 0x90040041, 0x90000041, 0x9000007f, 0x9000003e, 0x90000000, 0x90000000, 0x90000000, 0x97fc0000, 0x97fc0000, 0x90780000, 0x93e00000, 0x90780000, 0x97fc0000, 0x97fc0000, 0x90000000, 0x97fc0000, 0x97fc0000, 0xf0000000, 0xf3380000, 0x77c0000, 0x4440000, 0xf7dc0000, 0xf3980000, 0x90000000, 0x93380000, 0x977c0000, 0x94440000, 0x97dc0000, 0x93980000, 0x9000fe00, 0x97fc9200, 0x97fc6c00, 0x90000000, 0x93f8fc00, 0x97fc1200, 0x9404fc00, 0x97fc0000, 0x93f8fe00, 0x90008000, 0x97fc8000, 0x97fc0000, 0x9038fe00, 0x90708000, 0xf7fc8000, 0xf7fc0000, 0x0, 0x0, 0xf0000000, 0xf0000000, 0x90000400, 0x9000fe00
+        ])
     
 }
 
