@@ -541,20 +541,28 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var shouldBeCalibrating:Bool = false
     
     class Organism {
-        let contentLength = 16
-        var content : [CGFloat]?
+        let contentLength = 8
+        
+        var play : [CGFloat] = [CGFloat](repeating:0, count:8)
+        var pip : [CGFloat] = [CGFloat](repeating:0, count:8)
+        
         var lastScore:CGFloat = 0
         
-        init() {
-            content = [CGFloat](repeating:0, count:contentLength)
-        }
+        var subscriptToggle:Int = 0
         
         subscript(index:Int) -> CGFloat {
             get {
-                return content![index]
+                if subscriptToggle == 0 {
+                    return play[index]
+                }
+                return pip[index]
             }
             set(newElm) {
-                content![index] = newElm;
+                if subscriptToggle == 0 {
+                    play[index] = newElm
+                } else {
+                    pip[index] = newElm
+                }
             }
         }
     }
@@ -604,30 +612,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 let newChild = Organism ()
                 if idx == 0 {
                     for i in 0..<newChild.contentLength {
-                        newChild.content! [i] = 0
+                        newChild.play [i] = 0
+                        newChild.pip [i] = 0
                     }
                 } else if idx == 1 {
                     for i in 0..<newChild.contentLength {
-                        newChild.content! [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                        newChild.play [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                        newChild.pip [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
                     }
                 } else {
-                    newChild.content! [0] = CGFloat(Defaults[.play_calibrate_x1])
-                    newChild.content! [1] = CGFloat(Defaults[.play_calibrate_y1])
-                    newChild.content! [2] = CGFloat(Defaults[.play_calibrate_x2])
-                    newChild.content! [3] = CGFloat(Defaults[.play_calibrate_y2])
-                    newChild.content! [4] = CGFloat(Defaults[.play_calibrate_x3])
-                    newChild.content! [5] = CGFloat(Defaults[.play_calibrate_y3])
-                    newChild.content! [6] = CGFloat(Defaults[.play_calibrate_x4])
-                    newChild.content! [7] = CGFloat(Defaults[.play_calibrate_y4])
+                    newChild.play [0] = CGFloat(Defaults[.play_calibrate_x1])
+                    newChild.play [1] = CGFloat(Defaults[.play_calibrate_y1])
+                    newChild.play [2] = CGFloat(Defaults[.play_calibrate_x2])
+                    newChild.play [3] = CGFloat(Defaults[.play_calibrate_y2])
+                    newChild.play [4] = CGFloat(Defaults[.play_calibrate_x3])
+                    newChild.play [5] = CGFloat(Defaults[.play_calibrate_y3])
+                    newChild.play [6] = CGFloat(Defaults[.play_calibrate_x4])
+                    newChild.play [7] = CGFloat(Defaults[.play_calibrate_y4])
                     
-                    newChild.content! [8] = CGFloat(Defaults[.pip_calibrate_x1])
-                    newChild.content! [9] = CGFloat(Defaults[.pip_calibrate_y1])
-                    newChild.content! [10] = CGFloat(Defaults[.pip_calibrate_x2])
-                    newChild.content! [11] = CGFloat(Defaults[.pip_calibrate_y2])
-                    newChild.content! [12] = CGFloat(Defaults[.pip_calibrate_x3])
-                    newChild.content! [13] = CGFloat(Defaults[.pip_calibrate_y3])
-                    newChild.content! [14] = CGFloat(Defaults[.pip_calibrate_x4])
-                    newChild.content! [15] = CGFloat(Defaults[.pip_calibrate_y4])
+                    newChild.pip [0] = CGFloat(Defaults[.pip_calibrate_x1])
+                    newChild.pip [1] = CGFloat(Defaults[.pip_calibrate_y1])
+                    newChild.pip [2] = CGFloat(Defaults[.pip_calibrate_x2])
+                    newChild.pip [3] = CGFloat(Defaults[.pip_calibrate_y2])
+                    newChild.pip [4] = CGFloat(Defaults[.pip_calibrate_x3])
+                    newChild.pip [5] = CGFloat(Defaults[.pip_calibrate_y3])
+                    newChild.pip [6] = CGFloat(Defaults[.pip_calibrate_x4])
+                    newChild.pip [7] = CGFloat(Defaults[.pip_calibrate_y4])
                 }
                 return newChild;
             }
@@ -639,19 +649,68 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 let localHalfWidth:CGFloat = localMaxWidth / 2
                 let localHalfHeight:CGFloat = localMaxHeight / 2
                 
+                var subscriptToggle = 0
+                if prng.getRandomNumberf() > 0.5 {
+                    subscriptToggle = 1
+                }
+                
+                child.subscriptToggle = subscriptToggle
+                organismA.subscriptToggle = subscriptToggle
+                organismB.subscriptToggle = subscriptToggle
+                
                 if (organismA === organismB) {
                     for i in 0..<child.contentLength {
                         child [i] = organismA [i]
                     }
-                    
+                }
+                
+                if (organismA === organismB) {
                     let n = prng.getRandomNumberi(min:1, max:7)
                     if n == 5 {
-                        for i in 0..<child.contentLength {
-                            child [i] = child [i] + CGFloat(prng.getRandomNumberf()) * 3.0 - 1.5
+                        
+                        // Note: for pip it is most effective to move the whole box
+                        if subscriptToggle == 1 && prng.getRandomNumberf() > 0.5{
+                            let f = CGFloat(prng.getRandomNumberf()) * 30.0 - 15.0
+                            let r = prng.getRandomNumberf()
+                            if r < 0.33 {
+                                child [1] = child [1] + f
+                                child [3] = child [3] + f
+                                child [5] = child [5] + f
+                                child [7] = child [7] + f
+                            } else if r < 0.66 {
+                                child [1] = child [1] + f
+                                child [3] = child [3] + f
+                            } else {
+                                child [5] = child [5] + f
+                                child [7] = child [7] + f
+                            }
+                        } else {
+                            for i in 0..<child.contentLength {
+                                child [i] = child [i] + CGFloat(prng.getRandomNumberf()) * 3.0 - 1.5
+                            }
                         }
                     } else if n >= 6 {
-                        for i in 0..<child.contentLength {
-                            child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                        if subscriptToggle == 1 && prng.getRandomNumberf() > 0.5{
+                            let f = CGFloat(prng.getRandomNumberf()) * 30.0 - 15.0
+                            let r = prng.getRandomNumberf()
+                            if r < 0.33 {
+                                child [0] = child [0] + f
+                                child [2] = child [2] + f
+                                child [5] = child [4] + f
+                                child [6] = child [6] + f
+                            } else if r < 0.66 {
+                                child [0] = child [0] + f
+                                child [2] = child [2] + f
+                            } else {
+                                child [4] = child [4] + f
+                                child [6] = child [6] + f
+                            }
+
+                            
+                        } else {
+                            for i in 0..<child.contentLength {
+                                child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                            }
                         }
                     } else {
                         for _ in 0..<n {
@@ -699,23 +758,23 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 autoreleasepool { () -> Void in
                     let scale = self.lastOriginalFrame!.extent.height / 720.0
                     
-                    let x1 = organism.content![0]
-                    let y1 = organism.content![1]
-                    let x2 = organism.content![2]
-                    let y2 = organism.content![3]
-                    let x3 = organism.content![4]
-                    let y3 = organism.content![5]
-                    let x4 = organism.content![6]
-                    let y4 = organism.content![7]
+                    let x1 = organism.play[0]
+                    let y1 = organism.play[1]
+                    let x2 = organism.play[2]
+                    let y2 = organism.play[3]
+                    let x3 = organism.play[4]
+                    let y3 = organism.play[5]
+                    let x4 = organism.play[6]
+                    let y4 = organism.play[7]
                     
-                    let x5 = organism.content![8]
-                    let y5 = organism.content![9]
-                    let x6 = organism.content![10]
-                    let y6 = organism.content![11]
-                    let x7 = organism.content![12]
-                    let y7 = organism.content![13]
-                    let x8 = organism.content![14]
-                    let y8 = organism.content![15]
+                    let x5 = organism.pip[0]
+                    let y5 = organism.pip[1]
+                    let x6 = organism.pip[2]
+                    let y6 = organism.pip[3]
+                    let x7 = organism.pip[4]
+                    let y7 = organism.pip[5]
+                    let x8 = organism.pip[6]
+                    let y8 = organism.pip[7]
                     
                     let perspectiveImagesCoords = [
                         "inputTopLeft":CIVector(x: round((self.topLeft.0+x1) * scale), y: round((self.topLeft.1+y1) * scale)),
@@ -764,64 +823,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
                 
                 return accuracy
-                
-                /*
-                //let blurredAdjustedImage = adjustedImage.applyingFilter("CIDiscBlur", parameters: [kCIInputRadiusKey: blurLevel])
-                //let blurredCalibrationImage = self.calibrationImage!.applyingFilter("CIDiscBlur", parameters: [kCIInputRadiusKey: blurLevel])
-                
-                //let blurredAdjustedImage = adjustedImage.applyingFilter("CIEdgeWork", parameters: [kCIInputRadiusKey: 1.0])
-                //let blurredCalibrationImage = self.calibrationImage!.applyingFilter("CIEdgeWork", parameters: [kCIInputRadiusKey: 1.0])
-                
-                //let blurredAdjustedImage = adjustedImage.applyingFilter("CIEdges", parameters: [kCIInputIntensityKey: 4.0])
-                //let blurredCalibrationImage = self.calibrationImage!.applyingFilter("CIEdges", parameters: [kCIInputIntensityKey: 4.0])
-                
-                
-                let blurredAdjustedImage = adjustedImage.applyingFilter("CIPixellate", parameters: [kCIInputScaleKey: 3.0])
-                let blurredCalibrationImage = self.calibrationImage!.applyingFilter("CIPixellate", parameters: [kCIInputScaleKey: 3.0])
-                
-                
-                //let blurredAdjustedImage = adjustedImage
-                //let blurredCalibrationImage = self.calibrationImage!
-                
-                let subtractedImage = blurredCalibrationImage
-                    .applyingFilter("CIDifferenceBlendMode",
-                                    parameters: [kCIInputBackgroundImageKey: blurredAdjustedImage])
-
-                // scale the image down to a single pixel, read in that pixel's value.  If it is 0 then the images match exactly
-                let filter = CIFilter(name: "CIAreaAverage")!
-                filter.setValue(subtractedImage , forKey: kCIInputImageKey)
-                
-                let averageColorImage = filter.outputImage!
-                
-                let averageColorCGImage = self.ciContext.createCGImage(averageColorImage, from: averageColorImage.extent)!
-                
-                var rgbBytes = [UInt8](repeating: 0, count: 4)
-                let colorSpace = CGColorSpaceCreateDeviceRGB()
-                let contextRef = CGContext(data: &rgbBytes,
-                                           width: averageColorCGImage.width,
-                                           height: averageColorCGImage.height,
-                                           bitsPerComponent: 8,
-                                           bytesPerRow: 4,
-                                           space: colorSpace,
-                                           bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
-                contextRef?.draw(averageColorCGImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(averageColorCGImage.width), height: CGFloat(averageColorCGImage.height)))
-                
-                
-                accuracy = Float(rgbBytes[0]) + Float(rgbBytes[1]) + Float(rgbBytes[2])
-                accuracy = 1.0 - (accuracy / 765.0)
-                
-                //print(accuracy)
-                
-                if accuracy > bestCalibrationAccuracy {
-                    DispatchQueue.main.sync {
-                        self.preview.imageView.image = UIImage(ciImage: subtractedImage)
-                    }
-                }
-                    
-                
-                organism.lastScore = CGFloat(accuracy)
-                
-                return accuracy*/
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
@@ -833,23 +834,23 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 if score > bestCalibrationAccuracy {
                     bestCalibrationAccuracy = score
                     
-                    let x1 = organism.content![0]
-                    let y1 = organism.content![1]
-                    let x2 = organism.content![2]
-                    let y2 = organism.content![3]
-                    let x3 = organism.content![4]
-                    let y3 = organism.content![5]
-                    let x4 = organism.content![6]
-                    let y4 = organism.content![7]
+                    let x1 = organism.play[0]
+                    let y1 = organism.play[1]
+                    let x2 = organism.play[2]
+                    let y2 = organism.play[3]
+                    let x3 = organism.play[4]
+                    let y3 = organism.play[5]
+                    let x4 = organism.play[6]
+                    let y4 = organism.play[7]
                     
-                    let x5 = organism.content![8]
-                    let y5 = organism.content![9]
-                    let x6 = organism.content![10]
-                    let y6 = organism.content![11]
-                    let x7 = organism.content![12]
-                    let y7 = organism.content![13]
-                    let x8 = organism.content![14]
-                    let y8 = organism.content![15]
+                    let x5 = organism.pip[0]
+                    let y5 = organism.pip[1]
+                    let x6 = organism.pip[2]
+                    let y6 = organism.pip[3]
+                    let x7 = organism.pip[4]
+                    let y7 = organism.pip[5]
+                    let x8 = organism.pip[6]
+                    let y8 = organism.pip[7]
                     
                     print("[\(generation)] calibrated to: \(score) -> \(x1),\(y1)   \(x2),\(y2)   \(x3),\(y3)   \(x4),\(y4)")
                     
@@ -892,29 +893,29 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             print("final accuracy: \(finalAccuracy)")
            
-            Defaults[.play_calibrate_x1] = Double(finalResult[0])
-            Defaults[.play_calibrate_y1] = Double(finalResult[1])
+            Defaults[.play_calibrate_x1] = Double(finalResult.play[0])
+            Defaults[.play_calibrate_y1] = Double(finalResult.play[1])
             
-            Defaults[.play_calibrate_x2] = Double(finalResult[2])
-            Defaults[.play_calibrate_y2] = Double(finalResult[3])
+            Defaults[.play_calibrate_x2] = Double(finalResult.play[2])
+            Defaults[.play_calibrate_y2] = Double(finalResult.play[3])
             
-            Defaults[.play_calibrate_x3] = Double(finalResult[4])
-            Defaults[.play_calibrate_y3] = Double(finalResult[5])
+            Defaults[.play_calibrate_x3] = Double(finalResult.play[4])
+            Defaults[.play_calibrate_y3] = Double(finalResult.play[5])
             
-            Defaults[.play_calibrate_x4] = Double(finalResult[6])
-            Defaults[.play_calibrate_y4] = Double(finalResult[7])
+            Defaults[.play_calibrate_x4] = Double(finalResult.play[6])
+            Defaults[.play_calibrate_y4] = Double(finalResult.play[7])
             
-            Defaults[.pip_calibrate_x1] = Double(finalResult[8])
-            Defaults[.pip_calibrate_y1] = Double(finalResult[9])
+            Defaults[.pip_calibrate_x1] = Double(finalResult.pip[0])
+            Defaults[.pip_calibrate_y1] = Double(finalResult.pip[1])
             
-            Defaults[.pip_calibrate_x2] = Double(finalResult[10])
-            Defaults[.pip_calibrate_y2] = Double(finalResult[11])
+            Defaults[.pip_calibrate_x2] = Double(finalResult.pip[2])
+            Defaults[.pip_calibrate_y2] = Double(finalResult.pip[3])
             
-            Defaults[.pip_calibrate_x3] = Double(finalResult[12])
-            Defaults[.pip_calibrate_y3] = Double(finalResult[13])
+            Defaults[.pip_calibrate_x3] = Double(finalResult.pip[4])
+            Defaults[.pip_calibrate_y3] = Double(finalResult.pip[5])
             
-            Defaults[.pip_calibrate_x4] = Double(finalResult[14])
-            Defaults[.pip_calibrate_y4] = Double(finalResult[15])
+            Defaults[.pip_calibrate_x4] = Double(finalResult.pip[6])
+            Defaults[.pip_calibrate_y4] = Double(finalResult.pip[7])
             
             Defaults.synchronize()
             
