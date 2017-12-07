@@ -94,7 +94,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
             return
         }
         
-        guard let subscriber1 = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
+        guard let _ = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
             
             let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
             if dataAsString == heartbeatString {

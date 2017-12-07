@@ -49,6 +49,14 @@
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A9EE6ADF1FD87423006A5883 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6AD71FD87422006A5883 /* Math.swift */; };
+		A9EE6AE01FD87423006A5883 /* UIImage+CVPixelBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6AD81FD87422006A5883 /* UIImage+CVPixelBuffer.swift */; };
+		A9EE6AE11FD87423006A5883 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6AD91FD87422006A5883 /* Array.swift */; };
+		A9EE6AE21FD87423006A5883 /* Predictions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6ADA1FD87422006A5883 /* Predictions.swift */; };
+		A9EE6AE31FD87423006A5883 /* MultiArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6ADB1FD87422006A5883 /* MultiArray.swift */; };
+		A9EE6AE41FD87423006A5883 /* CVPixelBuffer+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6ADC1FD87422006A5883 /* CVPixelBuffer+Helpers.swift */; };
+		A9EE6AE51FD87423006A5883 /* NonMaxSuppression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6ADD1FD87422006A5883 /* NonMaxSuppression.swift */; };
+		A9EE6AE61FD87423006A5883 /* MLMultiArray+Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6ADE1FD87422006A5883 /* MLMultiArray+Image.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -116,6 +124,14 @@
 		A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNGDisplay.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A9EE6AD71FD87422006A5883 /* Math.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
+		A9EE6AD81FD87422006A5883 /* UIImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
+		A9EE6AD91FD87422006A5883 /* Array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
+		A9EE6ADA1FD87422006A5883 /* Predictions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Predictions.swift; sourceTree = "<group>"; };
+		A9EE6ADB1FD87422006A5883 /* MultiArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MultiArray.swift; sourceTree = "<group>"; };
+		A9EE6ADC1FD87422006A5883 /* CVPixelBuffer+Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CVPixelBuffer+Helpers.swift"; sourceTree = "<group>"; };
+		A9EE6ADD1FD87422006A5883 /* NonMaxSuppression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NonMaxSuppression.swift; sourceTree = "<group>"; };
+		A9EE6ADE1FD87422006A5883 /* MLMultiArray+Image.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "MLMultiArray+Image.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +185,7 @@
 		4632CB0F1F3B53BE00359AA3 /* smallplanet_Pinball */ = {
 			isa = PBXGroup;
 			children = (
+				A9EE6AD61FD87422006A5883 /* CoreMLHelpers */,
 				465426D71F9DFDCC001B332F /* SwiftyUserDefaults */,
 				464FFDFC1F96116700790173 /* zmq */,
 				4638FD3D1F7D7F8C00A0261C /* preview */,
@@ -308,6 +325,22 @@
 			path = control;
 			sourceTree = "<group>";
 		};
+		A9EE6AD61FD87422006A5883 /* CoreMLHelpers */ = {
+			isa = PBXGroup;
+			children = (
+				A9EE6AD71FD87422006A5883 /* Math.swift */,
+				A9EE6AD81FD87422006A5883 /* UIImage+CVPixelBuffer.swift */,
+				A9EE6AD91FD87422006A5883 /* Array.swift */,
+				A9EE6ADA1FD87422006A5883 /* Predictions.swift */,
+				A9EE6ADB1FD87422006A5883 /* MultiArray.swift */,
+				A9EE6ADC1FD87422006A5883 /* CVPixelBuffer+Helpers.swift */,
+				A9EE6ADD1FD87422006A5883 /* NonMaxSuppression.swift */,
+				A9EE6ADE1FD87422006A5883 /* MLMultiArray+Image.swift */,
+			);
+			name = CoreMLHelpers;
+			path = CoreMLHelpers/CoreMLHelpers;
+			sourceTree = SOURCE_ROOT;
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -406,9 +439,13 @@
 				464FFE0D1F96117600790173 /* Context.swift in Sources */,
 				464FFE0F1F96117600790173 /* Socket.swift in Sources */,
 				A949C4231FD4CEDB00F37C13 /* DotMatrixReader.swift in Sources */,
+				A9EE6AE31FD87423006A5883 /* MultiArray.swift in Sources */,
 				464FFE111F96117600790173 /* SocketType.swift in Sources */,
 				4666A62A1FC36B8E0047009A /* ComboSort.swift in Sources */,
 				465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */,
+				A9EE6AE61FD87423006A5883 /* MLMultiArray+Image.swift in Sources */,
+				A9EE6AE51FD87423006A5883 /* NonMaxSuppression.swift in Sources */,
+				A9EE6AE01FD87423006A5883 /* UIImage+CVPixelBuffer.swift in Sources */,
 				464FFE0E1F96117600790173 /* Poller.swift in Sources */,
 				4637FD601F41E99800A2BC55 /* RemoteController.swift in Sources */,
 				4666A6251FC366E90047009A /* GeneticAlgorithm.swift in Sources */,
@@ -416,6 +453,8 @@
 				465426DA1F9DFDCC001B332F /* SwiftyUserDefaults.swift in Sources */,
 				46F0E9DF1F97A5A100288F48 /* pinballModel.mlmodel in Sources */,
 				A98BD93B1FD1BD1F00C436E4 /* TNGDisplay.swift in Sources */,
+				A9EE6ADF1FD87423006A5883 /* Math.swift in Sources */,
+				A9EE6AE21FD87423006A5883 /* Predictions.swift in Sources */,
 				464FFE121F96117600790173 /* SwiftyZeroMQ.swift in Sources */,
 				A970C4AE1FCE0F5A0042D2FC /* dotmatrix.mlmodel in Sources */,
 				46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */,
@@ -423,6 +462,7 @@
 				461893391F3B58C300AA4599 /* MainController.swift in Sources */,
 				464FFE131F96117600790173 /* ZeroMQError.swift in Sources */,
 				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
+				A9EE6AE41FD87423006A5883 /* CVPixelBuffer+Helpers.swift in Sources */,
 				465714A21F96156F0021D893 /* Comm.swift in Sources */,
 				464FFE101F96117600790173 /* SocketSendRecvOption.swift in Sources */,
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
@@ -430,6 +470,7 @@
 				464055291F82868A0055756C /* ScoreController.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
+				A9EE6AE11FD87423006A5883 /* Array.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

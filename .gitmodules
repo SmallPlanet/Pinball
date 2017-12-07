@@ -7,3 +7,6 @@
 [submodule "BlueSocket"]
 	path = BlueSocket
 	url = https://github.com/SmallPlanetSporks/BlueSocket
+[submodule "CoreMLHelpers"]
+	path = CoreMLHelpers
+	url = https://github.com/hollance/CoreMLHelpers.git
