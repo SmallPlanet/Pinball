@@ -283,11 +283,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     }
     
     
-    let processCameraImageLock = NSLock()
-    
     func processCameraImage(_ originalImage:CIImage, _ perImageCoords:[String:Any], _ pipImagesCoords:[String:Any], _ ignoreTemporalFrames:Bool) -> CIImage {
-        
-        processCameraImageLock.lock()
         
         var cameraImage = originalImage
         
@@ -324,7 +320,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 
                 if self.motionBlurFrames.count < numberOfFrames {
                     // we don't have enough images, abort
-                    processCameraImageLock.unlock()
                     return lastBlurFrame
                 }
                 
@@ -340,8 +335,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 }
             }
         }
-        
-        processCameraImageLock.unlock()
         
         return lastBlurFrame
     }

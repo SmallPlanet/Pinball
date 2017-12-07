@@ -82,6 +82,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             if parts.count == 2 {
+                
                 if parts[0] == "b" || parts[0] == "x" {
                     self.currentPlayer = 1
                 }
@@ -159,10 +160,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        if shouldBeCalibrating && self.lastOriginalFrame != nil {
-            sleep(2000000)
-        }
-        
         if shouldBeCalibrating || cameraCaptureHelper.pipImagesCoords.count == 0 {
             let scale = originalImage.extent.height / 720.0
             let x1 = CGFloat(Defaults[.pip_calibrate_x1])
@@ -201,7 +198,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             ]
         }
         
-        
+        if shouldBeCalibrating {
+            lastOriginalFrame = originalImage
+            lastFrame = image
+            DispatchQueue.main.async {
+                self.preview.imageView.image = UIImage(ciImage: image)
+            }
+            usleep(72364)
+            return
+        }
         
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
@@ -321,7 +326,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("\(fps) fps")
             
             DispatchQueue.main.async {
-                //self.preview.imageView.image = UIImage(ciImage: image)
+                self.preview.imageView.image = UIImage(ciImage: image)
             }
         }
     }
@@ -523,6 +528,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.stop()
         pinball.disconnect()
         
+        shouldBeCalibrating = false
+        
         for observer in observers {
             NotificationCenter.default.removeObserver(observer)
         }
@@ -557,18 +564,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     }
     
     func PerformCalibration( ) {
-        
-        
+
+        // Load our calibration image and convert to RGB bytes
         calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate.jpg")))
+        let cgImage = self.ciContext.createCGImage(calibrationImage!, from: calibrationImage!.extent)
+        var calibrationRGBBytes = [UInt8](repeating: 0, count: 1)
+        
+        if cgImage != nil {
+            let width = cgImage!.width
+            let height = cgImage!.height
+            let bitsPerComponent = cgImage!.bitsPerComponent
+            let rowBytes = width * 4
+            let totalBytes = height * width * 4
+            
+            calibrationRGBBytes = [UInt8](repeating: 0, count: totalBytes)
+            
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let contextRef = CGContext(data: &calibrationRGBBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+            contextRef?.draw(cgImage!, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
+        }
         
         shouldBeCalibrating = true
         
-        var blurLevel = 10.0
-        
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 100
-            let maxHeight:CGFloat = 100
+            let maxWidth:CGFloat = 300
+            let maxHeight:CGFloat = 300
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
             
@@ -586,6 +607,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         newChild.content! [i] = 0
                     }
                 } else if idx == 1 {
+                    for i in 0..<newChild.contentLength {
+                        newChild.content! [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    }
+                } else {
                     newChild.content! [0] = CGFloat(Defaults[.play_calibrate_x1])
                     newChild.content! [1] = CGFloat(Defaults[.play_calibrate_y1])
                     newChild.content! [2] = CGFloat(Defaults[.play_calibrate_x2])
@@ -603,10 +628,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     newChild.content! [13] = CGFloat(Defaults[.pip_calibrate_y3])
                     newChild.content! [14] = CGFloat(Defaults[.pip_calibrate_x4])
                     newChild.content! [15] = CGFloat(Defaults[.pip_calibrate_y4])
-                } else {
-                    for i in 0..<newChild.contentLength {
-                        newChild.content! [i] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                    }
                 }
                 return newChild;
             }
@@ -625,27 +646,23 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     
                     let n = prng.getRandomNumberi(min:1, max:7)
                     if n == 5 {
-                        for i in 0..<8 {
-                            if prng.getRandomNumberf() < 0.5 {
-                                child [i] = child [i] + 3.0
-                            } else {
-                                child [i] = child [i] - 3.0
-                            }
+                        for i in 0..<child.contentLength {
+                            child [i] = child [i] + CGFloat(prng.getRandomNumberf()) * 3.0 - 1.5
                         }
                     } else if n >= 6 {
-                        for i in 0..<8 {
+                        for i in 0..<child.contentLength {
                             child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
                         }
                     } else {
                         for _ in 0..<n {
-                            let index = prng.getRandomNumberi(min:0, max:8)
+                            let index = prng.getRandomNumberi(min:0, max:UInt64(child.contentLength-1))
                             let r = prng.getRandomNumberf()
-                            if (r < 0.3) {
+                            if (r < 0.5) {
                                 child [index] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                            } else if (r < 0.6) {
-                                child [index] = child [index] + CGFloat((prng.getRandomNumberi() % 20 - 10) * 3)
+                            } else if r < 0.75 {
+                                child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 10.0 - 5.0
                             } else {
-                                child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 6.0 - 3.0
+                                child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 2.0 - 1.0
                             }
                         }
                     }
@@ -679,42 +696,76 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 
                 var accuracy:Float = 0
                 
-                let scale = self.lastOriginalFrame!.extent.height / 720.0
+                autoreleasepool { () -> Void in
+                    let scale = self.lastOriginalFrame!.extent.height / 720.0
+                    
+                    let x1 = organism.content![0]
+                    let y1 = organism.content![1]
+                    let x2 = organism.content![2]
+                    let y2 = organism.content![3]
+                    let x3 = organism.content![4]
+                    let y3 = organism.content![5]
+                    let x4 = organism.content![6]
+                    let y4 = organism.content![7]
+                    
+                    let x5 = organism.content![8]
+                    let y5 = organism.content![9]
+                    let x6 = organism.content![10]
+                    let y6 = organism.content![11]
+                    let x7 = organism.content![12]
+                    let y7 = organism.content![13]
+                    let x8 = organism.content![14]
+                    let y8 = organism.content![15]
+                    
+                    let perspectiveImagesCoords = [
+                        "inputTopLeft":CIVector(x: round((self.topLeft.0+x1) * scale), y: round((self.topLeft.1+y1) * scale)),
+                        "inputTopRight":CIVector(x: round((self.topRight.0+x2) * scale), y: round((self.topRight.1+y2) * scale)),
+                        "inputBottomLeft":CIVector(x: round((self.bottomLeft.0+x3) * scale), y: round((self.bottomLeft.1+y3) * scale)),
+                        "inputBottomRight":CIVector(x: round((self.bottomRight.0+x4) * scale), y: round((self.bottomRight.1+y4) * scale))
+                    ]
+                    
+                    let pipImagesCoords = [
+                        "inputTopLeft":CIVector(x: round((self.pip_topLeft.0+x5) * scale), y: round((self.pip_topLeft.1+y5) * scale)),
+                        "inputTopRight":CIVector(x: round((self.pip_topRight.0+x6) * scale), y: round((self.pip_topRight.1+y6) * scale)),
+                        "inputBottomLeft":CIVector(x: round((self.pip_bottomLeft.0+x7) * scale), y: round((self.pip_bottomLeft.1+y7) * scale)),
+                        "inputBottomRight":CIVector(x: round((self.pip_bottomRight.0+x8) * scale), y: round((self.pip_bottomRight.1+y8) * scale))
+                    ]
+                    
+                    let adjustedImage = self.captureHelper.processCameraImage(self.lastOriginalFrame!, perspectiveImagesCoords, pipImagesCoords, true)
+                    
+                    guard let cgImage = self.ciContext.createCGImage(adjustedImage, from: adjustedImage.extent) else {
+                        return
+                    }
+                    
+                    let width = cgImage.width
+                    let height = cgImage.height
+                    let bitsPerComponent = cgImage.bitsPerComponent
+                    let rowBytes = width * 4
+                    let totalBytes = height * width * 4
+                    
+                    var rgbBytes = [UInt8](repeating: 0, count: totalBytes)
+                    
+                    let colorSpace = CGColorSpaceCreateDeviceRGB()
+                    let contextRef = CGContext(data: &rgbBytes, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: rowBytes, space: colorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+                    contextRef?.draw(cgImage, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
+                    
+                    
+                    // run over both images, and determine how different they are...
+                    if calibrationRGBBytes.count == rgbBytes.count {
+                        var totalDiff:Double = 0.0
+                        for i in 0..<(width*height) {
+                            totalDiff = totalDiff + abs(Double(calibrationRGBBytes[i*4+0]) - Double(rgbBytes[i*4+0]))
+                            totalDiff = totalDiff + abs(Double(calibrationRGBBytes[i*4+1]) - Double(rgbBytes[i*4+2]))
+                            totalDiff = totalDiff + abs(Double(calibrationRGBBytes[i*4+2]) - Double(rgbBytes[i*4+3]))
+                        }
+                        
+                        accuracy = 1.0 - Float(totalDiff / Double(width*height*255*3))
+                    }
+                }
                 
-                let x1 = organism.content![0]
-                let y1 = organism.content![1]
-                let x2 = organism.content![2]
-                let y2 = organism.content![3]
-                let x3 = organism.content![4]
-                let y3 = organism.content![5]
-                let x4 = organism.content![6]
-                let y4 = organism.content![7]
+                return accuracy
                 
-                let x5 = organism.content![8]
-                let y5 = organism.content![9]
-                let x6 = organism.content![10]
-                let y6 = organism.content![11]
-                let x7 = organism.content![12]
-                let y7 = organism.content![13]
-                let x8 = organism.content![14]
-                let y8 = organism.content![15]
-                
-                let perspectiveImagesCoords = [
-                    "inputTopLeft":CIVector(x: round((self.topLeft.0+x1) * scale), y: round((self.topLeft.1+y1) * scale)),
-                    "inputTopRight":CIVector(x: round((self.topRight.0+x2) * scale), y: round((self.topRight.1+y2) * scale)),
-                    "inputBottomLeft":CIVector(x: round((self.bottomLeft.0+x3) * scale), y: round((self.bottomLeft.1+y3) * scale)),
-                    "inputBottomRight":CIVector(x: round((self.bottomRight.0+x4) * scale), y: round((self.bottomRight.1+y4) * scale))
-                ]
-                
-                let pipImagesCoords = [
-                    "inputTopLeft":CIVector(x: round((self.pip_topLeft.0+x5) * scale), y: round((self.pip_topLeft.1+y5) * scale)),
-                    "inputTopRight":CIVector(x: round((self.pip_topRight.0+x6) * scale), y: round((self.pip_topRight.1+y6) * scale)),
-                    "inputBottomLeft":CIVector(x: round((self.pip_bottomLeft.0+x7) * scale), y: round((self.pip_bottomLeft.1+y7) * scale)),
-                    "inputBottomRight":CIVector(x: round((self.pip_bottomRight.0+x8) * scale), y: round((self.pip_bottomRight.1+y8) * scale))
-                ]
-                
-                let adjustedImage = self.captureHelper.processCameraImage(self.lastOriginalFrame!, perspectiveImagesCoords, pipImagesCoords, true)
-                
+                /*
                 //let blurredAdjustedImage = adjustedImage.applyingFilter("CIDiscBlur", parameters: [kCIInputRadiusKey: blurLevel])
                 //let blurredCalibrationImage = self.calibrationImage!.applyingFilter("CIDiscBlur", parameters: [kCIInputRadiusKey: blurLevel])
                 
@@ -770,7 +821,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 
                 organism.lastScore = CGFloat(accuracy)
                 
-                return accuracy
+                return accuracy*/
             }
             
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
