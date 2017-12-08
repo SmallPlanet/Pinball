@@ -45,7 +45,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var perspectiveImagesCoords:[String:Any] = [:]
     var delegateWantsPerspectiveImages = false
     
-    var scaledImagesSize = CGSize(width: 100, height: 100)
+    var scaledImagesSize = CGSize(width: 96, height: 128)
     var delegateWantsScaledImages = false
     
     var delegateWantsPlayImages = false
@@ -215,7 +215,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var fpsDisplay:Int = 0
     var lastDate = Date()
     
-    var motionBlurFrames:[CIImage] = []
+    var temporalFrames:[CIImage] = []
     
     let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
     
@@ -246,10 +246,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             
             let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
             
-            let lastBlurFrame = self.processCameraImage(cameraImage, self.perspectiveImagesCoords, self.pipImagesCoords, false)
+            let currentFrame = self.processCameraImage(cameraImage, self.perspectiveImagesCoords, self.pipImagesCoords, false)
             
-            if self.delegateWantsPlayImages {
-                self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: cameraImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
+            if self.delegateWantsPlayImages, let currentFrame = currentFrame {
+                self.delegate?.playCameraImage(self, image: currentFrame, originalImage: cameraImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             }
         }
         
@@ -267,9 +267,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     let processCameraImageLock = NSLock()
     
-    func processCameraImage(_ originalImage:CIImage, _ perImageCoords:[String:Any], _ pipImagesCoords:[String:Any], _ ignoreTemporalFrames:Bool) -> CIImage {
+    func processCameraImage(_ originalImage:CIImage, _ perImageCoords:[String:Any], _ pipImagesCoords:[String:Any], _ ignoreTemporalFrames:Bool) -> CIImage? {
         
         processCameraImageLock.lock()
+        
+        defer {
+            processCameraImageLock.unlock()
+        }
         
         var cameraImage = originalImage
         
@@ -282,51 +286,25 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             cameraImage = pipImage.composited(over: cameraImage)
         }
         
-        
         if delegateWantsScaledImages {
             cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
         }
         
-        var lastBlurFrame = cameraImage
         if delegateWantsTemporalImages {
-            let numberOfFrames = 2 + 1
-            
-            if ignoreTemporalFrames {
-                for i in 2..<numberOfFrames {
-                    lastBlurFrame = lastBlurFrame.composited(over: lastBlurFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * lastBlurFrame.extent.width, y: 0)))
-                }
-            } else {
-                motionBlurFrames.append(cameraImage)
-                
-                // it may seem weird that we're skipping the first (most recent) frame below and have +1 to numberOfFrames, but it is my theory
-                // that this will account for network lag and give the AI a chance to react a little sooner
-                while motionBlurFrames.count > numberOfFrames {
-                    motionBlurFrames.remove(at: 0)
-                }
-                
-                if motionBlurFrames.count < numberOfFrames {
-                    // we don't have enough images, abort
-                    processCameraImageLock.unlock()
-                    return lastBlurFrame
-                }
-                
-                // instead of blurring them, let's just stack them horizontally
-                lastBlurFrame = motionBlurFrames[1]
-                for i in 2..<motionBlurFrames.count {
-                    let otherFrame = motionBlurFrames[i]
-                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * otherFrame.extent.width, y: 0)))
-                }
-                
-                if playFrameNumber % numberOfFrames == 0 {
-                    motionBlurFrames.removeLast()
-                }
+            let numberOfFrames = 4
+
+            temporalFrames.insert(cameraImage, at: 0)
+            if temporalFrames.count > numberOfFrames {
+                temporalFrames.removeLast(temporalFrames.count - numberOfFrames)
             }
+            
+            return merge(fourImages: temporalFrames)
         }
         
-        processCameraImageLock.unlock()
-        
-        return lastBlurFrame
+        return originalImage
     }
+    
+    // MARK: - Temporal stacking
     
     lazy var colorKernels = CIColorKernel.makeKernels(source: """
         kernel vec4 merge4(__sample s1, __sample s2, __sample s3, __sample s4) {
@@ -345,7 +323,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             assertionFailure("Could not load CIColorKernel")
             return nil
         }
-        assert(images.count == 4, "Images array must contain 4 images, found \(images.count)")
+        guard images.count == 4 else {
+            print("Images array must contain 4 images, found \(images.count)")
+            return nil
+        }
         let extent = images.first!.extent
         let outputRect = CGRect(x: 0, y: 0, width: extent.width, height: extent.width)
         return kernel.apply(extent: outputRect, arguments: images)

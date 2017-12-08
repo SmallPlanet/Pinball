@@ -47,6 +47,8 @@
 		A970C4AE1FCE0F5A0042D2FC /* dotmatrix.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */; };
 		A98BD93B1FD1BD1F00C436E4 /* TNGDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
+		A9CBE1061FDB203C00719FE6 /* Actor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CBE1051FDB203C00719FE6 /* Actor.swift */; };
+		A9CBE1081FDB207B00719FE6 /* tng_adam_0000.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A9CBE1071FDB207B00719FE6 /* tng_adam_0000.mlmodel */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A9EE6ADF1FD87423006A5883 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6AD71FD87422006A5883 /* Math.swift */; };
@@ -123,6 +125,8 @@
 		A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = dotmatrix.mlmodel; sourceTree = "<group>"; };
 		A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNGDisplay.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
+		A9CBE1051FDB203C00719FE6 /* Actor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actor.swift; sourceTree = "<group>"; };
+		A9CBE1071FDB207B00719FE6 /* tng_adam_0000.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_adam_0000.mlmodel; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9EE6AD71FD87422006A5883 /* Math.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		A9EE6AD81FD87422006A5883 /* UIImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
@@ -303,6 +307,8 @@
 			children = (
 				465F737E1F493AF2002CFF71 /* PlayController.swift */,
 				4664D7741F9259DE00B9FC47 /* CameraCaptureHelper.swift */,
+				A9CBE1051FDB203C00719FE6 /* Actor.swift */,
+				A9CBE1071FDB207B00719FE6 /* tng_adam_0000.mlmodel */,
 			);
 			path = play;
 			sourceTree = "<group>";
@@ -448,6 +454,7 @@
 				A9EE6AE01FD87423006A5883 /* UIImage+CVPixelBuffer.swift in Sources */,
 				464FFE0E1F96117600790173 /* Poller.swift in Sources */,
 				4637FD601F41E99800A2BC55 /* RemoteController.swift in Sources */,
+				A9CBE1081FDB207B00719FE6 /* tng_adam_0000.mlmodel in Sources */,
 				4666A6251FC366E90047009A /* GeneticAlgorithm.swift in Sources */,
 				46555A121F9A6AAC0092C20A /* Sound.swift in Sources */,
 				465426DA1F9DFDCC001B332F /* SwiftyUserDefaults.swift in Sources */,
@@ -463,6 +470,7 @@
 				464FFE131F96117600790173 /* ZeroMQError.swift in Sources */,
 				46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */,
 				A9EE6AE41FD87423006A5883 /* CVPixelBuffer+Helpers.swift in Sources */,
+				A9CBE1061FDB203C00719FE6 /* Actor.swift in Sources */,
 				465714A21F96156F0021D893 /* Comm.swift in Sources */,
 				464FFE101F96117600790173 /* SocketSendRecvOption.swift in Sources */,
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,

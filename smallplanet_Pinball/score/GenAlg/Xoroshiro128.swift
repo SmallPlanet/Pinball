@@ -19,7 +19,7 @@ public class PRNG {
         self.generator = Xoroshiro128Plus(state: (0, 0))
         generateSeeds(seed: seed)
         self.generator.state = rngState
-        getRandomNumber()
+        _ = getRandomNumber()
     }
     
     private func generateSeeds(seed: UInt64){
