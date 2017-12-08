@@ -64,6 +64,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     
     var currentPlayer = 1
+    var playerOneScore = 0
     
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
     var scoreSubscriber:SwiftyZeroMQ.Socket? = nil
@@ -95,6 +96,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
 
                     self.currentPlayer = Int(score_parts[0])!
                     print("Switching to player \(self.currentPlayer)")
+                    
+                    if self.currentPlayer == 1 {
+                        self.playerOneScore = Int(score_parts[1])!
+                    }
+                }
+                if parts[0] == "s" {
+                    if self.currentPlayer == 1 {
+                        self.playerOneScore = Int(parts[1])!
+                    }
                 }
             }
             
@@ -159,6 +169,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         guard let model = model else {
             return
         }
+        
+        CheckShouldBeCalibrating()
         
         if shouldBeCalibrating || cameraCaptureHelper.pipImagesCoords.count == 0 {
             let scale = originalImage.extent.height / 720.0
@@ -254,15 +266,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
             if self!.leftActivateTime.timeIntervalSinceNow < -2.0 {
-                cutoffLeft = 1.1
+                //cutoffLeft = 1.1
             }
             
             if self!.rightActivateTime.timeIntervalSinceNow < -2.0 {
-                cutoffRight = 1.1
+                //cutoffRight = 1.1
             }
             
             
-            if self!.leftActivateTime.timeIntervalSinceNow > -0.1 {
+            //if self!.leftActivateTime.timeIntervalSinceNow > -0.1 {
                 if leftObservation!.confidence > cutoffLeft {
                     if canPlay && self?.pinball.leftButtonPressed == false {
                         self!.leftActivateTime = Date()
@@ -274,9 +286,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
                     }
                 }
-            }
+            //}
             
-            if self!.rightActivateTime.timeIntervalSinceNow > -0.1 {
+            //if self!.rightActivateTime.timeIntervalSinceNow > -0.1 {
                 if rightObservation!.confidence > cutoffRight {
                     if canPlay && self?.pinball.rightButtonPressed == false {
                         self!.rightActivateTime = Date()
@@ -288,7 +300,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                         NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
                     }
                 }
-            }
+            //}
             
             if ballKickerObservation!.confidence >= 0.999 {
                 //print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
@@ -452,8 +464,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.pinball = pinball
         
         recalibrateFlipperCutoffs()
-        
-        PerformCalibration()
     }
     
     func recalibrateFlipperCutoffs() {
@@ -571,6 +581,18 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         shouldBeCalibrating = false
     }
     
+    func CheckShouldBeCalibrating() {
+        // While we are not playing a game, we should be calibrating.
+        if currentPlayer == 1 && playerOneScore <= 20 {
+            if shouldBeCalibrating == false {
+                PerformCalibration()
+            }
+        } else {
+            shouldBeCalibrating = false
+        }
+        
+    }
+    
     func PerformCalibration( ) {
 
         // Load our calibration image and convert to RGB bytes
@@ -668,40 +690,36 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     let n = prng.getRandomNumberi(min:1, max:7)
                     if n == 5 {
                         
-                        // Note: for pip it is most effective to move the whole box
-                        if subscriptToggle == 1 && prng.getRandomNumberf() > 0.5{
+                        // Note: for pip it is most effective to move in a "square" like fashion,
+                        // as non squares will distort how it gets overlaid on the other image and
+                        // cause loss in accuracy.  So in this method for pip we pick two of the
+                        // indices and move them together
+                        if subscriptToggle == 1{
                             let f = CGFloat(prng.getRandomNumberf()) * 30.0 - 15.0
-                            let r = prng.getRandomNumberf()
-                            if r < 0.33 {
-                                child [1] = child [1] + f
-                                child [3] = child [3] + f
-                                child [5] = child [5] + f
-                                child [7] = child [7] + f
-                            } else if r < 0.66 {
-                                child [1] = child [1] + f
-                                child [3] = child [3] + f
-                            } else {
-                                child [5] = child [5] + f
-                                child [7] = child [7] + f
-                            }
+                            let offset = prng.getRandomNumberi(min:0, max:1)
+                            let index1 = (prng.getRandomNumberi(min:0, max:4) + offset) % 8
+                            let index2 = (prng.getRandomNumberi(min:0, max:4) + offset) % 8
+                            
+                            child [index1] = child [index1] + f
+                            child [index2] = child [index2] + f
                         } else {
                             for i in 0..<child.contentLength {
                                 child [i] = child [i] + CGFloat(prng.getRandomNumberf()) * 3.0 - 1.5
                             }
                         }
                     } else if n >= 6 {
-                        if subscriptToggle == 1 && prng.getRandomNumberf() > 0.5{
+                        // for this pip method we move the whole box vertically or horizontally
+                        if subscriptToggle == 1{
                             let f = CGFloat(prng.getRandomNumberf()) * 30.0 - 15.0
                             let r = prng.getRandomNumberf()
-                            if r < 0.33 {
-                                child [0] = child [0] + f
-                                child [2] = child [2] + f
-                                child [5] = child [4] + f
-                                child [6] = child [6] + f
-                            } else if r < 0.66 {
-                                child [0] = child [0] + f
-                                child [2] = child [2] + f
+                            if r < 0.5 {
+                                child [1] = child [1] + f
+                                child [3] = child [3] + f
+                                child [5] = child [5] + f
+                                child [7] = child [7] + f
                             } else {
+                                child [0] = child [0] + f
+                                child [2] = child [2] + f
                                 child [4] = child [4] + f
                                 child [6] = child [6] + f
                             }
