@@ -111,23 +111,49 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("play controller received: \(dataAsString!)")
         })
         
-        remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_CoreMLUpdates, { (data) in
-            let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).appendingPathComponent("pinball.mlmodel")
-            do {
-                try data.write(to: fileURL)
-                
-                if FileManager.default.fileExists(atPath: fileURL.path) {
-                    let compiledUrl = try MLModel.compileModel(at: fileURL)
-                    let model = try MLModel(contentsOf: compiledUrl)
-                    self.model = try? VNCoreMLModel(for: model)
-                    
-                    // TODO: Receive flipper calibration information from the RLServer
-                }
-            } catch {
-                print(error)
-            }
-        })
+        remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_CoreMLUpdates, LoadModelMessage)
         
+    }
+    
+    func LoadModelMessage(_ data:Data) {
+        let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).appendingPathComponent("pinball.mlmodel")
+        do {
+            
+            // there are four float packed in before the model data; we need to extract those first
+            // and then write the actual model data to file
+            
+            let leftMeanBytes:Array<UInt8> = [data[0], data[1], data[2], data[3]]
+            var leftMean:Float = 0.0
+            memcpy(&leftMean, leftMeanBytes, 4)
+            
+            let leftMedianBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
+            var leftMedian:Float = 0.0
+            memcpy(&leftMedian, leftMedianBytes, 4)
+            
+            let rightMeanBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
+            var rightMean:Float = 0.0
+            memcpy(&rightMean, rightMeanBytes, 4)
+            
+            let rightMedianBytes:Array<UInt8> = [data[12], data[13], data[14], data[15]]
+            var rightMedian:Float = 0.0
+            memcpy(&rightMedian, rightMedianBytes, 4)
+            
+            try data.subdata(in: Range(16..<data.count)).write(to: fileURL)
+            
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                let compiledUrl = try MLModel.compileModel(at: fileURL)
+                let model = try MLModel(contentsOf: compiledUrl)
+                self.model = try? VNCoreMLModel(for: model)
+                
+                self.calibratedLeftCutoff = leftMedian
+                self.calibratedRightCutoff = rightMedian
+                
+                print("calibratedLeftCutoff \(self.calibratedLeftCutoff)")
+                print("calibratedRightCutoff \(self.calibratedRightCutoff)")
+            }
+        } catch {
+            print(error)
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -493,8 +519,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             self.send_ballKickerButton = 1
         })
         
-        // Load the ML model through its generated class
-        model = try? VNCoreMLModel(for: pinballModel().model)
+        
+        // Load our combined model + flipper calibration levels
+        try! LoadModelMessage(Data(contentsOf: URL(fileURLWithPath: String(bundlePath:"bundle://Assets/play/model.msg"))))
         
         captureHelper.pinball = pinball
     }
