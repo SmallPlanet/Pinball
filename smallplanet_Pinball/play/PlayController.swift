@@ -55,7 +55,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case PlayNoRecord    // AI will play but will not learn anything
     }
     
-    let playMode:PlayMode = .PlayNoRecord
+    let playMode:PlayMode = .Play
     
     let shouldExperiment = true
     
@@ -121,8 +121,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     let model = try MLModel(contentsOf: compiledUrl)
                     self.model = try? VNCoreMLModel(for: model)
                     
-                    
-                    self.recalibrateFlipperCutoffs()
+                    // TODO: Receive flipper calibration information from the RLServer
                 }
             } catch {
                 print(error)
@@ -152,6 +151,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
+    
+    var disableLeftFlipperUntilRelease = false
+    var disableRightFlipperUntilRelease = false
+    
+    let numberOfFramesItTakesForFlipperToRetract:Int = 12
     
     var lastOriginalFrame:CIImage? = nil
     var lastFrame:CIImage? = nil
@@ -220,8 +224,20 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
-        leftFlipperCounter -= 1
-        rightFlipperCounter -= 1
+        
+        if pinball.leftButtonPressed == true {
+            leftFlipperCounter = numberOfFramesItTakesForFlipperToRetract
+        }
+        if pinball.rightButtonPressed == true {
+            rightFlipperCounter = numberOfFramesItTakesForFlipperToRetract
+        }
+        
+        if pinball.leftButtonPressed == false && leftFlipperCounter > 0 {
+            leftFlipperCounter -= 1
+        }
+        if pinball.rightButtonPressed == false && rightFlipperCounter > 0 {
+            rightFlipperCounter -= 1
+        }
         
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
             guard let results = request.results as? [VNClassificationObservation] else {
@@ -249,60 +265,75 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             //print("\(leftObservation!.confidence)  \(rightObservation!.confidence)  \(ballKickerObservation!.confidence)")
             let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
-            // TODO: For now we're neutered the ability for the AI to affect the machine
-            //let experimental:Float = 0.1
-            //let rand1 = Float(arc4random_uniform(1000000)) / 1000000.0
-            //let rand2 = Float(arc4random_uniform(1000000)) / 1000000.0
             
-            var cutoffLeft:Float = self!.calibratedLeftCutoff
+            
+            
+            // TODO: We are moving to receipt flipper calibration values figured out during training of the model.
+            // From there, we want to adjust the below to allow for hitting the major shots (ie flipper confident is
+            // above the calibration level) as well as hitting the generalized shot (flipper confidence is above a
+            // lower threashold for a period of time).
+            /*var cutoffLeft:Float = self!.calibratedLeftCutoff
             var cutoffRight:Float = self!.calibratedRightCutoff
             
             if self?.shouldExperiment == true {
-                cutoffLeft = cutoffLeft - 0.01
-                cutoffRight = cutoffRight - 0.01
-            }
+                cutoffLeft = cutoffLeft - 0.005
+                cutoffRight = cutoffRight - 0.005
+            }*/
+            
+            var cutoffLeft:Float = 0.9954368614550656 - 0.01
+            var cutoffRight:Float = 0.99420212411586151 - 0.01
             
             
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
-            if self!.leftActivateTime.timeIntervalSinceNow < -2.0 {
-                //cutoffLeft = 1.1
+            if self!.leftActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.leftButtonPressed == true {
+                self!.disableLeftFlipperUntilRelease = true
             }
             
-            if self!.rightActivateTime.timeIntervalSinceNow < -2.0 {
-                //cutoffRight = 1.1
+            if self!.rightActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.rightButtonPressed == true {
+                self!.disableRightFlipperUntilRelease = true
+            }
+            
+            if self!.disableLeftFlipperUntilRelease {
+                if self!.leftFlipperCounter == 0 {
+                    self!.disableLeftFlipperUntilRelease = false
+                }
+                cutoffLeft = 1.1
+            }
+            
+            if self!.disableRightFlipperUntilRelease {
+                if self!.rightFlipperCounter == 0 {
+                    self!.disableRightFlipperUntilRelease = false
+                }
+                cutoffRight = 1.1
             }
             
             
-            //if self!.leftActivateTime.timeIntervalSinceNow > -0.1 {
-                if leftObservation!.confidence > cutoffLeft {
-                    if canPlay && self?.pinball.leftButtonPressed == false {
-                        self!.leftActivateTime = Date()
-                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
-                    }
-                    print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
-                } else {
-                    if canPlay && self?.pinball.leftButtonPressed == true {
-                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
-                    }
+            if leftObservation!.confidence > cutoffLeft {
+                if canPlay && self?.pinball.leftButtonPressed == false {
+                    self!.leftActivateTime = Date()
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
                 }
-            //}
-            
-            //if self!.rightActivateTime.timeIntervalSinceNow > -0.1 {
-                if rightObservation!.confidence > cutoffRight {
-                    if canPlay && self?.pinball.rightButtonPressed == false {
-                        self!.rightActivateTime = Date()
-                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
-                    }
-                    print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
-                }else{
-                    if canPlay && self?.pinball.rightButtonPressed == true {
-                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
-                    }
+                print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+            } else {
+                if canPlay && self?.pinball.leftButtonPressed == true {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
                 }
-            //}
+            }
             
-            if ballKickerObservation!.confidence >= 0.999 {
+            if rightObservation!.confidence > cutoffRight {
+                if canPlay && self?.pinball.rightButtonPressed == false {
+                    self!.rightActivateTime = Date()
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
+                }
+                print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence) *********")
+            }else{
+                if canPlay && self?.pinball.rightButtonPressed == true {
+                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                }
+            }
+            
+            if ballKickerObservation!.confidence >= 0.99 {
                 //print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
                 if canPlay && self?.pinball.ballKickerPressed == false {
                     //NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.BallKickerDown.rawValue), object: nil, userInfo: nil)
@@ -315,7 +346,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if self?.playMode != .PlayNoRecord {
                 if self?.send_leftButton == 1 || self?.send_rightButton == 1 || self?.send_ballKickerButton == 1 {
-                    self?.sendCameraFrame(image, self!.send_leftButton, self!.send_rightButton, 0, self!.send_ballKickerButton)
+                    
+                    // only save memories of the flippers in their resting position
+                    if self?.leftFlipperCounter == 0 && self?.rightFlipperCounter == 0 {
+                        self?.sendCameraFrame(image, self!.send_leftButton, self!.send_rightButton, 0, self!.send_ballKickerButton)
+                    }
                     self?.send_leftButton = 0
                     self?.send_rightButton = 0
                     self?.send_ballKickerButton = 0
@@ -332,7 +367,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print(error)
         }
         
-        if lastVisibleFrameNumber + 100 < frameNumber {
+        if lastVisibleFrameNumber + 3 < frameNumber {
             lastVisibleFrameNumber = frameNumber
             
             print("\(fps) fps")
@@ -462,76 +497,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         model = try? VNCoreMLModel(for: pinballModel().model)
         
         captureHelper.pinball = pinball
-        
-        recalibrateFlipperCutoffs()
     }
-    
-    func recalibrateFlipperCutoffs() {
-        // calibrate the cutoffs by showing the model known images and seeing what it returns
-        guard let model = model else {
-            return
-        }
-        
-        let leftImages = allFilesInFolder(String(bundlePath: "bundle://Assets/play/calibrate/left/"))
-        let rightImages = allFilesInFolder(String(bundlePath: "bundle://Assets/play/calibrate/right/"))
-        
-        var leftAverage:Float = 0.0
-        for imgPath in leftImages! {
-            let img = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate/left/"+imgPath)))!
-            
-            let handler = VNImageRequestHandler(ciImage: img)
-            do {
-                try handler.perform([VNCoreMLRequest(model: model) { request, error in
-                    guard let results = request.results as? [VNClassificationObservation] else {
-                        return
-                    }
-                    for result in results {
-                        if result.identifier == "left" {
-                            leftAverage = leftAverage + Float(result.confidence)
-                        }
-                    }
-                    }])
-            } catch {
-                print(error)
-            }
-        }
-        calibratedLeftCutoff = leftAverage / Float(leftImages!.count)
-        print("Calibrated Left Cutoff: \(calibratedLeftCutoff)")
-        
-        
-        var rightAverage:Float = 0.0
-        for imgPath in rightImages! {
-            let img = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate/right/"+imgPath)))!
-            
-            let handler = VNImageRequestHandler(ciImage: img)
-            do {
-                try handler.perform([VNCoreMLRequest(model: model) { request, error in
-                    guard let results = request.results as? [VNClassificationObservation] else {
-                        return
-                    }
-                    for result in results {
-                        if result.identifier == "right" {
-                            rightAverage = rightAverage + Float(result.confidence)
-                        }
-                    }
-                    }])
-            } catch {
-                print(error)
-            }
-        }
-        calibratedRightCutoff = rightAverage / Float(rightImages!.count)
-        print("Calibrated Right Cutoff: \(calibratedRightCutoff)")
-        
-        
-        
-        // sanity
-        if calibratedLeftCutoff < 0.5 {
-            calibratedLeftCutoff = 0.5
-        }
-        if calibratedRightCutoff < 0.5 {
-            calibratedRightCutoff = 0.5
-        }
-    }
+
         
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
@@ -618,8 +585,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 300
-            let maxHeight:CGFloat = 300
+            let maxWidth:CGFloat = 50
+            let maxHeight:CGFloat = 50
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
             
@@ -672,7 +639,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 let localHalfHeight:CGFloat = localMaxHeight / 2
                 
                 var subscriptToggle = 0
-                if prng.getRandomNumberf() > 0.5 {
+                if prng.getRandomNumberf() > 0.6 {
                     subscriptToggle = 1
                 }
                 
@@ -686,15 +653,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     }
                 }
                 
-                if (organismA === organismB) {
-                    let n = prng.getRandomNumberi(min:1, max:7)
-                    if n == 5 {
-                        
-                        // Note: for pip it is most effective to move in a "square" like fashion,
-                        // as non squares will distort how it gets overlaid on the other image and
-                        // cause loss in accuracy.  So in this method for pip we pick two of the
-                        // indices and move them together
-                        if subscriptToggle == 1{
+                if subscriptToggle == 1 {
+                    if (organismA === organismB) {
+                        if prng.getRandomNumberf() < 0.5 {
+                            // Note: for pip it is most effective to move in a "square" like fashion,
+                            // as non squares will distort how it gets overlaid on the other image and
+                            // cause loss in accuracy.  So in this method for pip we pick two of the
+                            // indices and move them together
                             let f = CGFloat(prng.getRandomNumberf()) * 30.0 - 15.0
                             let offset = prng.getRandomNumberi(min:0, max:1)
                             let index1 = (prng.getRandomNumberi(min:0, max:4) + offset) % 8
@@ -702,14 +667,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                             
                             child [index1] = child [index1] + f
                             child [index2] = child [index2] + f
+                            
                         } else {
-                            for i in 0..<child.contentLength {
-                                child [i] = child [i] + CGFloat(prng.getRandomNumberf()) * 3.0 - 1.5
-                            }
-                        }
-                    } else if n >= 6 {
-                        // for this pip method we move the whole box vertically or horizontally
-                        if subscriptToggle == 1{
+                            // for this pip method we move the whole box vertically or horizontally
                             let f = CGFloat(prng.getRandomNumberf()) * 30.0 - 15.0
                             let r = prng.getRandomNumberf()
                             if r < 0.5 {
@@ -723,12 +683,31 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                                 child [4] = child [4] + f
                                 child [6] = child [6] + f
                             }
-
+                        }
+                    } else {
+                        for i in 0..<child.contentLength {
+                            let t = prng.getRandomNumberf()
                             
-                        } else {
-                            for i in 0..<child.contentLength {
-                                child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                            if (t < 0.5) {
+                                child [i] = organismA [i];
+                            } else {
+                                child [i] = organismB [i];
                             }
+                        }
+                    }
+                    return
+                }
+                
+                
+                if (organismA === organismB) {
+                    let n = prng.getRandomNumberi(min:1, max:7)
+                    if n == 5 {
+                        for i in 0..<child.contentLength {
+                            child [i] = child [i] + CGFloat(prng.getRandomNumberf()) * 3.0 - 1.5
+                        }
+                    } else if n >= 6 {
+                        for i in 0..<child.contentLength {
+                            child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
                         }
                     } else {
                         for _ in 0..<n {
@@ -849,7 +828,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     return true
                 }
                 
-                if score > bestCalibrationAccuracy {
+                if generation > 100 && score > bestCalibrationAccuracy {
                     bestCalibrationAccuracy = score
                     
                     let x1 = organism.play[0]
