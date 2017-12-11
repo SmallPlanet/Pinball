@@ -18,7 +18,8 @@ import random
 
 import coremltools   
 import h5py
-
+import struct
+from text_histogram import histogram
 
 
 
@@ -29,7 +30,12 @@ class EvaluationMonitor(Callback):
     labels = []
     weights = []
     didSaveModel = False
-    minSaveAccuracy = 0.98
+    minSaveAccuracy = 0.93
+    
+    leftMeanSaved = 0
+    leftMedianSaved = 0
+    rightMeanSaved = 0
+    rightMedianSaved = 0
     
     def round2(self, x, y):
         if x > y:
@@ -40,26 +46,67 @@ class EvaluationMonitor(Callback):
         numCorrect = 0
         numTotal = 0
         
+        # let's store the average reward value per .5 
+        left_predictions = []
+        left_weights = []
+        right_predictions = []
+        right_weights = []
+        kicker_predictions = []
+        kicker_weights = []
+                
         # we only care about the good memories and the perm memories
-        for i in range(0,len(self.labels)):
-            #if self.weights[i] > 300000 or self.weights[i] == 999:
+        for i in range(0,len(self.labels)):            
+            # average and minimum positiive predictions by class
+            for j in range(0,3):
+                if round(self.labels[i][j]) == 1 and self.round2(predictions[i][j], value) == round(self.labels[i][j]):
+                    if j == 0:
+                        left_predictions.append(predictions[i][j])
+                        left_weights.append(self.weights[i])
+                    if j == 1:
+                        right_predictions.append(predictions[i][j])
+                        right_weights.append(self.weights[i])
+                    if j == 2:
+                        kicker_predictions.append(predictions[i][j])
+                        kicker_weights.append(self.weights[i])
+            
             numCorrect += (self.round2(predictions[i][0], value) == round(self.labels[i][0]) and 
                             self.round2(predictions[i][1], value) == round(self.labels[i][1]) and 
                             self.round2(predictions[i][2], value) == round(self.labels[i][2]) )
             numTotal += 1
+        
         if numTotal == 0:
             return 0
-        print("numTotal", numTotal)
+                
         acc = numCorrect / numTotal
-        return acc
+                
+        print("  - pred_acc {} of {}".format(acc, numTotal))
+        
+        # we want the minimum accuracy to be sufficient
+        # we want the SD to be sufficient large
+        if acc > self.minSaveAccuracy:
+            leftRange,leftSD,leftMean,leftMedian = histogram(left_predictions, right_weights, buckets=20)
+            rightRange,rightSD,rightMean,rightMedian = histogram(right_predictions, right_weights, buckets=20)
+            
+            # in theory, a higher standard deviation means the network generalizes better
+            if rightSD > 0.1 and leftSD > 0.1:
+                self.minSaveAccuracy = acc
+                
+                print("\n ************************* saving model! with accuracy of {} (total {})".format(acc, len(self.labels)))
+                print("  - left_cutoff: {}  //  {}".format(leftMean, leftMedian))
+                print("  - right_cutoff {}  //  {}".format(rightMean, rightMedian))
+                
+                self.leftMeanSaved = leftMean
+                self.leftMedianSaved = leftMedian
+                self.rightMeanSaved = rightMean
+                self.rightMedianSaved = rightMedian
+                
+                return True
+            
+        return False
     
     def on_epoch_end(self, epoch, logs={}): 
         predictions = self.cnn_model.predict(self.imgs)
-        acc = self.calc_predict(predictions, 0.5)
-        print("  - pred_acc {}".format(acc))
-        if acc > self.minSaveAccuracy:
-            self.minSaveAccuracy = acc
-            print("\n saving model with accuracy of {} (total {})".format(acc, len(self.labels)))
+        if self.calc_predict(predictions, 0.5):
             self.didSaveModel = True
             self.cnn_model.save("model.h5")
 
@@ -202,7 +249,7 @@ def Learn():
                 else:
                     normalized_weights[i] = total_weights[i] / max_weight
                     if normalized_weights[i] < 0:
-                        normalized_weights[i] = normalized_weights[i] * -0.25
+                        normalized_weights[i] = normalized_weights[i] * -1.0
                         
             # randomize the batch size            
             batch_size = int(random.random() * 32 + 6)
@@ -211,13 +258,13 @@ def Learn():
                 batch_size = len(total_imgs)
             
             # adjust the learning rate based on individual memory scores
-            wlr = WeightedLR(total_weights)
+            wlr = WeightedLR(total_weights, inversed=True)
 
             cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
                     steps_per_epoch=len(total_imgs) // batch_size,
                     epochs=epochs / 2,
                     class_weight=class_weight_dict,
-                    callbacks=[wlr])
+                    callbacks=[wlr,em])
                     
             cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
@@ -241,9 +288,13 @@ def Learn():
 
         print("Conversion to coreml finished...")
         
+        f = open("model.msg","wb")
+        f.write(struct.pack("ffff", em.leftMeanSaved, em.leftMedianSaved, em.rightMeanSaved, em.rightMedianSaved))
+        f.write(read_file("pinballModel.mlmodel"))
+        f.close()
         
-        modelBytes = read_file("pinballModel.mlmodel")        
-        coreMLPublisher.send(modelBytes)
+        modelMessage = read_file("model.msg")        
+        coreMLPublisher.send(modelMessage)
         
         print("Published new coreml model")
         

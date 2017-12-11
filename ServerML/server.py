@@ -120,7 +120,7 @@ class Memory:
         isBlurry = blur.IsBlurryJPEG(jpegAsBinary, cutoff=3000)
         
         # images should always contain at least one ball (note: this is not the most accurate method for ball detection, but hopefully it is better than nothing)
-        hasBall = templateMatch.ContainsAtLeatOneBall(jpegAsBinary, 0.75)
+        hasBall = templateMatch.ContainsAtLeatOneBall(jpegAsBinary, 0.80)
         
         if isBlurry == False:
             # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk

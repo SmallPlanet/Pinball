@@ -5,7 +5,7 @@ class WeightedLR(Callback):
     # this learning rate schedular will adjust the learning rate based upon a factor
     # known in the training material
 
-    def __init__(self, image_weights, base_lr=0.001, max_lr=0.006):
+    def __init__(self, image_weights, base_lr=0.001, max_lr=0.006, inversed=False):
         super(WeightedLR, self).__init__()
         self.image_weights = image_weights
         self.image_idx = 0
@@ -13,6 +13,7 @@ class WeightedLR(Callback):
         self.max_lr = max_lr
         self.max_weight = max(image_weights)
         self.min_weight = min(image_weights)
+        self.inversed = inversed
         
                 
     def on_epoch_begin(self, epoch, logs):
@@ -38,6 +39,9 @@ class WeightedLR(Callback):
             weight_range = self.max_weight
         
         normalized_weight = (avg - self.min_weight) / weight_range
+        
+        if self.inversed:
+            normalized_weight = 1.0 - normalized_weight
         
         weighted_lr = self.base_lr + (self.max_lr - self.base_lr) * normalized_weight
         

@@ -10,7 +10,7 @@ import numpy as np
 from keras.preprocessing.image import load_img, img_to_array, array_to_img
 
 
-#train.Learn()
+train.Learn()
 
 
 def TestBlurryImages():
@@ -46,5 +46,6 @@ def TestBallMatching(path):
     
     print("accuracy: ", (numCorrect / numTotal) * 100)
 
-TestBallMatching("pmemory")
-TestBallMatching("memory")
+#TestBallMatching("pmemory")
+#TestBallMatching("memory")
+#TestBallMatching("waste")
