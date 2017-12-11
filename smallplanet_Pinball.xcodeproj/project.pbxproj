@@ -42,7 +42,6 @@
 		4666A62A1FC36B8E0047009A /* ComboSort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4666A6291FC36B8E0047009A /* ComboSort.swift */; };
 		46C402851F3CB4DF00C46E3C /* UIControl+Closures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */; };
 		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
-		46F0E9DF1F97A5A100288F48 /* pinballModel.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 46F0E9DE1F979C4600288F48 /* pinballModel.mlmodel */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -107,7 +106,6 @@
 		4666A6291FC36B8E0047009A /* ComboSort.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ComboSort.swift; sourceTree = "<group>"; };
 		46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Closures.swift"; sourceTree = "<group>"; };
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
-		46F0E9DE1F979C4600288F48 /* pinballModel.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = pinballModel.mlmodel; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -267,7 +265,6 @@
 		465F737A1F493915002CFF71 /* PinballModels */ = {
 			isa = PBXGroup;
 			children = (
-				46F0E9DE1F979C4600288F48 /* pinballModel.mlmodel */,
 			);
 			path = PinballModels;
 			sourceTree = "<group>";
@@ -404,7 +401,6 @@
 				4666A6251FC366E90047009A /* GeneticAlgorithm.swift in Sources */,
 				46555A121F9A6AAC0092C20A /* Sound.swift in Sources */,
 				465426DA1F9DFDCC001B332F /* SwiftyUserDefaults.swift in Sources */,
-				46F0E9DF1F97A5A100288F48 /* pinballModel.mlmodel in Sources */,
 				464FFE121F96117600790173 /* SwiftyZeroMQ.swift in Sources */,
 				46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */,
 				4666A6281FC369670047009A /* Xoroshiro128.swift in Sources */,
