@@ -61,20 +61,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("play controller received: \(dataAsString!)")
         })
         
-        remoteControlSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_CoreMLUpdates, { (data) in
-            let fileURL = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).appendingPathComponent("pinball.mlmodel")
-            do {
-                try data.write(to: fileURL)
-                
-                if FileManager.default.fileExists(atPath: fileURL.path) {
-                    let compiledUrl = try MLModel.compileModel(at: fileURL)
-                    let model = try MLModel(contentsOf: compiledUrl)
-                    self.model = try? VNCoreMLModel(for: model)
-                }
-            } catch {
-                print(error)
-            }
-        })
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -93,7 +79,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
 
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
-    var model:VNCoreMLModel? = nil
     var lastVisibleFrameNumber = 0
     
     var leftFlipperCounter:Int = 0
@@ -107,23 +92,32 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var actor = Actor()
     
+    let originalSize = CGSize(width: 3024, height: 4032)
+    
+    let bottomRight = CGSize(width: 3024, height: 4032)
+    let bottomLeft = CGSize(width: 3024, height: 0)
+    let topRight = CGSize(width: 0, height: 4032)
+    let topLeft = CGSize(width: 0, height: 0)
+
+    
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
-        // Create a Vision request with completion handler
-        guard let model = model else {
-            return
-        }
-        
         if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
-            let scale = originalImage.extent.height / 720.0
-            let x:CGFloat = 0.0
-            let y:CGFloat = 0.0
+            let scale = originalImage.extent.height / CGFloat(3024)
+            let x1 = CGFloat(0) //Defaults[.calibrate_x1])
+            let x2 = CGFloat(0) //Defaults[.calibrate_x2])
+            let x3 = CGFloat(0) //Defaults[.calibrate_x3])
+            let x4 = CGFloat(0) //Defaults[.calibrate_x4])
+            let y1 = CGFloat(0) //Defaults[.calibrate_y1])
+            let y2 = CGFloat(0) //Defaults[.calibrate_y2])
+            let y3 = CGFloat(0) //Defaults[.calibrate_y3])
+            let y4 = CGFloat(0) //Defaults[.calibrate_y4])
             
             cameraCaptureHelper.perspectiveImagesCoords = [
-                "inputTopLeft":CIVector(x: round((149+x) * scale), y: round((566+y) * scale)),
-                "inputTopRight":CIVector(x: round((553+x) * scale), y: round((566+y) * scale)),
-                "inputBottomLeft":CIVector(x: round((149+x) * scale), y: round((145+y) * scale)),
-                "inputBottomRight":CIVector(x: round((553+x) * scale), y: round((145+y) * scale))
+                "inputTopLeft":CIVector(x: round((topLeft.width+x1) * scale), y: round((topLeft.height+y1) * scale)),
+                "inputTopRight":CIVector(x: round((topRight.width+x2) * scale), y: round((topRight.height+y2) * scale)),
+                "inputBottomLeft":CIVector(x: round((bottomLeft.width+x3) * scale), y: round((bottomLeft.height+y3) * scale)),
+                "inputBottomRight":CIVector(x: round((bottomRight.width+x4) * scale), y: round((bottomRight.height+y4) * scale))
             ]
             return
         }
@@ -153,6 +147,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("\(fps) fps")
             
             DispatchQueue.main.async {
+                self.preview.imageView.contentMode = .scaleAspectFit
                 self.preview.imageView.image = UIImage(ciImage: image)
             }
         }
@@ -208,12 +203,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsPerspectiveImages = true
-        captureHelper.delegateWantsPictureInPictureImages = true
+        captureHelper.delegateWantsPictureInPictureImages = false
         
         captureHelper.scaledImagesSize = CGSize(width: 96, height: 128)
-        captureHelper.delegateWantsScaledImages = true
+        captureHelper.delegateWantsScaledImages = false
         
-        captureHelper.delegateWantsHiSpeedCamera = true
+        captureHelper.delegateWantsHiSpeedCamera = false
         
         captureHelper.delegateWantsLockedCamera = true
         
@@ -223,65 +218,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegateWantsConstantFPS = true
         
         UIApplication.shared.isIdleTimerDisabled = true
-        
-        // We allow remote control of gameplay to help "manually" train the AI
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.PermanentDown.rawValue), object:nil, queue:nil) {_ in
-            self.sendCameraFrame()
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonUp.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.rightButtonEnd()
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.RightButtonDown.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.rightButtonStart()
-            self.send_rightButton = 1
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonUp.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.leftButtonEnd()
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.LeftButtonDown.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.leftButtonStart()
-            self.send_leftButton = 1
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonUp.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.startButtonEnd()
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.StartButtonDown.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.startButtonStart()
-            self.currentPlayer = 1
-            self.send_startButton = 1
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerUp.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.ballKickerEnd()
-        })
-        
-        observers.append(NotificationCenter.default.addObserver(forName:Notification.Name(rawValue:MainController.Notifications.BallKickerDown.rawValue), object:nil, queue:nil) {_ in
-            self.pinball.ballKickerStart()
-            self.send_ballKickerButton = 1
-        })
-        
-        // Load the ML model through its generated class
-        model = try? VNCoreMLModel(for: pinballModel().model)
-        
-        
-        // load the overlay so we can manmually line up the flippers
-        let overlayImagePath = String(bundlePath: "bundle://Assets/play/overlay.png")
-        var overlayImage = CIImage(contentsOf: URL(fileURLWithPath:overlayImagePath))!
-        overlayImage = overlayImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
-        guard let tiffData = self.ciContext.tiffRepresentation(of: overlayImage, format: kCIFormatRG8, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else {
-            return
-        }
-        overlay.imageView.image = UIImage(data:tiffData)
-        
-        let maskPath = String(bundlePath:"bundle://Assets/play/mask.png")
-        var maskImage = CIImage(contentsOf: URL(fileURLWithPath:maskPath))!
-        maskImage = maskImage.cropped(to: CGRect(x:0,y:0,width:169,height:120))
         
         captureHelper.pinball = pinball
     }
