@@ -178,6 +178,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
     
+    var lastLeftFlipperConfidence:Float = 0.0
+    var lastRightFlipperConfidence:Float = 0.0
+    var lastLeftFlipperConfidenceCounter:Int = 0
+    var lastRightFlipperConfidenceCounter:Int = 0
+    
     var disableLeftFlipperUntilRelease = false
     var disableRightFlipperUntilRelease = false
     
@@ -298,17 +303,42 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // From there, we want to adjust the below to allow for hitting the major shots (ie flipper confident is
             // above the calibration level) as well as hitting the generalized shot (flipper confidence is above a
             // lower threashold for a period of time).
-            /*var cutoffLeft:Float = self!.calibratedLeftCutoff
+            var cutoffLeft:Float = self!.calibratedLeftCutoff
             var cutoffRight:Float = self!.calibratedRightCutoff
             
+            // We want the AI to take shots at the ball which are less than our calibrated cut off in a manner which
+            // does not ruin the ability to wait and hit the actual good shot.  For our first stab at this, we will
+            // monitor the confidence level; if it is above 0.5 and decreasing then we will take the shot.
+            if true {
+                if self!.lastLeftFlipperConfidence > 0.5 && leftObservation!.confidence < self!.lastLeftFlipperConfidence {
+                    self!.lastLeftFlipperConfidenceCounter += 1
+                } else {
+                    self!.lastLeftFlipperConfidenceCounter = 0
+                }
+                if self!.lastRightFlipperConfidence > 0.5 && rightObservation!.confidence < self!.lastRightFlipperConfidence {
+                    self!.lastRightFlipperConfidenceCounter += 1
+                } else {
+                    self!.lastRightFlipperConfidenceCounter = 0
+                }
+                
+                if self!.lastLeftFlipperConfidenceCounter > 4 {
+                    cutoffLeft = 0.5
+                    print("**** taking the worse shot on the left ****")
+                }
+                if self!.lastRightFlipperConfidenceCounter > 4 {
+                    cutoffRight = 0.5
+                    print("**** taking the worse shot on the right ****")
+                }
+                
+                self!.lastLeftFlipperConfidence = leftObservation!.confidence
+                self!.lastRightFlipperConfidence = rightObservation!.confidence
+            }
+            
+            /*
             if self?.shouldExperiment == true {
                 cutoffLeft = cutoffLeft - 0.005
                 cutoffRight = cutoffRight - 0.005
             }*/
-            
-            var cutoffLeft:Float = 0.9954368614550656 - 0.01
-            var cutoffRight:Float = 0.99420212411586151 - 0.01
-            
             
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
