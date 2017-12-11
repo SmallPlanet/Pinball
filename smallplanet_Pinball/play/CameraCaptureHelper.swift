@@ -80,6 +80,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         var bestFrameRateRange:AVFrameRateRange? = nil
         var bestResolution:CGFloat = 0.0
         
+        var cameraFormatSize = CGSize(width: 1440, height: 1080)
+        
         if delegateWantsHiSpeedCamera {
             // choose the highest framerate
             for format in camera.formats {
@@ -91,18 +93,13 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 }
             }
         } else {
-            // choose the best quality picture
+            // choose cameraFormatSize
             for format in camera.formats {
                 
                 // Get video dimensions
                 let formatDescription = format.formatDescription
                 let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
-                let resolution = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
-                
-                let area = resolution.width * resolution.height
-                //print("\(resolution.width) x \(resolution.height) aspect \(Float(resolution.width/resolution.height))")
-                if area > bestResolution {
-                    bestResolution = area
+                if Int32(cameraFormatSize.width) == dimensions.width && Int32(cameraFormatSize.height) == dimensions.height {
                     bestFormat = format
                 }
             }
@@ -277,18 +274,18 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         var cameraImage = originalImage
         
-        if delegateWantsPerspectiveImages && perImageCoords.count > 0 {
-            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perImageCoords)
-        }
+//        if delegateWantsPerspectiveImages && perImageCoords.count > 0 {
+//            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perImageCoords)
+//        }
         
-        if delegateWantsPictureInPictureImages && pipImagesCoords.count > 0 {
-            let pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: pipImagesCoords)
-            cameraImage = pipImage.composited(over: cameraImage)
-        }
+//        if delegateWantsPictureInPictureImages && pipImagesCoords.count > 0 {
+//            let pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: pipImagesCoords)
+//            cameraImage = pipImage.composited(over: cameraImage)
+//        }
         
-        if delegateWantsScaledImages {
-            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
-        }
+//        if delegateWantsScaledImages {
+//            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
+//        }
         
         if delegateWantsTemporalImages {
             let numberOfFrames = 4
@@ -313,7 +310,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             out_px.r = s1.r*r + s1.g*g + s1.b*b;
             out_px.g = s2.r*r + s2.g*g + s2.b*b;
             out_px.b = s3.r*r + s3.g*g + s3.b*b;
-            out_px.a = s4.r*r + s4.g*g + s4.b*b;
+            out_px.a = 1.0; //s4.r*r + s4.g*g + s4.b*b;
             return out_px;
         }
     """)
@@ -328,8 +325,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             return nil
         }
         let extent = images.first!.extent
-        let outputRect = CGRect(x: 0, y: 0, width: extent.width, height: extent.width)
-        return kernel.apply(extent: outputRect, arguments: images)
+        let outputRect = CGRect(x: 0, y: 0, width: extent.width, height: extent.height)
+        let output = kernel.apply(extent: outputRect, arguments: images)
+        return output
     }
     
     func pngData(ciImage: CIImage) -> Data? {
