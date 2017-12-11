@@ -310,12 +310,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // does not ruin the ability to wait and hit the actual good shot.  For our first stab at this, we will
             // monitor the confidence level; if it is above 0.5 and decreasing then we will take the shot.
             if true {
-                if self!.lastLeftFlipperConfidence > 0.5 && leftObservation!.confidence < self!.lastLeftFlipperConfidence {
+                if leftObservation!.confidence > 0.5 && leftObservation!.confidence < self!.lastLeftFlipperConfidence {
                     self!.lastLeftFlipperConfidenceCounter += 1
                 } else {
                     self!.lastLeftFlipperConfidenceCounter = 0
                 }
-                if self!.lastRightFlipperConfidence > 0.5 && rightObservation!.confidence < self!.lastRightFlipperConfidence {
+                if rightObservation!.confidence > 0.5 && rightObservation!.confidence < self!.lastRightFlipperConfidence {
                     self!.lastRightFlipperConfidenceCounter += 1
                 } else {
                     self!.lastRightFlipperConfidenceCounter = 0
