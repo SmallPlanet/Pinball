@@ -137,9 +137,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
 
         let action = actor.chooseAction(state: image)
         
-        if lastVisibleFrameNumber % 200 == 0 {
-            save(image: UIImage(ciImage: image))
-        }
+//        if lastVisibleFrameNumber % 200 == 0 {
+//            save(image: UIImage(ciImage: image))
+//        }
         
         if lastVisibleFrameNumber + 100 < frameNumber {
             lastVisibleFrameNumber = frameNumber
@@ -206,7 +206,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegateWantsPictureInPictureImages = false
         
         captureHelper.scaledImagesSize = CGSize(width: 96, height: 128)
-        captureHelper.delegateWantsScaledImages = false
+        captureHelper.delegateWantsScaledImages = true
+        
         
         captureHelper.delegateWantsHiSpeedCamera = false
         
@@ -238,6 +239,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
+        
+//        testPinballActions()
     }
     
     fileprivate var preview: ImageView {
@@ -262,6 +265,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     internal var rightButton: Button? {
         return nil
     }
+    internal var rightUpperButton: Button? {
+        return nil
+    }
     internal var ballKicker: Button? {
         return nil
     }
@@ -276,6 +282,44 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         } else if let image = image {
             UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
         }
+    }
+    
+    func testPinballActions() {
+        let delay = UInt32(3)
+
+        print("Testing pinball actions")
+        
+        sleep(5)
+        print("3"); sleep(1)
+        print("2"); sleep(1)
+        print("1"); sleep(1)
+
+        print("Start button")
+        pinball.startButtonStart()
+        sleep(delay)
+
+        print("Ball launch")
+        pinball.ballKickerStart()
+        sleep(delay)
+
+        print("Left flipper")
+        pinball.leftButtonStart()
+        sleep(1)
+        pinball.leftButtonEnd()
+        sleep(delay)
+
+        print("Right lower")
+        pinball.rightButtonStart()
+        sleep(1)
+        pinball.rightButtonEnd()
+        sleep(delay)
+
+        print("Right upper")
+        pinball.rightUpperButtonStart()
+        sleep(1)
+        pinball.rightUpperButtonEnd()
+        sleep(delay)
+
     }
 
 }

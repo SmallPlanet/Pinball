@@ -7,14 +7,27 @@ from OmegaExpansion import relayExp
 
 # relays
 
-relayBank1 = 6  # Left flippers
 relayBank2 = 7  # Right flippers
+                # 0 = R - right lower flipper
+                # 1 = U - right upper flipper
+
+relayBank1 = 6  # Left flippers
+                # 0 = L - left flipper
+                # 1 = B - ball launcher
+
+relayBank3 = 5  # Start button
+                # 0 = S - start button
+                # 1 = _ - unused
+
 
 print("Init relay bank 1: ", relayExp.driverInit(relayBank1))
 print("Check relay bank 1: ", relayExp.checkInit(relayBank1))
 
 print("Init relay bank 2: ", relayExp.driverInit(relayBank2))
 print("Check relay bank 2: ", relayExp.checkInit(relayBank2))
+
+print("Init relay bank 3: ", relayExp.driverInit(relayBank3))
+print("Check relay bank 3: ", relayExp.checkInit(relayBank3))
 
 
 # TCP socket
@@ -41,15 +54,27 @@ print 'Socket now listening'
 
 def triggerBallLauncher():
     # trigger launcher on
-        relayExp.setChannel(relayBank2, 1, 1)
+        relayExp.setChannel(relayBank1, 1, 1)
         print 'Ball launcher on'
 
     # wait predetermined time
-        time.sleep(0.025) # time in seconds
+        time.sleep(0.05) # time in seconds
 
     # trigger launcher off
-        relayExp.setChannel(relayBank2, 1, 0)
+        relayExp.setChannel(relayBank1, 1, 0)
         print 'Ball launcher off'
+
+def triggerStartButton():
+    # trigger start button on
+        relayExp.setChannel(relayBank3, 0, 1)
+        print 'Start button on'
+
+    # wait predetermined time
+        time.sleep(0.05) # time in seconds
+
+    # trigger launcher off
+        relayExp.setChannel(relayBank3, 0, 0)
+        print 'Start button off'
 
 
 #Function for handling connections. This will be used to create threads
@@ -61,7 +86,7 @@ def clientthread(conn):
         data = conn.recv(1024)
 
         if not data:
-            reply = chr(1) # 1 = FAILURE
+	    reply = chr(1) # 1 = FAILURE
             break
 
         value = 1
@@ -70,12 +95,14 @@ def clientthread(conn):
 
         if data.startswith("B"):
             start_new_thread(triggerBallLauncher, ())
-        elif data.startswith("R"):
-            relayExp.setChannel(relayBank1, 0, value)
-        elif data.startswith("L"):
-            relayExp.setChannel(relayBank1, 1, value)
         elif data.startswith("S"):
+            start_new_thread(triggerStartButton, ())
+        elif data.startswith("R"):
+            relayExp.setChannel(relayBank2, 1, value)
+        elif data.startswith("U"):
             relayExp.setChannel(relayBank2, 0, value)
+        else:  # "L"
+            relayExp.setChannel(relayBank1, 0, value)
 
         reply = chr(0) # 0 == OKAY
         conn.sendall(reply)
@@ -91,3 +118,4 @@ while True:
     start_new_thread(clientthread, (conn,))
 
 s.close()
+
