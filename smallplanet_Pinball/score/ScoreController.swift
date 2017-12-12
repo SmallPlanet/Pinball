@@ -932,7 +932,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         // hack: these are probably erroneous scores from the bonus screens
         if score % 1000 == 0 {
             return (0, false)
-            
         }
         
         return (score,didMatchSomething)
@@ -1739,10 +1738,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         0,1,0,0,0,
         ]
     
-    // NOTE: we need to get actual snap of this
     fileprivate var bash_score7: [UInt8] = [
-        1,0,0,0,1,
-        0,1,0,0,1,
+        0,0,0,0,1,
+        1,1,0,0,1,
         0,0,1,0,1,
         0,0,0,1,1,
         ]
@@ -1754,9 +1752,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         0,1,0,1,0,
         ]
     
-    // NOTE: we need to get actual snap of this
     fileprivate var bash_score9: [UInt8] = [
-        1,0,0,1,0,
+        0,0,0,1,0,
         1,0,1,0,1,
         1,0,1,0,1,
         0,1,1,1,0,
