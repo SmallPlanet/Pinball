@@ -149,35 +149,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         UIApplication.shared.isIdleTimerDisabled = true
         
-        leftButton.button.add(for: .touchUpInside) {
-            Defaults[.calibrate_y1] -= 2
-            Defaults[.calibrate_y2] -= 2
-            Defaults[.calibrate_y3] -= 2
-            Defaults[.calibrate_y4] -= 2
-            Defaults.synchronize()
-        }
-        rightButton.button.add(for: .touchUpInside) {
-            Defaults[.calibrate_y1] += 2
-            Defaults[.calibrate_y2] += 2
-            Defaults[.calibrate_y3] += 2
-            Defaults[.calibrate_y4] += 2
-            Defaults.synchronize()
-        }
-        upButton.button.add(for: .touchUpInside) {
-            Defaults[.calibrate_x1] -= 2
-            Defaults[.calibrate_x2] -= 2
-            Defaults[.calibrate_x3] -= 2
-            Defaults[.calibrate_x4] -= 2
-            Defaults.synchronize()
-        }
-        downButton.button.add(for: .touchUpInside) {
-            Defaults[.calibrate_x1] += 2
-            Defaults[.calibrate_x2] += 2
-            Defaults[.calibrate_x3] += 2
-            Defaults[.calibrate_x4] += 2
-            Defaults.synchronize()
-        }
-        
         saveImageButton.button.add(for: .touchUpInside) {
             self.savePreviewImage()
         }
@@ -191,6 +162,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         calibrationBlocker.view.addGestureRecognizer(tap)
         calibrationBlocker.view.isUserInteractionEnabled = true
 
+        statusLabel.view.transform = CGAffineTransform(rotationAngle: -.pi/2)
+        self.statusLabel.updateText("0")
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -243,6 +216,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     print(dotmatrix)
                     print("\nNEW HIGH SCORE \(score)  ================== \n")
                 }
+                DispatchQueue.main.async {
+                    self.statusLabel.updateText(String(score))
+                }
+
             } else if score < highScore && verbose > 0 && !bogusScores.contains(score) {
                 savePreviewImage()
                 print(dotmatrix)
@@ -617,22 +594,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         return mainXmlView!.elementForId("calibrationLabel")!.asLabel!
     }
     
-    
-    fileprivate var leftButton: Button {
-        return mainXmlView!.elementForId("leftButton")!.asButton!
-    }
-    
-    fileprivate var rightButton: Button {
-        return mainXmlView!.elementForId("rightButton")!.asButton!
-    }
-    
-    fileprivate var upButton: Button {
-        return mainXmlView!.elementForId("upButton")!.asButton!
-    }
-    
-    fileprivate var downButton: Button {
-        return mainXmlView!.elementForId("downButton")!.asButton!
-    }
 
 
     func resetDefaults() {

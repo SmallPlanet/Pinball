@@ -9,56 +9,29 @@
         <ImageView id="overlay" contentMode="scaleAspectFit" />
         <Constraint firstItem="overlay" ruleSet="fillSuperview" />
     </ImageView>
-    <Constraint firstItem="preview" firstAttribute="width" constant="220"/>
-    <Constraint firstItem="preview" firstAttribute="height" constant="160"/>
-    <Constraint firstItem="preview" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="preview" firstAttribute="centerY" secondItem="root" secondAttribute="top" constant="220" />
+    <Constraint firstItem="preview" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="-10"/>
+    <Constraint firstItem="preview" firstAttribute="left" secondItem="root" secondAttribute="left" constant="10"/>
+    <Constraint firstItem="preview" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.46" />
+    <Constraint firstItem="preview" firstAttribute="top" secondItem="root" secondAttribute="top" constant="80" />
     
-    <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
-    <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
-    <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
-    <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="80" />
+    <Label id="statusLabel" styleId="LabelUnispace" fontSize="32" textColor="#06C2FC" text="9,999,999,999" textAlignment="center" />
+    <Constraint firstItem="statusLabel" firstAttribute="centerY" secondItem="root" secondAttribute="centerY" />
+    <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="preview" secondAttribute="right" constant="30" />
     
     <Button id="saveImageButton" title="Save Image" styleId="ButtonStd" />
     <Constraint firstItem="saveImageButton" firstAttribute="width" constant="120"/>
     <Constraint firstItem="saveImageButton" firstAttribute="height" constant="100"/>
-    <Constraint firstItem="saveImageButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" constant="-90" />
-    <Constraint firstItem="saveImageButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
+    <Constraint firstItem="saveImageButton" firstAttribute="right" secondItem="root" secondAttribute="right" constant="-10" />
+    <Constraint firstItem="saveImageButton" firstAttribute="top" secondItem="root" secondAttribute="top" constant="120" />
     
     <Button id="calibrateButton" title="Calibrate" styleId="ButtonStd" />
     <Constraint firstItem="calibrateButton" firstAttribute="width" constant="120"/>
     <Constraint firstItem="calibrateButton" firstAttribute="height" constant="100"/>
-    <Constraint firstItem="calibrateButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" constant="90" />
-    <Constraint firstItem="calibrateButton" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" />
+    <Constraint firstItem="calibrateButton" firstAttribute="right" secondItem="root" secondAttribute="right" constant="-10" />
+    <Constraint firstItem="calibrateButton" firstAttribute="top" secondItem="saveImageButton" secondAttribute="bottom" constant="40" />
     
     
     
-     <Button id="leftButton" title="-" styleId="ButtonStd" />
-     <Constraint firstItem="leftButton" firstAttribute="width" constant="60"/>
-     <Constraint firstItem="leftButton" firstAttribute="height" constant="60"/>
-     <Constraint firstItem="leftButton" firstAttribute="right" secondItem="preview" secondAttribute="left" constant="-5" />
-     <Constraint firstItem="leftButton" firstAttribute="centerY" secondItem="preview" secondAttribute="centerY" constant="0" />
-
-    <Button id="rightButton" title="+" styleId="ButtonStd" />
-     <Constraint firstItem="rightButton" firstAttribute="width" constant="60"/>
-     <Constraint firstItem="rightButton" firstAttribute="height" constant="60"/>
-     <Constraint firstItem="rightButton" firstAttribute="left" secondItem="preview" secondAttribute="right" constant="5" />
-     <Constraint firstItem="rightButton" firstAttribute="centerY" secondItem="preview" secondAttribute="centerY" constant="0" />
-     
-     <Button id="upButton" title="+" styleId="ButtonStd" />
-     <Constraint firstItem="upButton" firstAttribute="width" constant="60"/>
-     <Constraint firstItem="upButton" firstAttribute="height" constant="60"/>
-     <Constraint firstItem="upButton" firstAttribute="bottom" secondItem="preview" secondAttribute="top" constant="-5" />
-     <Constraint firstItem="upButton" firstAttribute="centerX" secondItem="preview" secondAttribute="centerX" constant="0" />
-     
-     <Button id="downButton" title="-" styleId="ButtonStd" />
-     <Constraint firstItem="downButton" firstAttribute="width" constant="60"/>
-     <Constraint firstItem="downButton" firstAttribute="height" constant="60"/>
-     <Constraint firstItem="downButton" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="5" />
-     <Constraint firstItem="downButton" firstAttribute="centerX" secondItem="preview" secondAttribute="centerX" constant="0" />
-     
-     
      
      
      <ImageView id="calibrationBlocker" backgroundColor="#003300EE" hidden="true" >
