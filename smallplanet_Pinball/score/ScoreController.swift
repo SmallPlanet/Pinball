@@ -20,12 +20,6 @@ import MKTween
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let bottomRight = (CGFloat(2802), CGFloat(1492))
-    let bottomLeft = (CGFloat(2823), CGFloat(896))
-    let topRight = (CGFloat(470), CGFloat(1514))
-    let topLeft = (CGFloat(434), CGFloat(919))
-    let originalImageHeight = 2448.0
-    
     let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
     // 0 = no prints
@@ -48,13 +42,17 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
     let ciContext = CIContext(options: [:])
-    
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
-
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     
 
+    let bottomRight = (CGFloat(2802-26.42), CGFloat(1492-17.10))
+    let bottomLeft = (CGFloat(2823-19.99), CGFloat(896+10.09))
+    let topRight = (CGFloat(470+18.18), CGFloat(1514-8.16))
+    let topLeft = (CGFloat(434+15.34), CGFloat(919+19.21))
+    let originalImageHeight = 2448.0
     
+
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
         // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
@@ -85,11 +83,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         // NOTE: we want to comment this out if testing not at a machine...
         if shouldBeCalibrating {
             calibrationImage = originalImage
+            save(image: UIImage(ciImage: originalImage))
             usleep(72364)
         }
         
         DispatchQueue.main.async {
-            self.statusLabel.label.text = "P \(self.currentPlayer+1): \(self.lastHighScoreByPlayer[self.currentPlayer])"
             self.preview.imageView.image = uiImage
         }
     }
@@ -277,7 +275,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 //
 //            }
 //        }
-        if arc4random() % 10 > 8 { print(dots) }
+//        if arc4random() % 10 > 8 { print(dots) }
         
         return dots.ints.map{ $0 > cutoff ? 1 : 0 }
     }
@@ -514,7 +512,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 
                 counter += 1
                 
-                if score > bestCalibrationAccuracy || counter > 100 {
+                if score > bestCalibrationAccuracy {
                     counter = 0
                     bestCalibrationAccuracy = score
                     
@@ -533,8 +531,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     DispatchQueue.main.async {
                         self.calibrationLabel.label.text = statusString
                         let image = self.adjust(image: self.calibrationImage!, organism: organism)
-                        //                        let dots = try! self.dotMatrixReader.process(image: image)
-                        //                        print(dots)
                         self.calibrationBlocker.imageView.image = UIImage(ciImage: image)
                     }
                 }
@@ -652,6 +648,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         Defaults[.calibrate_x4] = 0.0
         Defaults[.calibrate_y4] = 0.0
 
+        Defaults[.calibrate_cutoff] = 151
     }
 }
 

@@ -11,7 +11,7 @@
     <Constraint firstItem="playModeButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="playModeButton" firstAttribute="top" secondItem="root" secondAttribute="top" constant="80" />
     
-    <Button id="scoreModeButton" title="Score reader" styleId="ButtonBig" titleFontColor="white" backgroundColor="#FB16BB" />
+    <Button id="scoreModeButton" title="Scorekeeper" styleId="ButtonBig" titleFontColor="white" backgroundColor="#FB16BB" />
     <Constraint firstItem="scoreModeButton" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.95"/>
     <Constraint firstItem="scoreModeButton" firstAttribute="height" secondItem="root" secondAttribute="height" multiplier="0.4"/>
     <Constraint firstItem="scoreModeButton" firstAttribute="centerX" secondItem="root" secondAttribute="centerX"  />

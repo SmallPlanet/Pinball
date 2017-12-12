@@ -210,6 +210,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         
         captureHelper.delegateWantsHiSpeedCamera = false
+        captureHelper.delegateWantsSpecificFormat = true
+        captureHelper.cameraFormatSize = CGSize(width: 1440, height: 1080)
         
         captureHelper.delegateWantsLockedCamera = true
         

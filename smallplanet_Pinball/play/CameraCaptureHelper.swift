@@ -53,7 +53,9 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     var delegateWantsLockedCamera = false
     
     var delegateWantsHiSpeedCamera = false
-    
+    var delegateWantsSpecificFormat = false
+    var cameraFormatSize = CGSize(width: 1440, height: 1080)
+
     weak var delegate: CameraCaptureHelperDelegate?
     
     required init(cameraPosition: AVCaptureDevice.Position)
@@ -80,8 +82,6 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         var bestFrameRateRange:AVFrameRateRange? = nil
         var bestResolution:CGFloat = 0.0
         
-        var cameraFormatSize = CGSize(width: 1440, height: 1080)
-        
         if delegateWantsHiSpeedCamera {
             // choose the highest framerate
             for format in camera.formats {
@@ -92,7 +92,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                     }
                 }
             }
-        } else {
+        } else if delegateWantsSpecificFormat {
             // choose cameraFormatSize
             for format in camera.formats {
                 
@@ -100,6 +100,22 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 let formatDescription = format.formatDescription
                 let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
                 if Int32(cameraFormatSize.width) == dimensions.width && Int32(cameraFormatSize.height) == dimensions.height {
+                    bestFormat = format
+                }
+            }
+        } else {
+            // choose the best quality picture
+            for format in camera.formats {
+                
+                // Get video dimensions
+                let formatDescription = format.formatDescription
+                let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
+                let resolution = CGSize(width: CGFloat(dimensions.width), height: CGFloat(dimensions.height))
+                
+                let area = resolution.width * resolution.height
+                //print("\(resolution.width) x \(resolution.height) aspect \(Float(resolution.width/resolution.height))")
+                if area > bestResolution {
+                    bestResolution = area
                     bestFormat = format
                 }
             }
@@ -274,18 +290,18 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         var cameraImage = originalImage
         
-//        if delegateWantsPerspectiveImages && perImageCoords.count > 0 {
-//            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perImageCoords)
-//        }
+        if delegateWantsPerspectiveImages && perImageCoords.count > 0 {
+            cameraImage = cameraImage.applyingFilter("CIPerspectiveCorrection", parameters: perImageCoords)
+        }
         
 //        if delegateWantsPictureInPictureImages && pipImagesCoords.count > 0 {
 //            let pipImage = originalImage.applyingFilter("CIPerspectiveCorrection", parameters: pipImagesCoords)
 //            cameraImage = pipImage.composited(over: cameraImage)
 //        }
         
-//        if delegateWantsScaledImages {
-//            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
-//        }
+        if delegateWantsScaledImages {
+            cameraImage = cameraImage.transformed(by: CGAffineTransform(scaleX: scaledImagesSize.width / cameraImage.extent.width, y: scaledImagesSize.height / cameraImage.extent.height))
+        }
         
         if delegateWantsTemporalImages {
             let numberOfFrames = 4
@@ -298,7 +314,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             return merge(fourImages: temporalFrames)
         }
         
-        return originalImage
+        return cameraImage
     }
     
     // MARK: - Temporal stacking
