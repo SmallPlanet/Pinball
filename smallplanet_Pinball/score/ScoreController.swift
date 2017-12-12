@@ -197,44 +197,69 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     var bogusScores = Set<Int>()
     
-    func ocrReadScreen(_ croppedImage:CIImage) -> String {
-        // TODO: Add support for score tally during game specific mode screens (like party in the infield)
-        // TODO: Add support for changing of the current player
-        // TODO: Add support for when the ball number changes
-        
-//        let dotmatrix = getDotMatrix(croppedImage, Defaults[.calibrate_cutoff], &dotmatrixA)
+    func ocrReadScreen(_ croppedImage:CIImage) {
+
         let dotmatrix = try! dotMatrixReader.process(image: croppedImage, threshold: UInt8(Defaults[.calibrate_cutoff]))
 
-        // todo check game over
+        if verbose > 1 {
+            print(dotmatrix)
+        }
         
-        let ocrResults = Display.findDigits(cols: dotmatrix.bits())
+        // check for game over or game started screen
+        let bits = dotmatrix.bits()
+        if let screenResults = Display.findScreen(cols: bits) {
+            if screenResults.1 > 0.93 {
+                switch screenResults.0 {
+                case .gameStarted:
+                    highScore = 0
+                    update(score: highScore)
+                    if gameOver {
+                        gameOver = false
+                        if verbose > 0 {
+                            print("Found GAME STARTED screen")
+                        }
+                    }
+                case .gameOver:
+                    if !gameOver {
+                        gameOver = true
+                        if verbose > 0 {
+                            print("Found GAME OVER screen")
+                        }
+                    }
+                }
+            }
+            return
+        }
+        
+        let ocrResults = Display.findDigits(cols: bits)
         
         if let score = ocrResults.0, ocrResults.1 > 0.9 {
             if score > highScore {
                 highScore = score
-                if verbose > 0 {
+                if verbose > 1 {
                     print(dotmatrix)
+                } else if verbose > 0 {
                     print("\nNEW HIGH SCORE \(score)  ================== \n")
                 }
-                DispatchQueue.main.async {
-                    self.statusLabel.updateText(String(score))
-                }
-
+                update(score: score)
             } else if score < highScore && verbose > 0 && !bogusScores.contains(score) {
                 savePreviewImage()
-                print(dotmatrix)
-                print("Score found but not higher   \(score) < \(highScore)")
+                if verbose > 1 {
+                    print(dotmatrix)
+                } else if verbose > 0 {
+                    print("Score found but not higher   \(score) < \(highScore)")
+                }
                 bogusScores.insert(score)
             }
         }
         
-        if verbose > 1 {
-            print(dotmatrix)
-        }
-
-        return String(highScore)
     }
     
+    func update(score: Int) {
+        DispatchQueue.main.async {
+            self.statusLabel.updateText(String(score))
+        }
+    }
     
     func getDotMatrix(_ croppedImage:CIImage, _ cutoff:Int, _ dotmatrix:inout [UInt8]) -> [UInt8] {
         let dots = try! dotMatrixReader.process(image: croppedImage, threshold: UInt8(cutoff))
