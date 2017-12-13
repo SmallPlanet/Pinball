@@ -485,6 +485,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
             let testImages = [
                 
+                // bash quest scores
+                "bundle://Assets/score/sample/IMG_0070.JPG",
+                "bundle://Assets/score/sample/IMG_0071.JPG",
+                "bundle://Assets/score/sample/IMG_0073.JPG",
+                "bundle://Assets/score/sample/IMG_0075.JPG",
+                
                 // two player scores
                 "bundle://Assets/score/sample/IMG_0129.JPG",
                 "bundle://Assets/score/sample/IMG_0116.JPG",
@@ -526,8 +532,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "bundle://Assets/score/sample/IMG_0065.JPG",
                 "bundle://Assets/score/sample/IMG_0066.JPG",
                 
-                "bundle://Assets/score/sample/IMG_0069.JPG",
- 
                 // no false positives...
                 "bundle://Assets/score/sample/IMG_0142.JPG",
                 "bundle://Assets/score/sample/IMG_0143.JPG",
@@ -536,6 +540,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             ]
             
             let testResults = [
+                
+                "2465850",
+                "5381640",
+                "5262180",
+                "3611150",
                 
                 "1,559170",
                 "1,5130",
@@ -572,8 +581,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 "684580",
                 "688620",
                 
-                "957860",
-                
                 "",
                 "",
                 "",
@@ -584,8 +591,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             //let i = 23
             //testImages.count
-            //for i in 0..<testImages.count {
-            for i in [28] {
+            for i in 0..<testImages.count {
+            //for i in [36] {
                 ResetGame()
                 
                 let testImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: testImages[i])))
@@ -926,6 +933,104 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         if score % 1000 == 0 {
             return (0, false)
             
+        }
+        
+        return (score,didMatchSomething)
+    }
+    
+    func ocrBashScore(_ dotmatrix:[UInt8]) -> (Int,Bool) {
+        var score:Int = 0
+        
+        // scan from left to right, top to bottom and try and
+        // identify score numbers of 90%+ accuracy
+        var next_valid_y = 0
+        let accuracy = 0.96
+        var didMatchSomething = false
+        
+        for y in 0..<dotheight {
+            
+            if y < next_valid_y {
+                continue
+            }
+            
+            //for x in 0..<dotwidth {
+            for x in 20..<23 {
+                if ocrMatch(bash_scorePound, accuracy, x, y, 5, dotmatrix).0 {
+                    // if we match a pound sign, then this is NOT the bash the car quest
+                    return (0,false)
+                }
+                
+                if ocrMatch(bash_score0, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 0 at \(x),\(y)") }
+                    score = score * 10 + 0
+                    next_valid_y = y + bash_score0.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score1, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 1 at \(x),\(y)") }
+                    score = score * 10 + 1
+                    next_valid_y = y + bash_score1.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score2, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 2 at \(x),\(y)") }
+                    score = score * 10 + 2
+                    next_valid_y = y + bash_score2.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score3, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 3 at \(x),\(y)") }
+                    score = score * 10 + 3
+                    next_valid_y = y + bash_score3.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score4, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 4 at \(x),\(y)") }
+                    score = score * 10 + 4
+                    next_valid_y = y + bash_score4.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score5, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 5 at \(x),\(y)") }
+                    score = score * 10 + 5
+                    next_valid_y = y + bash_score5.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score6, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 6 at \(x),\(y)") }
+                    score = score * 10 + 6
+                    next_valid_y = y + bash_score6.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score7, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 7 at \(x),\(y)") }
+                    score = score * 10 + 7
+                    next_valid_y = y + bash_score7.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score8, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 8 at \(x),\(y)") }
+                    score = score * 10 + 8
+                    next_valid_y = y + bash_score8.count / 5
+                    didMatchSomething = true
+                    break
+                }
+                if ocrMatch(bash_score9, accuracy, x, y, 5, dotmatrix).0 {
+                    if (verbose >= 1) { print("bash matched 9 at \(x),\(y)") }
+                    score = score * 10 + 9
+                    next_valid_y = y + bash_score9.count / 5
+                    didMatchSomething = true
+                    break
+                }
+            }
         }
         
         return (score,didMatchSomething)
@@ -1286,6 +1391,16 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         
         if screenText == "" {
+            let (score, scoreWasFound) = self.ocrBashScore(dotmatrix)
+            if scoreWasFound && score > lastHighScoreByPlayer[currentPlayer] {
+                updateType = "s"
+                screenText = "\(score)"
+                
+                lastHighScoreByPlayer[currentPlayer] = score
+            }
+        }
+        
+        if screenText == "" {
             let (tpPlayer, tpScore, scoreWasFound) = self.ocrTPScore(dotmatrix)
             if scoreWasFound {
                 
@@ -1565,6 +1680,86 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         1,1,1,1,0,0,0,0,
         1,1,1,1,0,0,0,0,
         1,1,1,1,0,0,0,0,
+        ]
+    
+    
+    fileprivate var bash_scorePound: [UInt8] = [
+        0,1,0,1,0,
+        1,1,1,1,1,
+        0,1,0,1,0,
+        1,1,1,1,1,
+        0,1,0,1,0,
+        ]
+    
+    fileprivate var bash_score0: [UInt8] = [
+        0,1,1,1,0,
+        1,0,0,0,1,
+        1,0,0,0,1,
+        0,1,1,1,0,
+        ]
+    
+    fileprivate var bash_score1: [UInt8] = [
+        1,0,0,1,0,
+        1,1,1,1,1,
+        1,0,0,0,0,
+        ]
+    
+    fileprivate var bash_score2: [UInt8] = [
+        1,1,0,0,1,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        1,0,0,1,0,
+        ]
+    
+    fileprivate var bash_score3: [UInt8] = [
+        1,0,0,0,1,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,0,1,0,
+        ]
+    
+    fileprivate var bash_score4: [UInt8] = [
+        0,0,1,1,1,
+        0,0,1,0,0,
+        0,0,1,0,0,
+        1,1,1,1,1,
+        ]
+    
+    fileprivate var bash_score5: [UInt8] = [
+        1,0,1,1,1,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,0,0,1,
+        ]
+    
+    fileprivate var bash_score6: [UInt8] = [
+        0,1,1,1,0,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,0,0,0,
+        ]
+    
+    // NOTE: we need to get actual snap of this
+    fileprivate var bash_score7: [UInt8] = [
+        1,0,0,0,1,
+        0,1,0,0,1,
+        0,0,1,0,1,
+        0,0,0,1,1,
+        ]
+    
+    fileprivate var bash_score8: [UInt8] = [
+        0,1,0,1,0,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,0,1,0,
+        ]
+    
+    // NOTE: we need to get actual snap of this
+    fileprivate var bash_score9: [UInt8] = [
+        1,0,0,1,0,
+        1,0,1,0,1,
+        1,0,1,0,1,
+        0,1,1,1,0,
         ]
     
     fileprivate var quest_score0: [UInt8] = [
