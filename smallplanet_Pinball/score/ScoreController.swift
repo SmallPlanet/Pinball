@@ -19,45 +19,42 @@ import MKTween
 // dynamically crop the image for sending to the OCR (thus making the OCR app less susceptible to positioning changes)
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
+
+    // Game state
+    var currentScore = 0
+    var gameOver = false
+
     
-    let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
+    let scorePublisher = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
     // 0 = no prints
     // 1 = matched letters
     // 2 = dot matrix conversion
     let verbose = 1
     
-    var lastHighScoreByPlayer = [-1,-1,-1,-1]
-    var lastBallCountByPlayer = [0,0,0,0]
-    var currentPlayer = 0
-    
-    func ResetGame() {
-        currentPlayer = 0
-        for i in 0..<lastHighScoreByPlayer.count {
-            lastHighScoreByPlayer[i] = -1
-        }
-        for i in 0..<lastBallCountByPlayer.count {
-            lastBallCountByPlayer[i] = 0
-        }
-    }
-    
     let ciContext = CIContext(options: [:])
     var observers:[NSObjectProtocol] = [NSObjectProtocol]()
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
-    
+    var updateTimer: Timer?
 
+//    let bottomRight = (CGFloat(2802), CGFloat(1492))
+//    let bottomLeft = (CGFloat(2823), CGFloat(896))
+//    let topRight = (CGFloat(470), CGFloat(1514))
+//    let topLeft = (CGFloat(434), CGFloat(919))
     let bottomRight = (CGFloat(2802-26.42), CGFloat(1492-17.10))
     let bottomLeft = (CGFloat(2823-19.99), CGFloat(896+10.09))
     let topRight = (CGFloat(470+18.18), CGFloat(1514-8.16))
     let topLeft = (CGFloat(434+15.34), CGFloat(919+19.21))
     let originalImageHeight = 2448.0
     
-
+    func ResetGame() { }
+    
+    @objc func publish() {
+        try! scorePublisher?.send(string: "S:\(currentScore),\(gameOver ? 1:0)")
+    }
+    
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {
-        // TODO: convert the image to a dot matrix memory representation, then turn it into a score we can publish to the network
-        // 2448x3264
-        
         let scale = originalImage.extent.height / CGFloat(originalImageHeight)
         let x1 = CGFloat(Defaults[.calibrate_x1])
         let x2 = CGFloat(Defaults[.calibrate_x2])
@@ -74,31 +71,26 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             "inputBottomLeft":CIVector(x: round((bottomLeft.0+x3) * scale), y: round((bottomLeft.1+y3) * scale)),
             "inputBottomRight":CIVector(x: round((bottomRight.0+x4) * scale), y: round((bottomRight.1+y4) * scale))
         ]
-
-        let uiImage = UIImage(ciImage: image)
         
-        _ = ocrReadScreen(image)
-        
-        
-        // NOTE: we want to comment this out if testing not at a machine...
         if shouldBeCalibrating {
             calibrationImage = originalImage
-            save(image: UIImage(ciImage: originalImage))
             usleep(72364)
+        } else {
+            let uiImage = UIImage(ciImage: image)
+            _ = ocrReadScreen(image)
+            DispatchQueue.main.async {
+                self.preview.imageView.image = uiImage
+            }
         }
         
-        DispatchQueue.main.async {
-            self.preview.imageView.image = uiImage
-        }
     }
-    
-    var currentValidationURL:URL?
-    var saveTimer: Timer?
     
     // MARK: - Image saving
     
     @objc func savePreviewImage() {
-        save(image: preview.imageView.image)
+        DispatchQueue.main.async {
+           self.save(image: self.preview.imageView.image)
+        }
     }
     
     func save(image: UIImage?) {
@@ -116,10 +108,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             let ac = UIAlertController(title: "Save error", message: error.localizedDescription, preferredStyle: .alert)
             ac.addAction(UIAlertAction(title: "OK", style: .default))
             present(ac, animated: true)
-        } else {
-            //let ac = UIAlertController(title: "Saved!", message: "Your image has been saved to your photos.", preferredStyle: .alert)
-            //ac.addAction(UIAlertAction(title: "OK", style: .default))
-            //present(ac, animated: true)
         }
     }
     
@@ -128,10 +116,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewDidLoad() {
         super.viewDidLoad()
         print("Cutoff: \(Defaults[.calibrate_cutoff])")
-//        resetDefaults()
+        resetDefaults()
         
-// The following line will save a cropped photo of the screen display 2x/sec to the camera roll
-//        saveTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(savePreviewImage), userInfo: nil, repeats: true)
+        // publish the score and done state periodically
+        updateTimer = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)
 
         title = "Score Mode"
         
@@ -169,7 +157,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
         captureHelper.stop()
-        saveTimer?.invalidate()
+        updateTimer?.invalidate()
         
         for observer in observers {
             NotificationCenter.default.removeObserver(observer)
@@ -191,10 +179,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     lazy var dotmatrixB = [UInt8](repeating: 0, count: dotwidth * dotheight)
     
     var dotMatrixReader = DotMatrixReader()
-    
-    var highScore = 0
-    var gameOver = false
-    
     var bogusScores = Set<Int>()
     
     func ocrReadScreen(_ croppedImage:CIImage) {
@@ -211,8 +195,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             if screenResults.1 > 0.93 {
                 switch screenResults.0 {
                 case .gameStarted:
-                    highScore = 0
-                    update(score: highScore)
+                    currentScore = 0
+                    update(score: currentScore)
+                    publish()
                     if gameOver {
                         gameOver = false
                         if verbose > 0 {
@@ -222,6 +207,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 case .gameOver:
                     if !gameOver {
                         gameOver = true
+                        publish()
                         if verbose > 0 {
                             print("Found GAME OVER screen")
                         }
@@ -234,20 +220,21 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let ocrResults = Display.findDigits(cols: bits)
         
         if let score = ocrResults.0, ocrResults.1 > 0.9 {
-            if score > highScore {
-                highScore = score
+            if score > currentScore {
+                currentScore = score
+                update(score: score)
+                publish()
                 if verbose > 1 {
                     print(dotmatrix)
                 } else if verbose > 0 {
                     print("\nNEW HIGH SCORE \(score)  ================== \n")
                 }
-                update(score: score)
-            } else if score < highScore && verbose > 0 && !bogusScores.contains(score) {
-                savePreviewImage()
+            } else if score < currentScore && verbose > 0 && !bogusScores.contains(score) {
                 if verbose > 1 {
+                    savePreviewImage()
                     print(dotmatrix)
                 } else if verbose > 0 {
-                    print("Score found but not higher   \(score) < \(highScore)")
+                    print("Score found but not higher   \(score) < \(currentScore)")
                 }
                 bogusScores.insert(score)
             }
@@ -263,22 +250,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     func getDotMatrix(_ croppedImage:CIImage, _ cutoff:Int, _ dotmatrix:inout [UInt8]) -> [UInt8] {
         let dots = try! dotMatrixReader.process(image: croppedImage, threshold: UInt8(cutoff))
-//        if verbose >= 2 {
-//            DispatchQueue.main.async {
-////                print(dots)
-////                let bits = dots.bits().map { String(format: "0x%08x, ", $0) }.reduce("", +)
-////                print("[\(bits)]")
-//
-//                let (score, accuracy) = Display.findDigits(cols: dots.bits())
-//                if let score = score {
-//                    print(dots)
-//                    print("Found score: \(score) \(accuracy)\n")
-//                }
-//
-//            }
-//        }
-//        if arc4random() % 10 > 8 { print(dots) }
-        
         return dots.ints.map{ $0 > cutoff ? 1 : 0 }
     }
     
@@ -286,7 +257,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     // used by the genetic algorithm for matrix calibration
     var calibrationImage:CIImage? = nil
-    var shouldBeCalibrating:Bool = false
+    var shouldBeCalibrating = false
     
     class Organism {
         let contentLength = 8
@@ -358,34 +329,34 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             ga.generateOrganism = { (idx, prng) in
                 let newChild = Organism ()
                 if idx == 0 {
-                    newChild.content! [0] = 0
-                    newChild.content! [1] = 0
-                    newChild.content! [2] = 0
-                    newChild.content! [3] = 0
-                    newChild.content! [4] = 0
-                    newChild.content! [5] = 0
-                    newChild.content! [6] = 0
-                    newChild.content! [7] = 0
+                    newChild.content![0] = 0
+                    newChild.content![1] = 0
+                    newChild.content![2] = 0
+                    newChild.content![3] = 0
+                    newChild.content![4] = 0
+                    newChild.content![5] = 0
+                    newChild.content![6] = 0
+                    newChild.content![7] = 0
                     newChild.cutoff = 125
                 } else if idx == 1 {
-                    newChild.content! [0] = CGFloat(Defaults[.calibrate_x1])
-                    newChild.content! [1] = CGFloat(Defaults[.calibrate_y1])
-                    newChild.content! [2] = CGFloat(Defaults[.calibrate_x2])
-                    newChild.content! [3] = CGFloat(Defaults[.calibrate_y2])
-                    newChild.content! [4] = CGFloat(Defaults[.calibrate_x3])
-                    newChild.content! [5] = CGFloat(Defaults[.calibrate_y3])
-                    newChild.content! [6] = CGFloat(Defaults[.calibrate_x4])
-                    newChild.content! [7] = CGFloat(Defaults[.calibrate_y4])
+                    newChild.content![0] = CGFloat(Defaults[.calibrate_x1])
+                    newChild.content![1] = CGFloat(Defaults[.calibrate_y1])
+                    newChild.content![2] = CGFloat(Defaults[.calibrate_x2])
+                    newChild.content![3] = CGFloat(Defaults[.calibrate_y2])
+                    newChild.content![4] = CGFloat(Defaults[.calibrate_x3])
+                    newChild.content![5] = CGFloat(Defaults[.calibrate_y3])
+                    newChild.content![6] = CGFloat(Defaults[.calibrate_x4])
+                    newChild.content![7] = CGFloat(Defaults[.calibrate_y4])
                     newChild.cutoff = Defaults[.calibrate_cutoff]
                 } else {
-                    newChild.content! [0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                    newChild.content! [1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                    newChild.content! [2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                    newChild.content! [3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                    newChild.content! [4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                    newChild.content! [5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                    newChild.content! [6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
-                    newChild.content! [7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content![0] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content![1] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content![2] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content![3] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content![4] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content![5] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                    newChild.content![6] = CGFloat(prng.getRandomNumberf()) * maxWidth - halfWidth
+                    newChild.content![7] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
                     newChild.cutoff = Int(prng.getRandomNumber(min: 20, max: 240))
                 }
                 return newChild;
@@ -398,9 +369,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 let localHalfWidth:CGFloat = localMaxWidth / 2
                 let localHalfHeight:CGFloat = localMaxHeight / 2
                 
-                if (organismA === organismB) {
+                if organismA === organismB {
                     for i in 0..<child.contentLength {
-                        child [i] = organismA [i]
+                        child[i] = organismA[i]
                     }
                     
                     func newCutoff(_ old: Int) -> Int {
@@ -419,10 +390,10 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                         for _ in 0..<n {
                             let index = prng.getRandomNumberi(min:0, max:UInt64(child.contentLength-1))
                             let r = prng.getRandomNumberf()
-                            if (r < 0.6) {
-                                child [index] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
-                            } else if (r < 0.95) {
-                                child [index] = child [index] + CGFloat(prng.getRandomNumberf()) * 4.0 - 2.0
+                            if r < 0.6 {
+                                child[index] = CGFloat(prng.getRandomNumberf()) * maxHeight - halfHeight
+                            } else if r < 0.95 {
+                                child[index] = child[index] + CGFloat(prng.getRandomNumberf()) * 4.0 - 2.0
                             } else {
                                 child [0] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
                                 child [1] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
@@ -449,15 +420,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     for i in 0..<child.contentLength {
                         let t = prng.getRandomNumberf()
                         
-                        if (t < 0.45) {
-                            child [i] = organismA [i];
-                        } else if (t < 0.9) {
-                            child [i] = organismB [i];
+                        if t < 0.45 {
+                            child[i] = organismA[i];
+                        } else if t < 0.9 {
+                            child[i] = organismB[i];
                         } else {
                             if i & 1 == 1 {
-                                child [i] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
-                            }else{
-                                child [i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
+                                child[i] = CGFloat(prng.getRandomNumberf()) * localMaxHeight - localHalfHeight
+                            } else {
+                                child[i] = CGFloat(prng.getRandomNumberf()) * localMaxWidth - localHalfWidth
                             }
                         }
                     }
@@ -465,8 +436,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
             
             ga.scoreOrganism = { (organism, threadIdx, prng) in
-                
-                var accuracy:Double = 0
+                var accuracy = 0.0
                 
                 autoreleasepool { () -> Void in
                     let scale = self.calibrationImage!.extent.height / CGFloat(self.originalImageHeight)
@@ -499,7 +469,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     
                     organism.lastScore = CGFloat(accuracy)
                 }
-                
 
                 return Float(accuracy)
             }
@@ -620,20 +589,15 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     }
     
 
-
     func resetDefaults() {
         Defaults[.calibrate_x1] = 0.0
         Defaults[.calibrate_y1] = 0.0
-        
         Defaults[.calibrate_x2] = 0.0
         Defaults[.calibrate_y2] = 0.0
-        
         Defaults[.calibrate_x3] = 0.0
         Defaults[.calibrate_y3] = 0.0
-        
         Defaults[.calibrate_x4] = 0.0
         Defaults[.calibrate_y4] = 0.0
-
         Defaults[.calibrate_cutoff] = 151
     }
 }

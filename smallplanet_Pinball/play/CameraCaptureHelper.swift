@@ -345,9 +345,11 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         let output = kernel.apply(extent: outputRect, arguments: images)
         return output
     }
-    
-    func pngData(ciImage: CIImage) -> Data? {
-        let uiImage = UIImage(ciImage: ciImage)
+}
+
+extension CIImage {
+    var pngData: Data? {
+        let uiImage = UIImage(ciImage: self)
         if let data = UIImagePNGRepresentation(uiImage) {
             return data
         } else {
@@ -355,13 +357,11 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             defer { UIGraphicsEndImageContext() }
             uiImage.draw(in: CGRect(origin: .zero, size: uiImage.size))
             let data = UIGraphicsGetImageFromCurrentImageContext()
-            return data != nil ? UIImagePNGRepresentation(data!) : nil
+            return data.flatMap { UIImagePNGRepresentation($0) }
         }
     }
-    
 }
 
-protocol CameraCaptureHelperDelegate: class
-{
+protocol CameraCaptureHelperDelegate: class {
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
 }

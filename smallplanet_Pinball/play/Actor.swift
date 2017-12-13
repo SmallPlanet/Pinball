@@ -26,9 +26,9 @@ struct Actor {
     
     mutating func chooseAction(state: CIImage) -> Action {
         let buffer = pixelBuffer(ciImage: state)
-        let output = try! model.prediction(images: buffer).output1
+        let output = try! model.prediction(images: buffer).actions
         let array = (0..<output.count).map { Double(output[$0]) }
-        print(array)
+//        print(array)
 
         let actionRaw = choice(distribution: array)
         return Action(rawValue: actionRaw)!

@@ -16,61 +16,11 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    enum PlayMode {
-        case Observe    // AI will never cause actions to happen
-        case ObserveAndPlay // AI will player as player 2, allowing human to play as player 1
-        case Play    // AI will play as player 1 over and over
-    }
-    
-    let playMode:PlayMode = .ObserveAndPlay
-    
-    var currentPlayer = 1
-    
     var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
     var scoreSubscriber:SwiftyZeroMQ.Socket? = nil
     
     let trainingImagesPublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_TrainingImages)
     
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        
-        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        
-        scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
-            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
-            
-            guard let parts = dataAsString?.components(separatedBy: ":") else {
-                return
-            }
-            
-            if parts.count == 2 {
-                if parts[0] == "b" || parts[0] == "x" {
-                    self.currentPlayer = 1
-                }
-                if parts[0] == "p" {
-                    self.currentPlayer = Int(parts[1])!
-                    print("Switching to player \(self.currentPlayer)")
-                }
-                if parts[0] == "m" {
-                    let score_parts = parts[1].components(separatedBy: ",")
-
-                    self.currentPlayer = Int(score_parts[0])!
-                    print("Switching to player \(self.currentPlayer)")
-                }
-            }
-            
-            print("play controller received: \(dataAsString!)")
-        })
-        
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    deinit {
-        try! remoteControlSubscriber?.close()
-        try! scoreSubscriber?.close()
-    }
 
     let playAndCapture = true
     
@@ -83,12 +33,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
-    
-    var lastFrame:CIImage? = nil
-    var send_leftButton:Byte = 0
-    var send_rightButton:Byte = 0
-    var send_startButton:Byte = 0
-    var send_ballKickerButton:Byte = 0
     
     var actor = Actor()
     
@@ -125,21 +69,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         leftFlipperCounter -= 1
         rightFlipperCounter -= 1
         
-        // really, we don't want the start button
-        if lastFrame != nil && (send_leftButton == 1 || send_rightButton == 1 || send_ballKickerButton == 1) {
-            sendCameraFrame(lastFrame!, send_leftButton, send_rightButton, 0, send_ballKickerButton)
-            send_leftButton = 0
-            send_rightButton = 0
-            send_ballKickerButton = 0
-        }
         
-        lastFrame = image
-
         let action = actor.chooseAction(state: image)
-        
-//        if lastVisibleFrameNumber % 200 == 0 {
-//            save(image: UIImage(ciImage: image))
-//        }
         
         if lastVisibleFrameNumber + 100 < frameNumber {
             lastVisibleFrameNumber = frameNumber
@@ -153,50 +84,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
     
-    func sendCameraFrame(_ image: CIImage, _ leftButton:Byte, _ rightButton:Byte, _ startButton:Byte, _ ballKicker:Byte) {
-        
-        guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else{
-            return
-        }
-        
-        var dataPacket = Data()
-        
-        var sizeAsInt = UInt32(jpegData.count)
-        let sizeAsData = Data(bytes: &sizeAsInt,
-                              count: MemoryLayout.size(ofValue: sizeAsInt))
-        
-        dataPacket.append(sizeAsData)
-        
-        dataPacket.append(jpegData)
-        
-        dataPacket.append(leftButton)
-        dataPacket.append(rightButton)
-        dataPacket.append(startButton)
-        dataPacket.append(ballKicker)
-        
-        try! trainingImagesPublisher?.send(data: dataPacket)
-        
-        print("send image: \(leftButton), \(rightButton), \(startButton), \(ballKicker)")
-    }
+    // MARK:- View lifecycle
     
-    func sendCameraFrame() {
-        if lastFrame != nil {
-            sendCameraFrame(
-                lastFrame!,
-                (pinball.leftButtonPressed ? 1 : 0),
-                (pinball.rightButtonPressed ? 1 : 0),
-                (pinball.startButtonPressed ? 1 : 0),
-                (pinball.ballKickerPressed ? 1 : 0))
-        }
-    }
-    
-    
-
-    var currentValidationURL:URL?
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Play Mode"
         
+        testPinballActions()
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
         
@@ -235,7 +129,48 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
     }
     
-    // MARK: Hardware Controller
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
+            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            
+            guard let parts = dataAsString?.components(separatedBy: ":"), parts.count > 1 else {
+                return
+            }
+
+            
+//                if parts[0] == "b" || parts[0] == "x" {
+//                    self.currentPlayer = 1
+//                }
+//                if parts[0] == "p" {
+//                    self.currentPlayer = Int(parts[1])!
+//                    print("Switching to player \(self.currentPlayer)")
+//                }
+//                if parts[0] == "m" {
+//                    let score_parts = parts[1].components(separatedBy: ",")
+//
+//                    self.currentPlayer = Int(score_parts[0])!
+//                    print("Switching to player \(self.currentPlayer)")
+//                }
+            
+            print("play controller received: \(dataAsString!)")
+        })
+        
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        try! remoteControlSubscriber?.close()
+        try! scoreSubscriber?.close()
+    }
+
+    
+    // MARK:- Hardware Controller
+    
     var pinball = PinballInterface()
 
     override func viewWillAppear(_ animated: Bool) {
