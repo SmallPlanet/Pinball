@@ -38,7 +38,10 @@
          <Label id="calibrationLabel" styleId="LabelBld" numberOfLines="2" fontSize="48" textColor="#FFFFFFFF" text="" textAlignment="center" />
          <Constraint firstItem="calibrationLabel" ruleSet="fillSuperview" />
      </ImageView>
-     <Constraint firstItem="calibrationBlocker" ruleSet="fillSuperview" />
-    
+     <Constraint firstItem="calibrationBlocker" firstAttribute="top" secondItem="root" secondAttribute="top" constant="-80" />
+     <Constraint firstItem="calibrationBlocker" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" constant="0" />
+     <Constraint firstItem="calibrationBlocker" firstAttribute="width" secondItem="root" secondAttribute="width" constant="0" />
+     <Constraint firstItem="calibrationBlocker" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="0" />
+
 
 </Scene>

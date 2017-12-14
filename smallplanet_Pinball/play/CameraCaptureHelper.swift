@@ -35,7 +35,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var isLocked = false
     
-    var constantFPS = 70
+    var constantFPS = 30
     var delegateWantsConstantFPS = false
     
     var pipImagesCoords:[String:Any] = [:]
@@ -58,8 +58,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
 
     weak var delegate: CameraCaptureHelperDelegate?
     
-    required init(cameraPosition: AVCaptureDevice.Position)
-    {
+    required init(cameraPosition: AVCaptureDevice.Position) {
         self.cameraPosition = cameraPosition
         
         super.init()
@@ -70,7 +69,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     }
     
     fileprivate func initialiseCaptureSession() {
-        guard let camera = (AVCaptureDevice.devices(for: AVMediaType.video) )
+        guard let camera = AVCaptureDevice.devices(for: AVMediaType.video)
             .filter({ $0.position == cameraPosition })
             .first else {
             fatalError("Unable to access camera")
@@ -95,12 +94,16 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         } else if delegateWantsSpecificFormat {
             // choose cameraFormatSize
             for format in camera.formats {
-                
                 // Get video dimensions
                 let formatDescription = format.formatDescription
                 let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription)
                 if Int32(cameraFormatSize.width) == dimensions.width && Int32(cameraFormatSize.height) == dimensions.height {
-                    bestFormat = format
+                    for range in format.videoSupportedFrameRateRanges {
+                        if bestFrameRateRange == nil || range.maxFrameRate > bestFrameRateRange!.maxFrameRate {
+                            bestFormat = format
+                            bestFrameRateRange = range
+                        }
+                    }
                 }
             }
         } else {
@@ -254,6 +257,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             var bufferCopy : CMSampleBuffer?
             let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
             guard err == noErr, let pixelBuffer = CMSampleBufferGetImageBuffer(bufferCopy!) else {
+                print(err)
                 return
             }
             
@@ -364,4 +368,10 @@ extension CIImage {
 
 protocol CameraCaptureHelperDelegate: class {
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
+}
+
+extension CameraCaptureHelperDelegate {
+    func skippedCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte){}
+    
+    func newCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {}
 }

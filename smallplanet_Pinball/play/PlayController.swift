@@ -16,12 +16,9 @@ import Vision
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    var remoteControlSubscriber:SwiftyZeroMQ.Socket? = nil
     var scoreSubscriber:SwiftyZeroMQ.Socket? = nil
+    var pixelsSubscriber:SwiftyZeroMQ.Socket? = nil
     
-    let trainingImagesPublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_TrainingImages)
-    
-
     let playAndCapture = true
     
     let ciContext = CIContext(options: [:])
@@ -35,6 +32,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var rightFlipperCounter:Int = 0
     
     var actor = Actor()
+    var currentPixels = [UInt8](repeatElement(0, count: 4096))
     
     let originalSize = CGSize(width: 3024, height: 4032)
     
@@ -83,6 +81,43 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
         }
     }
+
+    func receivePixels(data: Data) {
+        let bytes = [UInt8](data)
+        print("score pixes received: \(bytes.count) bytes")
+        
+        guard bytes.count == 4096 else {
+            print("not enough bytes")
+            return
+        }
+        // todo: overlay on current image frame
+    }
+    
+    func receiveScore(data: Data) {
+        let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+        print("score string received: \(dataAsString!)")
+
+        guard let parts = dataAsString?.components(separatedBy: ":"), parts.count > 1 else {
+            return
+        }
+        
+//
+//        if parts[0] == "b" || parts[0] == "x" {
+//            self.currentPlayer = 1
+//        }
+//        if parts[0] == "p" {
+//            self.currentPlayer = Int(parts[1])!
+//            print("Switching to player \(self.currentPlayer)")
+//        }
+//        if parts[0] == "m" {
+//            let score_parts = parts[1].components(separatedBy: ",")
+//
+//            self.currentPlayer = Int(score_parts[0])!
+//            print("Switching to player \(self.currentPlayer)")
+//        }
+        
+    }
+    
     
     // MARK:- View lifecycle
     
@@ -90,7 +125,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         super.viewDidLoad()
         title = "Play Mode"
         
-        testPinballActions()
+        // testPinballActions()
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
         
@@ -111,12 +146,22 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.delegateWantsTemporalImages = true
         
-        captureHelper.constantFPS = 70
+        captureHelper.constantFPS = 30
         captureHelper.delegateWantsConstantFPS = true
         
         UIApplication.shared.isIdleTimerDisabled = true
         
         captureHelper.pinball = pinball
+        
+        scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo) { data in
+            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
+            print("score string received: \(dataAsString!)")
+            
+            guard let parts = dataAsString?.components(separatedBy: ":"), parts.count > 1 else {
+                return
+            }
+        }
+//        pixelsSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_ScorePixels, receivePixels)
     }
         
     override func viewDidDisappear(_ animated: Bool) {
@@ -131,32 +176,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        
-        scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, { (data) in
-            let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
-            
-            guard let parts = dataAsString?.components(separatedBy: ":"), parts.count > 1 else {
-                return
-            }
-
-            
-//                if parts[0] == "b" || parts[0] == "x" {
-//                    self.currentPlayer = 1
-//                }
-//                if parts[0] == "p" {
-//                    self.currentPlayer = Int(parts[1])!
-//                    print("Switching to player \(self.currentPlayer)")
-//                }
-//                if parts[0] == "m" {
-//                    let score_parts = parts[1].components(separatedBy: ",")
-//
-//                    self.currentPlayer = Int(score_parts[0])!
-//                    print("Switching to player \(self.currentPlayer)")
-//                }
-            
-            print("play controller received: \(dataAsString!)")
-        })
-        
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -164,7 +183,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     }
     
     deinit {
-        try! remoteControlSubscriber?.close()
+        try! pixelsSubscriber?.close()
         try! scoreSubscriber?.close()
     }
 

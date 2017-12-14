@@ -11,6 +11,9 @@ struct Endpoints {
     let pub_GameInfo = "tcp://\(Comm.brokerAddress):60002"
     let sub_GameInfo = "tcp://\(Comm.brokerAddress):60001"
     
+    let pub_ScorePixels = "tcp://\(Comm.brokerAddress):60022"
+    let sub_ScorePixels = "tcp://\(Comm.brokerAddress):60021"
+    
     let pub_TrainingImages = "tcp://\(Comm.brokerAddress):60012"
     let sub_TrainingImages = "tcp://\(Comm.brokerAddress):60011"
     
