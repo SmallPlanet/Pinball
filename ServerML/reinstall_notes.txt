@@ -112,6 +112,13 @@ Install Ubuntu from scratch ML box:
 	
 	pip install pillow
 	pip install h5py
+
+** install opencv (required for blurry image detection)
+	sudo apt-get install python-opencv
+	pip install opencv-python
+
+** install sklearn
+	pip install scikit-learn
 	
 ** install zmq
 	pip install pyzmq-static

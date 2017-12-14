@@ -15,6 +15,9 @@ import os
 import gc
 import comm
 import random
+import os
+import glob
+import re
 
 import coremltools   
 import h5py
@@ -30,7 +33,7 @@ class EvaluationMonitor(Callback):
     labels = []
     weights = []
     didSaveModel = False
-    minSaveAccuracy = 0.93
+    minSaveAccuracy = 0.98
     
     leftMeanSaved = 0
     leftMedianSaved = 0
@@ -83,12 +86,13 @@ class EvaluationMonitor(Callback):
         
         # we want the minimum accuracy to be sufficient
         # we want the SD to be sufficient large
-        if acc > self.minSaveAccuracy:
-            leftRange,leftSD,leftMean,leftMedian = histogram(left_predictions, right_weights, buckets=20)
+        if acc > self.minSaveAccuracy and len(left_predictions) > 1 and len(right_predictions) > 1:
+            leftRange,leftSD,leftMean,leftMedian = histogram(left_predictions, left_weights, buckets=20)
             rightRange,rightSD,rightMean,rightMedian = histogram(right_predictions, right_weights, buckets=20)
             
             # in theory, a higher standard deviation means the network generalizes better
-            if rightSD > 0.1 and leftSD > 0.1:
+            if (rightSD > 0.1 and leftSD > 0.1) or (self.minSaveAccuracy == 0.0):
+            #if rightSD < 0.02 and leftSD < 0.02 and rightSD > 0.01 and leftSD > 0.01:
                 self.minSaveAccuracy = acc
                 
                 print("\n ************************* saving model! with accuracy of {} (total {})".format(acc, len(self.labels)))
@@ -111,24 +115,6 @@ class EvaluationMonitor(Callback):
             self.cnn_model.save("model.h5")
 
 
-
-
-permanent_path = "./pmemory/"
-permanent_max_size = 0
-
-train_path = "./memory/"
-train_max_size = 0
-
-waste_path = "./waste/"
-waste_max_size = 0
-
-temp_path = "./tmemory/"
-
-# if we have some pre-existing weights, load those first
-#if os.path.isfile("model.h5"):
-#    print("Loading previous model weights...")
-#    model.load_weights("model.h5")
-
 print("Allocating the image data generator...")
 datagen = ImageDataGenerator(featurewise_center=False,
                              featurewise_std_normalization=False,
@@ -138,11 +124,145 @@ datagen = ImageDataGenerator(featurewise_center=False,
 
 coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
 
+
+def TrainingRunPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/"
+
+def PermanentMemoryPath():
+    return "./run0/pmemory/"
+
+def TrainingMemoryPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/memory/"
+
+def WasteMemoryPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/waste/"
+
+def TempMemoryPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/tmemory/"
+
+def ModelWeightsPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/model.h5"
+
+def CoreMLPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/model.mlmodel"
+
+def ModelMessagePath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(trainingRunNumber) + "/model.msg"
+
+
 def read_file(path):
     with open(path, 'rb') as f:
         return f.read()
 
+def GenerateClassWeights(total_labels):
+    class_weight_dict = {0:1,1:1,2:1,3:1}
+    for i in range(0,len(total_labels)):
+        class_weight_dict[0] += total_labels[i][0]
+        class_weight_dict[1] += total_labels[i][1]
+        class_weight_dict[2] += total_labels[i][2]
+    
+    class_max_weight = max(class_weight_dict.values())
+
+    if class_max_weight != 0:
+        class_weight_dict[0] /= class_max_weight
+        class_weight_dict[1] /= class_max_weight
+        class_weight_dict[2] /= class_max_weight
+    
+    return class_weight_dict
+
+def GenerateSampleWeights(total_weights):
+    normalized_weights = np.zeros(len(total_weights), dtype='float32')
+    max_weight = max(total_weights)
+    for i in range(0,len(total_weights)):
+        if total_weights[i] == 999:
+            normalized_weights[i] = 1.0
+        else:
+            normalized_weights[i] = total_weights[i] / max_weight
+            if normalized_weights[i] < 0:
+                normalized_weights[i] = normalized_weights[i] * -1.0
+
+def ConfirmTrainingNumber():
+    global trainingRunNumber
+    
+    # figure out what run # we are on based on the existance of run# folders
+    all_run_paths = glob.glob(os.path.join("./", 'run*'))
+    for img_path in all_run_paths:
+        m = re.search(r'\d+$', img_path)
+        if m:
+            n = int(m.group())
+            if n > trainingRunNumber:
+                trainingRunNumber = n
+
+trainingRunNumber = 0
+ConfirmTrainingNumber()
+
+
+def GatherImagesFromTrainingRun(runNumber,maxImages):
+    train_imgs = images.generate_image_array(TrainingMemoryPath(), maxImages)
+    train_labels = []
+    train_weights = []
+    images.load_images(train_imgs, train_labels, train_weights, TrainingMemoryPath(), maxImages)
+    
+    permanent_imgs = images.generate_image_array(PermanentMemoryPath(), maxImages)
+    permanent_labels = []
+    permanent_weights = []
+    images.load_images(permanent_imgs, permanent_labels, permanent_weights, PermanentMemoryPath(), maxImages)
+        
+    waste_imgs = images.generate_image_array(WasteMemoryPath(), maxImages)
+    waste_labels = []
+    waste_weights = []
+    images.load_images(waste_imgs, waste_labels, waste_weights, WasteMemoryPath(), maxImages)
+    
+    # combine the arrays
+    total_imgs = []
+    total_labels = []
+    total_weights = []
+    
+    if len(permanent_labels) > 0:
+        total_imgs = np.concatenate((total_imgs,permanent_imgs), axis=0) if len(total_imgs) > 0 else permanent_imgs
+        total_labels = np.concatenate((total_labels,permanent_labels), axis=0) if len(total_labels) > 0 else permanent_labels
+        total_weights = np.concatenate((total_weights,permanent_weights), axis=0) if len(total_weights) > 0 else permanent_weights
+    
+    if len(train_labels) > 0:
+        total_imgs = np.concatenate((total_imgs,train_imgs), axis=0) if len(total_imgs) > 0 else train_imgs
+        total_labels = np.concatenate((total_labels,train_labels), axis=0) if len(total_labels) > 0 else train_labels
+        total_weights = np.concatenate((total_weights,train_weights), axis=0) if len(total_weights) > 0 else train_weights
+    
+    if len(waste_labels) > 0:
+        total_imgs = np.concatenate((total_imgs,waste_imgs), axis=0) if len(total_imgs) > 0 else waste_imgs
+        total_labels = np.concatenate((total_labels,waste_labels), axis=0) if len(total_labels) > 0 else waste_labels
+        total_weights = np.concatenate((total_weights,waste_weights), axis=0) if len(total_weights) > 0 else waste_weights
+    
+    return (total_imgs,total_labels,total_weights)
+    
+        
+
 def Learn():
+    global trainingRunNumber
+    
+    # figure out what run # we are on based on the existance of run# folders
+    ConfirmTrainingNumber()
+    
+	# - memories are now stored in run# folders ( /run0/ , /run1/)
+	# - new memories are stored in the max run folder
+	# - when you train, only use memories from the max run folder and load the weights from the model.h5 file in that folder
+	# - when a training run is complete, a new run folder is created (run#+1) and the model.h5 file is placed in there
+    
+    print("Begin training run "+str(trainingRunNumber))
     
     # create the model
     print("Generating the CNN model...")
@@ -152,151 +272,167 @@ def Learn():
                   optimizer='rmsprop',
                   metrics=['accuracy'])
     
-    print("Loading long term memories...")
-    train_imgs = images.generate_image_array(train_path, train_max_size)
-    train_labels = []
-    train_weights = []
     
-    images.load_images(train_imgs, train_labels, train_weights, train_path, train_max_size)
-    
-    print("Load permanent memories...")
-    permanent_imgs = images.generate_image_array(permanent_path, permanent_max_size)
-    permanent_labels = []
-    permanent_weights = []
-    
-    images.load_images(permanent_imgs, permanent_labels, permanent_weights, permanent_path, permanent_max_size)
+    total_imgs,total_labels,total_weights = GatherImagesFromTrainingRun(trainingRunNumber, 0)
         
-    waste_imgs = images.generate_image_array(waste_path, waste_max_size)
-    waste_labels = []
-    waste_weights = []
-    images.load_images(waste_imgs, waste_labels, waste_weights, waste_path, waste_max_size)
-                    
-    if len(permanent_imgs) + len(train_imgs) >= 6:
-        
-        #if os.path.isfile("model.h5"):
-        #    print("Loading previous model weights...")
-        #    cnn_model.load_weights("model.h5")
+    if len(total_imgs) >= 32:
         
         em = EvaluationMonitor()
         
+        didLoadWeights = False
+        if os.path.isfile(ModelWeightsPath()):
+            print("Loading model weights from "+ModelWeightsPath())
+            cnn_model.load_weights(ModelWeightsPath())
+            didLoadWeights = True
         
         
-        epochs = 10
+        
+        # Training here takes one of two flavors:
+        # 1) this is run0 (or more appropriately, no model.h5 file exists in the current run). We should exahustively
+        #    train this model as best we know how in order to get the machine intelligental playing ASAP
+        #
+        # 2) pre-existing weights exist and were loaded, we should lightly train this new run of data (allowing
+        #    non ideal memories to be forgotten slowly over time). In theory, the number of epocs for this training
+        #    should be low.        
+        em.imgs = total_imgs
+        em.labels = total_labels
+        em.weights = total_weights
+        em.cnn_model = cnn_model
+                        
+        if didLoadWeights == False:        
+            epochs = 10
                                         
-        # then let's train the network on the altered images
-        print("Training the long term memories...")
-        while em.didSaveModel == False:
+            # then let's train the network on the altered images
+            while em.didSaveModel == False:
             
-            # load a new set of wasted images each time through the training loop            
-    
-            if len(train_labels) > 0 and len(waste_labels) > 0:
-                total_imgs = np.concatenate((permanent_imgs,train_imgs,waste_imgs), axis=0)
-                total_labels = np.concatenate((permanent_labels,train_labels,waste_labels), axis=0)
-                total_weights = np.concatenate((permanent_weights,train_weights,waste_weights), axis=0)
-            elif len(train_labels) > 0:
-                total_imgs = np.concatenate((permanent_imgs,train_imgs), axis=0)
-                total_labels = np.concatenate((permanent_labels,train_labels), axis=0)
-                total_weights = np.concatenate((permanent_weights,train_weights), axis=0)
-            elif len(waste_labels) > 0:
-                total_imgs = np.concatenate((permanent_imgs,waste_imgs), axis=0)
-                total_labels = np.concatenate((permanent_labels,waste_labels), axis=0)
-                total_weights = np.concatenate((permanent_weights,waste_weights), axis=0)
-            else:
-                total_imgs = permanent_imgs
-                total_labels = permanent_labels
-                total_weights = permanent_weights
+                # free up whatever memory we can before training
+                gc.collect()
+            
+                # shuffle the arrays
+                t = int(time.time())
+                prng = RandomState(t)
+                prng.shuffle(total_imgs)
+                prng = RandomState(t)
+                prng.shuffle(total_labels)
+                prng = RandomState(t)
+                prng.shuffle(total_weights)
+            
+                # make the evaluator point to the updated arrays
+                em.imgs = total_imgs
+                em.labels = total_labels
+                em.weights = total_weights
+                em.cnn_model = cnn_model
+            
+                # take into account the weight of classes
+                class_weight_dict = GenerateClassWeights(total_labels)
+                        
+                # normalize the sample weights
+                normalized_weights = GenerateSampleWeights(total_weights)
+                        
+                # randomize the batch size            
+                batch_size = int(random.random() * 32 + 6)
+            
+                if batch_size > len(total_imgs):
+                    batch_size = len(total_imgs)
+            
+                # adjust the learning rate based on individual memory scores
+                wlr = WeightedLR(total_weights, inversed=True)
+
+                cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
+                        steps_per_epoch=len(total_imgs) // batch_size,
+                        epochs=epochs / 3,
+                        class_weight=class_weight_dict,
+                        callbacks=[wlr,em])
+                    
+                cnn_model.fit(total_imgs, total_labels,
+                          batch_size=batch_size,
+                          epochs=epochs,
+                          verbose=1,
+                          class_weight=class_weight_dict,
+                          sample_weight=normalized_weights,
+                          callbacks=[em],
+                          )
+            
+                epochs += 1
+        
+        else:
+            
+            
+            batch_size = 32
+            
+            # we need to train on random samples of previous runs to help the AI generalize well and
+            # not forget too much
+            for i in range(0,trainingRunNumber):
+                prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 32)
                 
-            
-            # free up whatever memory we can before training
-            gc.collect()
-            
-            # shuffle the arrays
-            t = int(time.time())
-            prng = RandomState(t)
-            prng.shuffle(total_imgs)
-            prng = RandomState(t)
-            prng.shuffle(total_labels)
-            prng = RandomState(t)
-            prng.shuffle(total_weights)
-            
-            # make the evaluator point to the updated arrays
-            em.imgs = total_imgs
-            em.labels = total_labels
-            em.weights = total_weights
-            em.cnn_model = cnn_model
+                # take into account the weight of classes
+                class_weight_dict = GenerateClassWeights(prev_labels)
+                    
+                # normalize the sample weights
+                normalized_weights = GenerateSampleWeights(prev_weights)
+                
+                print("Retraining "+str(len(prev_labels))+" images from run"+str(i))
+                cnn_model.fit(prev_imgs, prev_labels,
+                          batch_size=batch_size,
+                          epochs=5,
+                          verbose=1,
+                          class_weight=class_weight_dict,
+                          sample_weight=normalized_weights,
+                          callbacks=[],
+                          )
+                
+                
             
             
             # take into account the weight of classes
-            class_weight_dict = {0:1,1:1,2:1,3:1}
-            for i in range(0,len(total_labels)):
-                class_weight_dict[0] += total_labels[i][0]
-                class_weight_dict[1] += total_labels[i][1]
-                class_weight_dict[2] += total_labels[i][2]
-                
-            class_max_weight = max(class_weight_dict.values())
-            
-            if class_max_weight != 0:
-                class_weight_dict[0] /= class_max_weight
-                class_weight_dict[1] /= class_max_weight
-                class_weight_dict[2] /= class_max_weight
-                        
-            # normalize the sample weights
-            normalized_weights = np.zeros(len(total_weights), dtype='float32')
-            max_weight = max(total_weights)
-            for i in range(0,len(total_weights)):
-                if total_weights[i] == 999:
-                    normalized_weights[i] = 1.0
-                else:
-                    normalized_weights[i] = total_weights[i] / max_weight
-                    if normalized_weights[i] < 0:
-                        normalized_weights[i] = normalized_weights[i] * -1.0
-                        
-            # randomize the batch size            
-            batch_size = int(random.random() * 32 + 6)
-            
-            if batch_size > len(total_imgs):
-                batch_size = len(total_imgs)
-            
-            # adjust the learning rate based on individual memory scores
-            wlr = WeightedLR(total_weights, inversed=True)
-
-            cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
-                    steps_per_epoch=len(total_imgs) // batch_size,
-                    epochs=epochs / 2,
-                    class_weight=class_weight_dict,
-                    callbacks=[wlr,em])
+            class_weight_dict = GenerateClassWeights(total_labels)
                     
+            # normalize the sample weights
+            normalized_weights = GenerateSampleWeights(total_weights)
+            
+            print("Training "+str(len(total_labels))+" images from run"+str(trainingRunNumber))
             cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
-                      epochs=epochs,
+                      epochs=20,
                       verbose=1,
                       class_weight=class_weight_dict,
                       sample_weight=normalized_weights,
-                      callbacks=[em],
+                      callbacks=[],
                       )
-            
-            epochs += 1
                 
-        print("Training finished...")
+            cnn_model.save("model.h5")
         
         output_labels = ['left','right','ballkicker'] 
-        coreml_model = coremltools.converters.keras.convert('model.h5',input_names='image',image_input_names = 'image',class_labels = output_labels)   
+        coreml_model = coremltools.converters.keras.convert("model.h5",input_names='image',image_input_names = 'image',class_labels = output_labels)   
         coreml_model.author = 'Rocco Bowling'   
-        coreml_model.short_description = 'RL Pinball model'
+        coreml_model.short_description = 'RL Pinball model, traing run '+str(trainingRunNumber-1)
         coreml_model.input_description['image'] = 'Image of the play area of the pinball machine'
-        coreml_model.save('pinballModel.mlmodel')
+        coreml_model.save(CoreMLPath())
 
         print("Conversion to coreml finished...")
         
-        f = open("model.msg","wb")
+        f = open(ModelMessagePath(),"wb")
         f.write(struct.pack("ffff", em.leftMeanSaved, em.leftMedianSaved, em.rightMeanSaved, em.rightMedianSaved))
-        f.write(read_file("pinballModel.mlmodel"))
+        f.write(read_file(CoreMLPath()))
         f.close()
         
-        modelMessage = read_file("model.msg")        
+        modelMessage = read_file(ModelMessagePath())        
         coreMLPublisher.send(modelMessage)
         
         print("Published new coreml model")
+        
+        # once training is finished, we need to create a new run folder and move model.h5 to it.
+        trainingRunNumber = trainingRunNumber + 1
+        if not os.path.exists(TrainingRunPath()):
+            os.makedirs(TrainingRunPath())
+            os.makedirs(TrainingMemoryPath())
+            os.makedirs(WasteMemoryPath())
+            os.makedirs(TempMemoryPath())
+        
+        # move the model.h5 file into this run
+        os.rename("model.h5", ModelWeightsPath())
+        
+        print("Training finished...")
         
         
 
