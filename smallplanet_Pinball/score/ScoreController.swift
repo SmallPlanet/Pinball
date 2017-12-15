@@ -9,21 +9,18 @@
 import UIKit
 import PlanetSwift
 import Laba
-import Socket
 import CoreML
 import Vision
 import MKTween
+import Socket
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
-
+    
     // Game state
     var currentScore = 0
     var gameOver = false
 
     
-    let scorePublisher = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
-    let pixelPublisher = Comm.shared.publisher(Comm.endpoints.pub_ScorePixels)
-
     // 0 = no prints
     // 1 = matched letters
     // 2 = dot matrix conversion
@@ -47,10 +44,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     let originalImageHeight = 2448.0
     
     func ResetGame() { }
-    
-    @objc func publish() {
-        try! scorePublisher?.send(string: "S:\(currentScore),\(gameOver ? 1:0)")
-    }
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
 //        print(fps)
@@ -117,9 +110,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         print("Cutoff: \(Defaults[.calibrate_cutoff])")
 //        resetDefaults()
         
-        // publish the score and done state periodically
-        updateTimer = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)
-
         title = "Score Mode"
         
         mainBundlePath = "bundle://Assets/score/score.xml"
@@ -153,6 +143,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
         statusLabel.view.transform = CGAffineTransform(rotationAngle: -.pi/2)
         self.statusLabel.updateText("0")
+        
+        do { try setupScoreServer() }
+        catch { print(error) }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -184,8 +177,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     func ocrReadScreen(_ croppedImage: CIImage) {
 
         let dotmatrix = try! dotMatrixReader.process(image: croppedImage, threshold: UInt8(Defaults[.calibrate_cutoff]))
-
-//        try! scorePublisher?.send(data: Data(bytes: dotmatrix.intsThresholded))
 
         if verbose > 1 {
             print(dotmatrix)
@@ -558,10 +549,36 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
         }
     }
+    
+    // MARK: - Socket communications
+    
+    var actor: Socket?
+    
+    func setupScoreServer() throws {
+        if actor == nil {
+            actor = try Socket.create(family: .inet)
+        }
+        guard let actor = actor else { print("Aarg"); return }
 
+        try actor.connect(to: "Actor.local", port: Int32(PlayController.port))
+        
+        // publish the score and done state periodically
+        updateTimer = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)
+
+    }
+    
+    @objc func publish() {
+        guard let actor = actor else { return }
+        do {
+            let score = "S:\(currentScore),\(gameOver ? 1:0)"
+            try actor.write(from: score)
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    
     
     // MARK: - Play and capture
-    
     
     fileprivate var preview: ImageView {
         return mainXmlView!.elementForId("preview")!.asImageView!

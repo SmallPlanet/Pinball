@@ -215,6 +215,7 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         if client == nil {
             client = try? Socket.create(family: .inet)
             hostname = "omega-0065.local"
+
             port = Int32(8000)
             print("attempting to connect to pinball service \(hostname):\(port)")
             connect()

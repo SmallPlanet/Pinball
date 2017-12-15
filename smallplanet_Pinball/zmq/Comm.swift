@@ -8,8 +8,8 @@
 import Foundation
 
 struct Endpoints {
-    let pub_GameInfo = "tcp://\(Comm.brokerAddress):60002"
-    let sub_GameInfo = "tcp://\(Comm.brokerAddress):60001"
+    let pub_GameInfo = "tcp://Actor.local:60002"
+    let sub_GameInfo = "tcp://Scorekeeper.local:65535"
     
     let pub_ScorePixels = "tcp://\(Comm.brokerAddress):60022"
     let sub_ScorePixels = "tcp://\(Comm.brokerAddress):60021"
@@ -63,7 +63,7 @@ class Comm {
                         }
                     }
                 } catch {
-
+                    print("Comm error A: \(error)")
                 }
             }
             
@@ -84,7 +84,7 @@ class Comm {
             
             return socket
         } catch {
-            print("Comm error: \(error)")
+            print("Comm error B: \(error)")
             return nil
         }
     }
@@ -105,8 +105,8 @@ class Comm {
             try poller.register(socket: socket, flags: .pollIn)
             
             return socket
-        }catch{
-            print("Comm error: \(error)")
+        } catch {
+            print("Comm error C: \(error)")
             return nil
         }
     }
