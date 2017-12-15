@@ -309,8 +309,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 200
-            let maxHeight:CGFloat = 200
+            let maxWidth:CGFloat = 70
+            let maxHeight:CGFloat = 70
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
             
