@@ -35,7 +35,7 @@
 		4657149C1F9611CF0021D893 /* libzmq-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 464FFDFE1F96116700790173 /* libzmq-ios.a */; };
 		4657149F1F9611ED0021D893 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4657149E1F9611ED0021D893 /* libc++.tbd */; };
 		465714A21F96156F0021D893 /* Comm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465714A11F9612580021D893 /* Comm.swift */; };
-		465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F737E1F493AF2002CFF71 /* PlayController.swift */; };
+		465F737F1F493AF6002CFF71 /* ActorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F737E1F493AF2002CFF71 /* ActorController.swift */; };
 		4664D7751F9259DE00B9FC47 /* CameraCaptureHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4664D7741F9259DE00B9FC47 /* CameraCaptureHelper.swift */; };
 		4666A6251FC366E90047009A /* GeneticAlgorithm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4666A6231FC366E90047009A /* GeneticAlgorithm.swift */; };
 		4666A6281FC369670047009A /* Xoroshiro128.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4666A6271FC369660047009A /* Xoroshiro128.swift */; };
@@ -114,7 +114,7 @@
 		4657149E1F9611ED0021D893 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		465714A01F96121F0021D893 /* smallplanet_Pinball-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "smallplanet_Pinball-Bridging-Header.h"; sourceTree = "<group>"; };
 		465714A11F9612580021D893 /* Comm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Comm.swift; sourceTree = "<group>"; };
-		465F737E1F493AF2002CFF71 /* PlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayController.swift; sourceTree = "<group>"; };
+		465F737E1F493AF2002CFF71 /* ActorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorController.swift; sourceTree = "<group>"; };
 		4664D7741F9259DE00B9FC47 /* CameraCaptureHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureHelper.swift; sourceTree = "<group>"; };
 		4666A6231FC366E90047009A /* GeneticAlgorithm.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneticAlgorithm.swift; sourceTree = "<group>"; };
 		4666A6271FC369660047009A /* Xoroshiro128.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Xoroshiro128.swift; sourceTree = "<group>"; };
@@ -307,7 +307,7 @@
 		465F737D1F493AF2002CFF71 /* play */ = {
 			isa = PBXGroup;
 			children = (
-				465F737E1F493AF2002CFF71 /* PlayController.swift */,
+				465F737E1F493AF2002CFF71 /* ActorController.swift */,
 				4664D7741F9259DE00B9FC47 /* CameraCaptureHelper.swift */,
 				A9CBE1051FDB203C00719FE6 /* Actor.swift */,
 				A90620D81FDF806B005C0732 /* Episode.swift */,
@@ -452,7 +452,7 @@
 				464FFE111F96117600790173 /* SocketType.swift in Sources */,
 				4666A62A1FC36B8E0047009A /* ComboSort.swift in Sources */,
 				A90620D91FDF806B005C0732 /* Episode.swift in Sources */,
-				465F737F1F493AF6002CFF71 /* PlayController.swift in Sources */,
+				465F737F1F493AF6002CFF71 /* ActorController.swift in Sources */,
 				A9EE6AE61FD87423006A5883 /* MLMultiArray+Image.swift in Sources */,
 				A9EE6AE51FD87423006A5883 /* NonMaxSuppression.swift in Sources */,
 				A9EE6AE01FD87423006A5883 /* UIImage+CVPixelBuffer.swift in Sources */,

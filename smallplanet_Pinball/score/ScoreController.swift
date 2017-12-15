@@ -560,7 +560,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         }
         guard let actor = actor else { print("Aarg"); return }
 
-        try actor.connect(to: "Actor.local", port: Int32(PlayController.port))
+        try actor.connect(to: "Actor.local", port: Int32(ActorController.port))
         
         // publish the score and done state periodically
         updateTimer = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)

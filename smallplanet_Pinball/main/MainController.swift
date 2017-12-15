@@ -42,7 +42,7 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         if #available(iOS 11.0, *) {
             playModeButton.button.add(for: .touchUpInside) {
-                self.navigationController?.pushViewController(PlayController(), animated: true)
+                self.navigationController?.pushViewController(ActorController(), animated: true)
             }
         } else {
             playModeButton.button.alpha = 0.25

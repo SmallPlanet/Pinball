@@ -14,7 +14,7 @@ import CoreML
 import Vision
 
 @available(iOS 11.0, *)
-class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
+class ActorController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
     static let port = 65535
 
@@ -119,7 +119,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     }
     
     func setupActorServer(_ handler: (Data) -> ()) throws {
-        actorServer = ActorServer(port: PlayController.port, handler: receiveScore)
+        actorServer = ActorServer(port: ActorController.port, handler: receiveScore)
         DispatchQueue.global(qos: .background).async {
             self.actorServer.run()
         }
