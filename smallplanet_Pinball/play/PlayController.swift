@@ -174,7 +174,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var disableLeftFlipperUntilRelease = false
     var disableRightFlipperUntilRelease = false
     
-    let numberOfFramesItTakesForFlipperToRetract:Int = 12
+    let numberOfFramesItTakesForFlipperToRetract:Int = 22
     
     var lastOriginalFrame:CIImage? = nil
     var lastFrame:CIImage? = nil
@@ -314,7 +314,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if leftObservation!.confidence > cutoffLeft {
                 if canPlay && self?.pinball.leftButtonPressed == false {
-                    self!.leftActivateTime = Date()
+                    if self!.leftFlipperCounter == 0 {
+                        self!.leftActivateTime = Date()
+                    }
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
                 }
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
@@ -326,7 +328,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             if rightObservation!.confidence > cutoffRight {
                 if canPlay && self?.pinball.rightButtonPressed == false {
-                    self!.rightActivateTime = Date()
+                    if self!.leftFlipperCounter == 0 {
+                        self!.rightActivateTime = Date()
+                    }
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
                 }
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence)  *********")
