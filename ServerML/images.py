@@ -45,6 +45,7 @@ def load_image(imgs_idx, imgs, labels, weights, img_path):
 def load_images(imgs, labels, weights, dir_path, max_size):
     all_img_paths = glob.glob(os.path.join(dir_path, '*.jpg'))
     np.random.shuffle(all_img_paths)
+    print("loading images from "+dir_path)
     n = 0
     for img_path in all_img_paths:
         if n % 10000 == 1:

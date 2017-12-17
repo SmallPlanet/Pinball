@@ -128,7 +128,7 @@ coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
 def TrainingRunPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/"
+    return "./run" + str(runNumber) + "/"
 
 def PermanentMemoryPath():
     return "./run0/pmemory/"
@@ -136,32 +136,32 @@ def PermanentMemoryPath():
 def TrainingMemoryPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/memory/"
+    return "./run" + str(runNumber) + "/memory/"
 
 def WasteMemoryPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/waste/"
+    return "./run" + str(runNumber) + "/waste/"
 
 def TempMemoryPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/tmemory/"
+    return "./run" + str(runNumber) + "/tmemory/"
 
 def ModelWeightsPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/model.h5"
+    return "./run" + str(runNumber) + "/model.h5"
 
 def CoreMLPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/model.mlmodel"
+    return "./run" + str(runNumber) + "/model.mlmodel"
 
 def ModelMessagePath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
-    return "./run" + str(trainingRunNumber) + "/model.msg"
+    return "./run" + str(runNumber) + "/model.msg"
 
 
 def read_file(path):
@@ -193,7 +193,8 @@ def GenerateSampleWeights(total_weights):
         else:
             normalized_weights[i] = total_weights[i] / max_weight
             if normalized_weights[i] < 0:
-                normalized_weights[i] = normalized_weights[i] * -1.0
+                #normalized_weights[i] = normalized_weights[i] * -1.0
+                normalized_weights[i] = 1.0
 
 def ConfirmTrainingNumber():
     global trainingRunNumber
@@ -212,20 +213,20 @@ ConfirmTrainingNumber()
 
 
 def GatherImagesFromTrainingRun(runNumber,maxImages):
-    train_imgs = images.generate_image_array(TrainingMemoryPath(), maxImages)
+    train_imgs = images.generate_image_array(TrainingMemoryPath(runNumber), maxImages)
     train_labels = []
     train_weights = []
-    images.load_images(train_imgs, train_labels, train_weights, TrainingMemoryPath(), maxImages)
+    images.load_images(train_imgs, train_labels, train_weights, TrainingMemoryPath(runNumber), maxImages)
     
     permanent_imgs = images.generate_image_array(PermanentMemoryPath(), maxImages)
     permanent_labels = []
     permanent_weights = []
     images.load_images(permanent_imgs, permanent_labels, permanent_weights, PermanentMemoryPath(), maxImages)
         
-    waste_imgs = images.generate_image_array(WasteMemoryPath(), maxImages)
+    waste_imgs = images.generate_image_array(WasteMemoryPath(runNumber), maxImages)
     waste_labels = []
     waste_weights = []
-    images.load_images(waste_imgs, waste_labels, waste_weights, WasteMemoryPath(), maxImages)
+    images.load_images(waste_imgs, waste_labels, waste_weights, WasteMemoryPath(runNumber), maxImages)
     
     # combine the arrays
     total_imgs = []
@@ -363,7 +364,7 @@ def Learn():
             # we need to train on random samples of previous runs to help the AI generalize well and
             # not forget too much
             for i in range(0,trainingRunNumber):
-                prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 32)
+                prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 48)
                 
                 # take into account the weight of classes
                 class_weight_dict = GenerateClassWeights(prev_labels)
@@ -374,9 +375,9 @@ def Learn():
                 print("Retraining "+str(len(prev_labels))+" images from run"+str(i))
                 cnn_model.fit(prev_imgs, prev_labels,
                           batch_size=batch_size,
-                          epochs=5,
+                          epochs=3,
                           verbose=1,
-                          class_weight=class_weight_dict,
+                          #class_weight=class_weight_dict,
                           sample_weight=normalized_weights,
                           callbacks=[],
                           )
@@ -393,9 +394,9 @@ def Learn():
             print("Training "+str(len(total_labels))+" images from run"+str(trainingRunNumber))
             cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
-                      epochs=20,
+                      epochs=15,
                       verbose=1,
-                      class_weight=class_weight_dict,
+                      #class_weight=class_weight_dict,
                       sample_weight=normalized_weights,
                       callbacks=[],
                       )
