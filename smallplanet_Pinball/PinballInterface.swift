@@ -114,6 +114,11 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     func disconnect() {
         client?.close()
     }
+
+    // Press the start button (on and off)
+    func start() {
+        startButtonStart()
+    }
     
     @objc func leftButtonStart() {
         sendPress(forButton: .left(on: true))

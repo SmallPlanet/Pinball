@@ -221,7 +221,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                 if verbose > 1 {
                     print(dotmatrix)
                 } else if verbose > 0 {
-                    print("\nNEW HIGH SCORE \(score)  ================== \n")
+                    print("NEW HIGH SCORE \(score)  ==================")
                 }
             } else if score < currentScore && verbose > 0 && !bogusScores.contains(score) {
                 if verbose > 1 {
@@ -570,7 +570,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     @objc func publish() {
         guard let actor = actor else { return }
         do {
-            let score = "S:\(currentScore),\(gameOver ? 1:0)"
+            let score = "S:\(currentScore):\(gameOver ? 1:0)"
             try actor.write(from: score)
         } catch {
             print(error.localizedDescription)
