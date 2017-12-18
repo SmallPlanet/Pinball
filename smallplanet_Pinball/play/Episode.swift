@@ -27,7 +27,7 @@ struct Episode {
     }
     
     var nextFilename: String {
-        return String(format: "%s-%60d.png", id, nextIndex)
+        return String(format: "%@-%08d.png", id, nextIndex)
     }
     
     mutating func append(state: CIImage, action: Actor.Action, reward: Double, done: Bool) {

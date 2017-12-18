@@ -330,7 +330,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             out_px.r = s1.r*r + s1.g*g + s1.b*b;
             out_px.g = s2.r*r + s2.g*g + s2.b*b;
             out_px.b = s3.r*r + s3.g*g + s3.b*b;
-            out_px.a = s4.r*r + s4.g*g + s4.b*b;
+            out_px.a = 1.0; //s4.r*r + s4.g*g + s4.b*b;
             return out_px;
         }
     """)

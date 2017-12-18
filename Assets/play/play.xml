@@ -20,11 +20,17 @@
     <Constraint firstItem="cameraLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="cameraLabel" firstAttribute="bottom" secondItem="preview" secondAttribute="top" constant="3" />
 
-    <Label id="statusLabel" styleId="LabelBld" text="" textAlignment="center" />
+    <Label id="statusLabel" styleId="LabelBld" text="ABCDEFG" textAlignment="center" />
     <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
     <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
     <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="40" />
     
+    <Switch id="deadman" on="false"/>
+    <Constraint firstItem="deadman" firstAttribute="left" secondItem="root" secondAttribute="left" constant="10"/>
+    <Constraint firstItem="deadman" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="8"/>
+    <Label id="deadmanLabel" styleId="LabelBld" text="Enable pinball" textAlignment="left"/>
+    <Constraint firstItem="deadmanLabel" firstAttribute="left" secondItem="deadman" secondAttribute="right" constant="8"/>
+    <Constraint firstItem="deadmanLabel" firstAttribute="centerY" secondItem="deadman" secondAttribute="centerY"/>
 
 </Scene>

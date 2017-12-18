@@ -11,6 +11,8 @@ import PlanetSwift
 import Laba
 import Socket
 import CoreML
+import AVFoundation
+import CoreMedia
 import Vision
 
 @available(iOS 11.0, *)
@@ -18,6 +20,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     static let port = 65535
 
+    let timeBetweenGames = 30.0 // seconds, following end of save game
+    
     var actor = Actor()
     var actorServer: ActorServer!
 //    var currentPixels = [UInt8](repeatElement(0, count: 4096))
@@ -25,6 +29,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     var episode: Episode?
     var currentScore = -1
     var gameOver = false
+    var gameStarting = false
 
     var lastVisibleFrameNumber = 0
 
@@ -38,11 +43,11 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     let topLeft = CGSize(width: 0, height: 0)
 
     let ciContext = CIContext(options: [:])
-
+    var observers = [NSObjectProtocol]()
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
-        
-        if !gameOver {
+        print("pci")
+        if !(gameOver || gameStarting) {
             if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
                 let scale = originalImage.extent.height / CGFloat(3024)
                 let x1 = CGFloat(0) //Defaults[.calibrate_x1])
@@ -63,12 +68,33 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 return
             }
             
-            let action = actor.chooseAction(state: image)
-//            print(action)
+//            let action = actor.chooseAction(state: image)
+            let action = actor.fakeAction()
             // TODO: perform action
+            
+            if pinballEnabled {
+                switch action {
+                case .left:
+                    pinball.leftButtonStart()
+                    PlanetUI.GCDDelay(0.05) { self.pinball.leftButtonEnd() }
+                case .right:
+                    pinball.rightButtonStart()
+                    PlanetUI.GCDDelay(0.05) { self.pinball.rightButtonEnd() }
+                case .upperRight:
+                    pinball.rightUpperButtonStart()
+                    PlanetUI.GCDDelay(0.05) { self.pinball.rightUpperButtonEnd() }
+                case .plunger:
+                    pinball.ballKickerStart()
+                    PlanetUI.GCDDelay(0.05) { self.pinball.leftButtonEnd() }
+                case .nop:
+                    break
+                }
             
             // Save state/reward in episode
             episode?.append(state: image, action: action, reward: Double(currentScore), done: false)
+            } else {
+                print("Action computed but not sent: \(action)")
+            }
         }
         
         if lastVisibleFrameNumber + 100 < frameNumber {
@@ -82,8 +108,17 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         }
     }
     
+    var pinballEnabled: Bool {
+        var enabled = false
+        DispatchQueue.main.sync {
+            enabled = deadmanSwitch.switch_.isOn
+        }
+        return enabled
+    }
+    
     func startGame() {
         gameOver = false
+        gameStarting = true
         
         episode = createEpisode()
         // send start signal to pinball machine
@@ -95,13 +130,11 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     func createEpisode() -> Episode {
         currentScore = 0
-        
-        let modelName = actor.model.model.description
-        return Episode(modelName: modelName)
+        return Episode(modelName: actor.modelName())
     }
     
     func episodeFinishedSaving() {
-        PlanetUI.GCDDelay(30.0) { self.startGame() }
+        PlanetUI.GCDDelay(timeBetweenGames) { self.startGame() }
     }
 
 //    func receivePixels(data: Data) {
@@ -116,6 +149,10 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 //    }
     
     func receiveScore(data: Data) {
+        if !captureHelper.captureSession.isRunning {
+            captureHelper.captureSession.startRunning()
+        }
+        
         let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
         print("score string received: \(dataAsString!)")
 
@@ -131,13 +168,19 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
             currentScore = score
             
-            if parts[2] == "1" && !gameOver {
+            let gameOverSignal = parts[2] == "1"
+            
+            if gameStarting && !gameOverSignal {
+                // game has started!
+                gameStarting = false
+            }
+            
+            if !gameStarting && (gameOverSignal && !gameOver) {
                 gameOver = true
                 
                 // start saving episode data
+                // callback will start next game after delay
                 episode?.save(callback: episodeFinishedSaving)
-                
-                // after finished and up to a fixed delay start next game
             }
             
         }
@@ -163,12 +206,11 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
-        captureHelper.delegateWantsPerspectiveImages = true
+        captureHelper.delegateWantsPerspectiveImages = false
         captureHelper.delegateWantsPictureInPictureImages = false
         
-        captureHelper.scaledImagesSize = CGSize(width: 96, height: 128)
+        captureHelper.scaledImagesSize = CGSize(width: 128, height: 96)
         captureHelper.delegateWantsScaledImages = true
-        
         
         captureHelper.delegateWantsHiSpeedCamera = false
         captureHelper.delegateWantsSpecificFormat = true
@@ -187,12 +229,40 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         
         do { try setupActorServer(receiveScore) }
         catch { print(error) }
-    }
         
+        observers.append(NotificationCenter.default.addObserver(forName: .AVCaptureSessionRuntimeError, object: captureHelper.captureSession, queue: nil) { notification in
+                print(notification)
+            })
+        observers.append(NotificationCenter.default.addObserver(forName: .AVCaptureSessionDidStopRunning, object: captureHelper.captureSession, queue: nil) { notification in
+            print(notification)
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: .AVCaptureSessionDidStartRunning, object: captureHelper.captureSession, queue: nil) { notification in
+            print(notification)
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: .AVCaptureSessionWasInterrupted, object: captureHelper.captureSession, queue: nil) { notification in
+            print(notification)
+        })
+        
+        observers.append(NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: PinballInterface.connectionNotification), object: nil, queue: nil) { notification in
+            let connected = (notification.userInfo?["connected"] as? Bool ?? false)
+            self.deadmanSwitch.switch_.thumbTintColor = connected ? UIColor(gaxbString: "#06c2fcff") : UIColor(gaxbString: "#fb16bbff")
+        })
+
+        
+    }
+
+    
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
         captureHelper.stop()
         pinball.disconnect()
+    }
+    
+    deinit {
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        actorServer.shutdownServer()
     }
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -203,10 +273,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         fatalError("init(coder:) has not been implemented")
     }
     
-    deinit {
-        actorServer.shutdownServer()
-    }
-
     
     // MARK:- Hardware Controller
     
@@ -231,10 +297,10 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
-    fileprivate var validateNascarButton: Button {
-        return mainXmlView!.elementForId("validateNascarButton")!.asButton!
+    fileprivate var deadmanSwitch: Switch {
+        return mainXmlView!.elementForId("deadman")!.asSwitch!
     }
-    
+
     internal var leftButton: Button? {
         return nil
     }

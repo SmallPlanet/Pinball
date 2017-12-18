@@ -13,7 +13,7 @@ import Vision
 
 struct Actor {
     
-    lazy var model = tng_adam_0000()
+    lazy var model = tng_boy_0000()
     let size = CGSize(width: 128.0, height: 96.0)
     
     enum Action: Int {
@@ -32,6 +32,20 @@ struct Actor {
 
         let actionRaw = choice(distribution: array)
         return Action(rawValue: actionRaw)!
+    }
+    
+    func fakeAction() -> Action {
+        switch arc4random() % 100 {
+        case 0..<75: return .nop
+        case 76..<78: return .plunger
+        case 79..<88: return .left
+        case 89..<98: return .right
+        default: return .upperRight
+        }
+    }
+    
+    mutating func modelName() -> String {
+        return (model.model.modelDescription.metadata[MLModelMetadataKey.versionString] as? String) ?? "Unknown"
     }
     
     let context = CIContext()
