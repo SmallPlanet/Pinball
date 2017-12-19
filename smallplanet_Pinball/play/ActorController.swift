@@ -24,7 +24,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     var actor = Actor()
     var actorServer: ActorServer!
-//    var currentPixels = [UInt8](repeatElement(0, count: 4096))
     
     var episode: Episode?
     var currentScore = -1
@@ -130,23 +129,14 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     func createEpisode() -> Episode {
         currentScore = 0
-        return Episode(modelName: actor.modelName())
+        let episode = Episode(modelName: actor.modelName())
+        print("Created new episode: \(episode.id) using model: \(episode.modelName)")
+        return episode
     }
     
     func episodeFinishedSaving() {
         PlanetUI.GCDDelay(timeBetweenGames) { self.startGame() }
     }
-
-//    func receivePixels(data: Data) {
-//        let bytes = [UInt8](data)
-//        print("score pixes received: \(bytes.count) bytes")
-//
-//        guard bytes.count == 4096 else {
-//            print("not enough bytes")
-//            return
-//        }
-//        // todo: overlay on current image frame
-//    }
     
     func receiveScore(data: Data) {
         if !captureHelper.captureSession.isRunning {
@@ -163,7 +153,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         if parts[0] == "S", parts.count > 2, let score = Int(parts[1]) {
             if episode == nil {
                 episode = createEpisode()
-                print("Created new episode: \(episode!.id) using model: \(episode!.modelName)")
             }
 
             currentScore = score
@@ -490,14 +479,14 @@ class ActorServer {
                             
                             return
                         }
-//                        print("Server received from connection at \(socket.remoteHostname):\(socket.remotePort): \(response) ")
-//                        let reply = "Server response: \n\(response)\n"
-//                        try socket.write(from: reply)
+                        // print("Server received from connection at \(socket.remoteHostname):\(socket.remotePort): \(response) ")
+                        // let reply = "Server response: \n\(response)\n"
+                        // try socket.write(from: reply)
                         
                         if (response.uppercased().hasPrefix(ActorServer.quitCommand) || response.uppercased().hasPrefix(ActorServer.shutdownCommand)) &&
                             (!response.hasPrefix(ActorServer.quitCommand) && !response.hasPrefix(ActorServer.shutdownCommand)) {
                             
-                            try socket.write(from: "If you want to QUIT or SHUTDOWN, please type the name in all caps. 😃\n")
+                            try socket.write(from: "Enter QUIT or SHUTDOWN to exit\n")
                         }
                         
                         if response.hasPrefix(ActorServer.quitCommand) || response.hasSuffix(ActorServer.quitCommand) {
