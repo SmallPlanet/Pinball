@@ -11,37 +11,50 @@ import Foundation
 import CoreImage
 import PlanetSwift
 
-typealias Step = (state: String, action: Actor.Action, reward: Double, discountedReward: Double, done: Bool, timestamp: TimeInterval)
+struct SARS: Codable {
+    let state: String
+    let action: Actor.Action.RawValue
+    let reward: Double
+    let discountedReward: Double
+    let nextState: String
+    let done: Bool
+    let timestamp: TimeInterval
+    
+    init(_ step: StepStorage, discountedReward: Double) {
+        state = step.state
+        action = step.action
+        reward = step.score
+        self.discountedReward = discountedReward
+        nextState = step.nextState
+        done = step.done
+        timestamp = step.timestamp
+    }
+}
+
+typealias StepStorage = (state: String, action: Actor.Action.RawValue, score: Double, nextState: String, done: Bool, timestamp: TimeInterval)
+
 
 struct Episode {
+    let gamma = 0.995
+    
     let id: String
     let startDate = Date()
     let directoryPath: String
     let modelName: String
 
-    var steps = [Step]()
+    var steps = [StepStorage]()
     var discountedRewards = [Double]()
     
     var nextIndex: Int {
         return steps.count
     }
     
-    var nextFilename: String {
-        return String(format: "%@-%08d.png", id, nextIndex)
+    func filename(index: Int) -> String {
+        return String(format: "%@-%08d.png", id, index)
     }
     
-    mutating func append(state: CIImage, action: Actor.Action, reward: Double, done: Bool) {
-        let filename = nextFilename
-        let rewardChange: Double
-        if let lastStep = steps.last {
-            rewardChange = reward - lastStep.reward
-        } else {
-            rewardChange = reward
-        }
-
-        if rewardChange > 0 {
-            // todo: apply discounted rewards now or when saving after episode finishes?
-        }
+    mutating func append(state: CIImage, action: Actor.Action, score: Double, done: Bool) {
+        let name = filename(index: nextIndex)
         
         // write image
         guard let png = state.pngData else {
@@ -49,25 +62,56 @@ struct Episode {
             return
         }
         do {
-            try png.write(to: URL(fileURLWithPath: directoryPath + "/" + filename))
-            steps.append(Step(state: filename, action: action, reward: rewardChange, discountedReward: 0.0, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
+            try png.write(to: URL(fileURLWithPath: directoryPath + "/" + name))
+            let nextState = done ? "" : filename(index: nextIndex + 1)
+            steps.append(StepStorage(state: name, action: action.rawValue, score: score, nextState: nextState, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
         } catch let error {
             print(error)
         }
     }
     
+    func discount(score: Double, scoreIndex: Int, count: Int) -> [Double] {
+        guard scoreIndex > 0 && count > 0 && scoreIndex <= count else { return [] }
+        let discounted = (0...scoreIndex).map { index in pow(gamma, Double(scoreIndex - index))*score }
+        return discounted + [Double](repeatElement(0.0, count: count - scoreIndex - 1))
+    }
+    
+    func sum(_ lhs: [Double], _ rhs: [Double]) -> [Double] {
+        guard lhs.count == rhs.count, lhs.count > 0 else { return [] }
+        return lhs.enumerated().map{ $0.element + rhs[$0.offset] }
+    }
+    
     // Convert episode data to h5py format and write to file
     // To be used at the after episode ends
     func save(callback: ()->()) {
+        // Create [Step] from [StepStorage] including reward and discounted reward computation
+
+        let scoreChanges = steps.enumerated().map { $0.offset > 0 ? $0.element.score - steps[$0.offset-1].score : 0.0  }
         
+        let discounts = scoreChanges.enumerated()
+            .filter { $0.element != 0.0 }
+            .map { discount(score: $0.element, scoreIndex: $0.offset, count: steps.count) }
         
+        let rewards = discounts.reduce([Double](repeating: 0.0, count: steps.count), sum)
+        
+        // print(rewards.map{String($0)}.joined(separator: "\n"))
+        
+        let sars = rewards.enumerated().map{ SARS(steps[$0.offset], discountedReward: $0.element) }
+        
+        do {
+            let data = try JSONEncoder().encode(sars)
+            let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+            let jsonString = String(describing: json)
+            let fileURL = URL(fileURLWithPath: "\(directoryPath)/\(id).json")
+            try jsonString.write(to: fileURL, atomically: false, encoding: .utf8)
+        } catch {
+            print(error)
+        }
         callback()
     }
     
-    // var sarsData: H5PY
-    
-     var finalReward: Double {
-        return steps.last?.reward ?? 0.0
+    var finalScore: Double {
+        return steps.last?.score ?? 0.0
     }
     
     init(modelName: String) {

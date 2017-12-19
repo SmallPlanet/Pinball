@@ -35,7 +35,7 @@ struct Actor {
     }
     
     func fakeAction() -> Action {
-        switch arc4random() % 100 {
+        switch arc4random() % 79 {
         case 0..<75: return .nop
         case 76..<78: return .plunger
         case 79..<88: return .left

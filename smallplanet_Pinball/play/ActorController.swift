@@ -46,7 +46,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     var observers = [NSObjectProtocol]()
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
-        print("pci")
+
         if !(gameOver || gameStarting) {
             if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
                 let scale = originalImage.extent.height / CGFloat(3024)
@@ -91,9 +91,9 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 }
             
             // Save state/reward in episode
-            episode?.append(state: image, action: action, reward: Double(currentScore), done: false)
+            episode?.append(state: image, action: action, score: Double(currentScore), done: false)
             } else {
-                print("Action computed but not sent: \(action)")
+                 print("Action computed but not sent: \(action)")
             }
         }
         
@@ -181,9 +181,11 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         
     }
     
+    let actorQueue = DispatchQueue(label: "actor_server_queue", qos: .background)
+
     func setupActorServer(_ handler: (Data) -> ()) throws {
         actorServer = ActorServer(port: ActorController.port, handler: receiveScore)
-        DispatchQueue.global(qos: .background).async {
+        actorQueue.async {
             self.actorServer.run()
         }
     }
@@ -215,7 +217,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         
         captureHelper.delegateWantsTemporalImages = true
         
-        captureHelper.constantFPS = 30
+        captureHelper.constantFPS = 20
         captureHelper.delegateWantsConstantFPS = true
         
         UIApplication.shared.isIdleTimerDisabled = true

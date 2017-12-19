@@ -20,17 +20,30 @@
     <Constraint firstItem="cameraLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="cameraLabel" firstAttribute="bottom" secondItem="preview" secondAttribute="top" constant="3" />
 
+    <Button id="startEpisode" title="Start episode" styleId="ButtonBig" titleFontColor="white" backgroundColor="#06C2FC" />
+    <Constraint firstItem="startEpisode" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.95"/>
+    <Constraint firstItem="startEpisode" firstAttribute="height" constant="80"/>
+    <Constraint firstItem="startEpisode" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="30" />
+    <Constraint firstItem="startEpisode" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+
+    <Button id="gameOver" title="End episode (game over)" styleId="ButtonBig" titleFontColor="white" backgroundColor="#FB16BB" />
+    <Constraint firstItem="gameOver" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.95"/>
+    <Constraint firstItem="gameOver" firstAttribute="height" constant="80"/>
+    <Constraint firstItem="gameOver" firstAttribute="top" secondItem="startEpisode" secondAttribute="bottom" constant="30" />
+    <Constraint firstItem="gameOver" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
+
+    <Switch id="deadman" on="false"/>
+    <Constraint firstItem="deadman" firstAttribute="left" secondItem="root" secondAttribute="left" constant="10"/>
+    <Constraint firstItem="deadman" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="-8"/>
+    <Label id="deadmanLabel" styleId="LabelBld" text="Enable pinball" textAlignment="left"/>
+    <Constraint firstItem="deadmanLabel" firstAttribute="left" secondItem="deadman" secondAttribute="right" constant="8"/>
+    <Constraint firstItem="deadmanLabel" firstAttribute="centerY" secondItem="deadman" secondAttribute="centerY"/>
+
     <Label id="statusLabel" styleId="LabelBld" text="ABCDEFG" textAlignment="center" />
     <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
     <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
     <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="statusLabel" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="40" />
-    
-    <Switch id="deadman" on="false"/>
-    <Constraint firstItem="deadman" firstAttribute="left" secondItem="root" secondAttribute="left" constant="10"/>
-    <Constraint firstItem="deadman" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="8"/>
-    <Label id="deadmanLabel" styleId="LabelBld" text="Enable pinball" textAlignment="left"/>
-    <Constraint firstItem="deadmanLabel" firstAttribute="left" secondItem="deadman" secondAttribute="right" constant="8"/>
-    <Constraint firstItem="deadmanLabel" firstAttribute="centerY" secondItem="deadman" secondAttribute="centerY"/>
+    <Constraint firstItem="statusLabel" firstAttribute="bottom" secondItem="deadman" secondAttribute="top" constant="10" />
+
 
 </Scene>

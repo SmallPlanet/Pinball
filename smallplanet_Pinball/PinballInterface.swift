@@ -222,17 +222,12 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
     }
     
     func findFlipperServer() {
-        // Note: hardcoding this for now as
-        // 1) bonjour does not appear to be working with my new Omega network setup
-        // 2) it is now always going to be a well know IP address
-        
         if client == nil {
             client = try? Socket.create(family: .inet)
             hostname = "omega-0065.local"
 
             port = Int32(8000)
-            print("attempting to connect to pinball service \(hostname):\(port)")
-            connect()
+            print("Set pinball service \(hostname):\(port)")
         }
     }
     
