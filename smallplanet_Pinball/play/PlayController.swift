@@ -233,6 +233,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             ]
         }
         
+        /*
         if shouldBeCalibrating {
             lastOriginalFrame = originalImage
             lastFrame = image
@@ -242,7 +243,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             usleep(72364)
             return
         }
-        
+        */
         
         if pinball.leftButtonPressed == true {
             leftFlipperCounter = numberOfFramesItTakesForFlipperToRetract
@@ -355,7 +356,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 if self?.send_leftButton == 1 || self?.send_rightButton == 1 || self?.send_ballKickerButton == 1 {
                     
                     // only save memories of the flippers in their resting position
-                    if self?.leftFlipperCounter == 0 && self?.rightFlipperCounter == 0 {
+                    if (self!.send_leftButton == 1 && self?.leftFlipperCounter == 0) ||
+                        (self!.send_rightButton == 1 && self?.rightFlipperCounter == 0) {
                         self?.sendCameraFrame(image, self!.send_leftButton, self!.send_rightButton, 0, self!.send_ballKickerButton)
                     }
                     self?.send_leftButton = 0
@@ -557,6 +559,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     }
     
     func CheckShouldBeCalibrating() {
+        
+        shouldBeCalibrating = true
+        
+        /*
         // While we are not playing a game, we should be calibrating.
         if currentPlayer == 1 && playerOneScore <= 20 {
             if shouldBeCalibrating == false {
@@ -565,10 +571,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         } else {
             shouldBeCalibrating = false
         }
-        
+        */
     }
     
-    func PerformCalibration( ) {
+    func PerformCalibration() {
 
         // Load our calibration image and convert to RGB bytes
         calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate.jpg")))
@@ -597,11 +603,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let maxHeight:CGFloat = 50
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
-            
-            
-            var bestCalibrationAccuracy:Float = 0.0
-            
-            let timeout = 9000000
             
             let ga = GeneticAlgorithm<Organism>()
             
@@ -830,13 +831,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 return accuracy
             }
             
+            var bestCalibrationAccuracy:Float = 0.0
+
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
-                if self.shouldBeCalibrating == false || score > 0.999 {
+                if self.shouldBeCalibrating == false {
                     self.shouldBeCalibrating = false
                     return true
                 }
                 
-                if generation > 100 && score > bestCalibrationAccuracy {
+                // NOTE: This will only ever be called with the current BEST organism...
+                if sharedOrganismIdx == 0 && (generation % 250 == 0 || score > bestCalibrationAccuracy) {
                     bestCalibrationAccuracy = score
                     
                     let x1 = organism.play[0]
@@ -891,7 +895,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             print("** Begin PerformCalibration **")
             
-            let finalResult = ga.PerformGeneticsThreaded (UInt64(timeout))
+            let finalResult = ga.PerformGeneticsThreaded (UInt64.max)
             
             // force a score of the final result so we can fill the dotmatrix
             let finalAccuracy = ga.scoreOrganism(finalResult, 1, PRNG())
@@ -936,6 +940,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
+        
+        DispatchQueue.main.async {
+            self.PerformCalibration();
+        }
     }
     
     // MARK: PlanetSwift Glue

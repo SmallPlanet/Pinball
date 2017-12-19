@@ -127,6 +127,13 @@ class GeneticAlgorithm<T> {
             
             while (finished == false && ((DispatchTime.now().uptimeNanoseconds - watchStart.uptimeNanoseconds) / 1000000) < millisecondsToProcess) {
                 
+                // to handle the case of shifting targets, we should periodically rescore all of the organisms
+                if numberOfGenerations % 250 == 0 {
+                    for i in 0..<numberOfOrganisms {
+                        allOrganismScores [i] = scoreOrganism (allOrganisms [i]!, sharedOrganismIdx, prng)
+                    }
+                }
+                
                 // optimization: we only call chosen organsism below when the new best organism changes
                 //didFindNewBestOrganism = false
                 
@@ -231,7 +238,6 @@ class GeneticAlgorithm<T> {
                                 }
                             }
                         }
-                        
                     }
                 }
                 
