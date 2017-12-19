@@ -1,0 +1,798 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		26113F741EF183CD007E5E45 /* Reply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26113F731EF183CD007E5E45 /* Reply.swift */; };
+		2684F1A31E95AB1800536DCC /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1891E95AB1800536DCC /* Action.swift */; };
+		2684F1A41E95AB1800536DCC /* Attachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18A1E95AB1800536DCC /* Attachment.swift */; };
+		2684F1A51E95AB1800536DCC /* AttachmentField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18B1E95AB1800536DCC /* AttachmentField.swift */; };
+		2684F1A61E95AB1800536DCC /* Bot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18C1E95AB1800536DCC /* Bot.swift */; };
+		2684F1A71E95AB1800536DCC /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18D1E95AB1800536DCC /* Channel.swift */; };
+		2684F1A81E95AB1800536DCC /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18E1E95AB1800536DCC /* Comment.swift */; };
+		2684F1A91E95AB1800536DCC /* CustomProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18F1E95AB1800536DCC /* CustomProfile.swift */; };
+		2684F1AA1E95AB1800536DCC /* CustomProfileField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1901E95AB1800536DCC /* CustomProfileField.swift */; };
+		2684F1AB1E95AB1800536DCC /* DoNotDisturbStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1911E95AB1800536DCC /* DoNotDisturbStatus.swift */; };
+		2684F1AC1E95AB1800536DCC /* Edited.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1921E95AB1800536DCC /* Edited.swift */; };
+		2684F1AD1E95AB1800536DCC /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1931E95AB1800536DCC /* Event.swift */; };
+		2684F1AE1E95AB1800536DCC /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1941E95AB1800536DCC /* Extensions.swift */; };
+		2684F1AF1E95AB1800536DCC /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1951E95AB1800536DCC /* File.swift */; };
+		2684F1B01E95AB1800536DCC /* History.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1961E95AB1800536DCC /* History.swift */; };
+		2684F1B11E95AB1800536DCC /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1971E95AB1800536DCC /* Item.swift */; };
+		2684F1B21E95AB1800536DCC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1981E95AB1800536DCC /* Message.swift */; };
+		2684F1B31E95AB1800536DCC /* OAuthConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1991E95AB1800536DCC /* OAuthConfig.swift */; };
+		2684F1B41E95AB1800536DCC /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19A1E95AB1800536DCC /* Reaction.swift */; };
+		2684F1B51E95AB1800536DCC /* RTMOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19B1E95AB1800536DCC /* RTMOptions.swift */; };
+		2684F1B61E95AB1800536DCC /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19C1E95AB1800536DCC /* Scope.swift */; };
+		2684F1B71E95AB1800536DCC /* SlackError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19D1E95AB1800536DCC /* SlackError.swift */; };
+		2684F1B81E95AB1800536DCC /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19E1E95AB1800536DCC /* Team.swift */; };
+		2684F1B91E95AB1800536DCC /* TeamIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19F1E95AB1800536DCC /* TeamIcon.swift */; };
+		2684F1BA1E95AB1800536DCC /* Topic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A01E95AB1800536DCC /* Topic.swift */; };
+		2684F1BB1E95AB1800536DCC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A11E95AB1800536DCC /* User.swift */; };
+		2684F1BC1E95AB1800536DCC /* UserGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A21E95AB1800536DCC /* UserGroup.swift */; };
+		2684F1C41E95ABD400536DCC /* AttachmentField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18B1E95AB1800536DCC /* AttachmentField.swift */; };
+		2684F1C51E95ABD400536DCC /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1931E95AB1800536DCC /* Event.swift */; };
+		2684F1C61E95ABD400536DCC /* History.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1961E95AB1800536DCC /* History.swift */; };
+		2684F1C71E95ABD400536DCC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A11E95AB1800536DCC /* User.swift */; };
+		2684F1C81E95ABD400536DCC /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18E1E95AB1800536DCC /* Comment.swift */; };
+		2684F1C91E95ABD400536DCC /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19C1E95AB1800536DCC /* Scope.swift */; };
+		2684F1CA1E95ABD400536DCC /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18D1E95AB1800536DCC /* Channel.swift */; };
+		2684F1CB1E95ABD400536DCC /* CustomProfileField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1901E95AB1800536DCC /* CustomProfileField.swift */; };
+		2684F1CC1E95ABD400536DCC /* SlackError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19D1E95AB1800536DCC /* SlackError.swift */; };
+		2684F1CD1E95ABD400536DCC /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19E1E95AB1800536DCC /* Team.swift */; };
+		2684F1CE1E95ABD400536DCC /* Bot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18C1E95AB1800536DCC /* Bot.swift */; };
+		2684F1CF1E95ABD400536DCC /* Attachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18A1E95AB1800536DCC /* Attachment.swift */; };
+		2684F1D01E95ABD400536DCC /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1941E95AB1800536DCC /* Extensions.swift */; };
+		2684F1D11E95ABD400536DCC /* OAuthConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1991E95AB1800536DCC /* OAuthConfig.swift */; };
+		2684F1D21E95ABD400536DCC /* Topic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A01E95AB1800536DCC /* Topic.swift */; };
+		2684F1D31E95ABD400536DCC /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19A1E95AB1800536DCC /* Reaction.swift */; };
+		2684F1D41E95ABD400536DCC /* Edited.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1921E95AB1800536DCC /* Edited.swift */; };
+		2684F1D51E95ABD400536DCC /* RTMOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19B1E95AB1800536DCC /* RTMOptions.swift */; };
+		2684F1D61E95ABD400536DCC /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1971E95AB1800536DCC /* Item.swift */; };
+		2684F1D71E95ABD400536DCC /* DoNotDisturbStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1911E95AB1800536DCC /* DoNotDisturbStatus.swift */; };
+		2684F1D81E95ABD400536DCC /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1951E95AB1800536DCC /* File.swift */; };
+		2684F1D91E95ABD400536DCC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1981E95AB1800536DCC /* Message.swift */; };
+		2684F1DA1E95ABD400536DCC /* TeamIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19F1E95AB1800536DCC /* TeamIcon.swift */; };
+		2684F1DB1E95ABD400536DCC /* CustomProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18F1E95AB1800536DCC /* CustomProfile.swift */; };
+		2684F1DC1E95ABD400536DCC /* UserGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A21E95AB1800536DCC /* UserGroup.swift */; };
+		2684F1DD1E95ABD400536DCC /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1891E95AB1800536DCC /* Action.swift */; };
+		2684F1E81E95ABD600536DCC /* AttachmentField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18B1E95AB1800536DCC /* AttachmentField.swift */; };
+		2684F1E91E95ABD600536DCC /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1931E95AB1800536DCC /* Event.swift */; };
+		2684F1EA1E95ABD600536DCC /* History.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1961E95AB1800536DCC /* History.swift */; };
+		2684F1EB1E95ABD600536DCC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A11E95AB1800536DCC /* User.swift */; };
+		2684F1EC1E95ABD600536DCC /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18E1E95AB1800536DCC /* Comment.swift */; };
+		2684F1ED1E95ABD600536DCC /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19C1E95AB1800536DCC /* Scope.swift */; };
+		2684F1EE1E95ABD600536DCC /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18D1E95AB1800536DCC /* Channel.swift */; };
+		2684F1EF1E95ABD600536DCC /* CustomProfileField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1901E95AB1800536DCC /* CustomProfileField.swift */; };
+		2684F1F01E95ABD600536DCC /* SlackError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19D1E95AB1800536DCC /* SlackError.swift */; };
+		2684F1F11E95ABD600536DCC /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19E1E95AB1800536DCC /* Team.swift */; };
+		2684F1F21E95ABD600536DCC /* Bot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18C1E95AB1800536DCC /* Bot.swift */; };
+		2684F1F31E95ABD600536DCC /* Attachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18A1E95AB1800536DCC /* Attachment.swift */; };
+		2684F1F41E95ABD600536DCC /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1941E95AB1800536DCC /* Extensions.swift */; };
+		2684F1F51E95ABD600536DCC /* OAuthConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1991E95AB1800536DCC /* OAuthConfig.swift */; };
+		2684F1F61E95ABD600536DCC /* Topic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A01E95AB1800536DCC /* Topic.swift */; };
+		2684F1F71E95ABD600536DCC /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19A1E95AB1800536DCC /* Reaction.swift */; };
+		2684F1F81E95ABD600536DCC /* Edited.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1921E95AB1800536DCC /* Edited.swift */; };
+		2684F1F91E95ABD600536DCC /* RTMOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19B1E95AB1800536DCC /* RTMOptions.swift */; };
+		2684F1FA1E95ABD600536DCC /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1971E95AB1800536DCC /* Item.swift */; };
+		2684F1FB1E95ABD600536DCC /* DoNotDisturbStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1911E95AB1800536DCC /* DoNotDisturbStatus.swift */; };
+		2684F1FC1E95ABD600536DCC /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1951E95AB1800536DCC /* File.swift */; };
+		2684F1FD1E95ABD600536DCC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1981E95AB1800536DCC /* Message.swift */; };
+		2684F1FE1E95ABD600536DCC /* TeamIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F19F1E95AB1800536DCC /* TeamIcon.swift */; };
+		2684F1FF1E95ABD600536DCC /* CustomProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F18F1E95AB1800536DCC /* CustomProfile.swift */; };
+		2684F2001E95ABD600536DCC /* UserGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1A21E95AB1800536DCC /* UserGroup.swift */; };
+		2684F2011E95ABD600536DCC /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684F1891E95AB1800536DCC /* Action.swift */; };
+		820E53AD1F0738D100C103BB /* Reply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26113F731EF183CD007E5E45 /* Reply.swift */; };
+		820E53AE1F0738D100C103BB /* Reply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26113F731EF183CD007E5E45 /* Reply.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		26113F731EF183CD007E5E45 /* Reply.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Reply.swift; sourceTree = "<group>"; };
+		2684F17D1E95AA6900536DCC /* SKCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SKCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2684F1891E95AB1800536DCC /* Action.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
+		2684F18A1E95AB1800536DCC /* Attachment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Attachment.swift; sourceTree = "<group>"; };
+		2684F18B1E95AB1800536DCC /* AttachmentField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AttachmentField.swift; sourceTree = "<group>"; };
+		2684F18C1E95AB1800536DCC /* Bot.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bot.swift; sourceTree = "<group>"; };
+		2684F18D1E95AB1800536DCC /* Channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Channel.swift; sourceTree = "<group>"; };
+		2684F18E1E95AB1800536DCC /* Comment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Comment.swift; sourceTree = "<group>"; };
+		2684F18F1E95AB1800536DCC /* CustomProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomProfile.swift; sourceTree = "<group>"; };
+		2684F1901E95AB1800536DCC /* CustomProfileField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomProfileField.swift; sourceTree = "<group>"; };
+		2684F1911E95AB1800536DCC /* DoNotDisturbStatus.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DoNotDisturbStatus.swift; sourceTree = "<group>"; };
+		2684F1921E95AB1800536DCC /* Edited.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Edited.swift; sourceTree = "<group>"; };
+		2684F1931E95AB1800536DCC /* Event.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		2684F1941E95AB1800536DCC /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		2684F1951E95AB1800536DCC /* File.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		2684F1961E95AB1800536DCC /* History.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = History.swift; sourceTree = "<group>"; };
+		2684F1971E95AB1800536DCC /* Item.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+		2684F1981E95AB1800536DCC /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		2684F1991E95AB1800536DCC /* OAuthConfig.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OAuthConfig.swift; sourceTree = "<group>"; };
+		2684F19A1E95AB1800536DCC /* Reaction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
+		2684F19B1E95AB1800536DCC /* RTMOptions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RTMOptions.swift; sourceTree = "<group>"; };
+		2684F19C1E95AB1800536DCC /* Scope.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
+		2684F19D1E95AB1800536DCC /* SlackError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SlackError.swift; sourceTree = "<group>"; };
+		2684F19E1E95AB1800536DCC /* Team.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
+		2684F19F1E95AB1800536DCC /* TeamIcon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TeamIcon.swift; sourceTree = "<group>"; };
+		2684F1A01E95AB1800536DCC /* Topic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Topic.swift; sourceTree = "<group>"; };
+		2684F1A11E95AB1800536DCC /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		2684F1A21E95AB1800536DCC /* UserGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserGroup.swift; sourceTree = "<group>"; };
+		2684F1C01E95AB6F00536DCC /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2684F1E41E95ABD400536DCC /* SKCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SKCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2684F2081E95ABD600536DCC /* SKCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SKCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2684F1791E95AA6900536DCC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F1DE1E95ABD400536DCC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F2021E95ABD600536DCC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2684F1731E95AA6900536DCC = {
+			isa = PBXGroup;
+			children = (
+				2684F17F1E95AA6900536DCC /* SKCore */,
+				2684F17E1E95AA6900536DCC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2684F17E1E95AA6900536DCC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2684F17D1E95AA6900536DCC /* SKCore.framework */,
+				2684F1E41E95ABD400536DCC /* SKCore.framework */,
+				2684F2081E95ABD600536DCC /* SKCore.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2684F17F1E95AA6900536DCC /* SKCore */ = {
+			isa = PBXGroup;
+			children = (
+				2684F1BF1E95AB6F00536DCC /* Supporting Files */,
+				2684F1881E95AB1800536DCC /* Sources */,
+			);
+			path = SKCore;
+			sourceTree = "<group>";
+		};
+		2684F1881E95AB1800536DCC /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				2684F1891E95AB1800536DCC /* Action.swift */,
+				2684F18A1E95AB1800536DCC /* Attachment.swift */,
+				2684F18B1E95AB1800536DCC /* AttachmentField.swift */,
+				2684F18C1E95AB1800536DCC /* Bot.swift */,
+				2684F18D1E95AB1800536DCC /* Channel.swift */,
+				2684F18E1E95AB1800536DCC /* Comment.swift */,
+				2684F18F1E95AB1800536DCC /* CustomProfile.swift */,
+				2684F1901E95AB1800536DCC /* CustomProfileField.swift */,
+				2684F1911E95AB1800536DCC /* DoNotDisturbStatus.swift */,
+				2684F1921E95AB1800536DCC /* Edited.swift */,
+				2684F1931E95AB1800536DCC /* Event.swift */,
+				2684F1941E95AB1800536DCC /* Extensions.swift */,
+				2684F1951E95AB1800536DCC /* File.swift */,
+				2684F1961E95AB1800536DCC /* History.swift */,
+				2684F1971E95AB1800536DCC /* Item.swift */,
+				2684F1981E95AB1800536DCC /* Message.swift */,
+				2684F1991E95AB1800536DCC /* OAuthConfig.swift */,
+				2684F19A1E95AB1800536DCC /* Reaction.swift */,
+				26113F731EF183CD007E5E45 /* Reply.swift */,
+				2684F19B1E95AB1800536DCC /* RTMOptions.swift */,
+				2684F19C1E95AB1800536DCC /* Scope.swift */,
+				2684F19D1E95AB1800536DCC /* SlackError.swift */,
+				2684F19E1E95AB1800536DCC /* Team.swift */,
+				2684F19F1E95AB1800536DCC /* TeamIcon.swift */,
+				2684F1A01E95AB1800536DCC /* Topic.swift */,
+				2684F1A11E95AB1800536DCC /* User.swift */,
+				2684F1A21E95AB1800536DCC /* UserGroup.swift */,
+			);
+			path = Sources;
+			sourceTree = SOURCE_ROOT;
+		};
+		2684F1BF1E95AB6F00536DCC /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				2684F1C01E95AB6F00536DCC /* Info.plist */,
+			);
+			path = "Supporting Files";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		2684F17A1E95AA6900536DCC /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F1DF1E95ABD400536DCC /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F2031E95ABD600536DCC /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		2684F17C1E95AA6900536DCC /* SKCore macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2684F1851E95AA6900536DCC /* Build configuration list for PBXNativeTarget "SKCore macOS" */;
+			buildPhases = (
+				2684F1781E95AA6900536DCC /* Sources */,
+				2684F1791E95AA6900536DCC /* Frameworks */,
+				2684F17A1E95AA6900536DCC /* Headers */,
+				2684F17B1E95AA6900536DCC /* Resources */,
+				26A2E6311EEB2F53005C25AC /* SwiftLint */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SKCore macOS";
+			productName = SKCore;
+			productReference = 2684F17D1E95AA6900536DCC /* SKCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		2684F1C21E95ABD400536DCC /* SKCore iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2684F1E11E95ABD400536DCC /* Build configuration list for PBXNativeTarget "SKCore iOS" */;
+			buildPhases = (
+				2684F1C31E95ABD400536DCC /* Sources */,
+				2684F1DE1E95ABD400536DCC /* Frameworks */,
+				2684F1DF1E95ABD400536DCC /* Headers */,
+				2684F1E01E95ABD400536DCC /* Resources */,
+				26A2E6321EEB2F61005C25AC /* SwiftLint */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SKCore iOS";
+			productName = SKCore;
+			productReference = 2684F1E41E95ABD400536DCC /* SKCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		2684F1E61E95ABD600536DCC /* SKCore tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2684F2051E95ABD600536DCC /* Build configuration list for PBXNativeTarget "SKCore tvOS" */;
+			buildPhases = (
+				2684F1E71E95ABD600536DCC /* Sources */,
+				2684F2021E95ABD600536DCC /* Frameworks */,
+				2684F2031E95ABD600536DCC /* Headers */,
+				2684F2041E95ABD600536DCC /* Resources */,
+				26A2E6331EEB2F6F005C25AC /* SwiftLint */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "SKCore tvOS";
+			productName = SKCore;
+			productReference = 2684F2081E95ABD600536DCC /* SKCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2684F1741E95AA6900536DCC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = "Peter Zignego";
+				TargetAttributes = {
+					2684F17C1E95AA6900536DCC = {
+						CreatedOnToolsVersion = 8.3;
+						ProvisioningStyle = Manual;
+					};
+					2684F1C21E95ABD400536DCC = {
+						DevelopmentTeam = U63DWZL52M;
+					};
+					2684F1E61E95ABD600536DCC = {
+						DevelopmentTeam = U63DWZL52M;
+					};
+				};
+			};
+			buildConfigurationList = 2684F1771E95AA6900536DCC /* Build configuration list for PBXProject "SKCore" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 2684F1731E95AA6900536DCC;
+			productRefGroup = 2684F17E1E95AA6900536DCC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2684F17C1E95AA6900536DCC /* SKCore macOS */,
+				2684F1C21E95ABD400536DCC /* SKCore iOS */,
+				2684F1E61E95ABD600536DCC /* SKCore tvOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2684F17B1E95AA6900536DCC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F1E01E95ABD400536DCC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F2041E95ABD600536DCC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		26A2E6311EEB2F53005C25AC /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n    swiftlint\nelse\n    echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi";
+		};
+		26A2E6321EEB2F61005C25AC /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n    swiftlint\nelse\n    echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi";
+		};
+		26A2E6331EEB2F6F005C25AC /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n    swiftlint\nelse\n    echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2684F1781E95AA6900536DCC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2684F1A51E95AB1800536DCC /* AttachmentField.swift in Sources */,
+				2684F1AD1E95AB1800536DCC /* Event.swift in Sources */,
+				2684F1B01E95AB1800536DCC /* History.swift in Sources */,
+				2684F1BB1E95AB1800536DCC /* User.swift in Sources */,
+				2684F1A81E95AB1800536DCC /* Comment.swift in Sources */,
+				2684F1B61E95AB1800536DCC /* Scope.swift in Sources */,
+				2684F1A71E95AB1800536DCC /* Channel.swift in Sources */,
+				2684F1AA1E95AB1800536DCC /* CustomProfileField.swift in Sources */,
+				2684F1B71E95AB1800536DCC /* SlackError.swift in Sources */,
+				26113F741EF183CD007E5E45 /* Reply.swift in Sources */,
+				2684F1B81E95AB1800536DCC /* Team.swift in Sources */,
+				2684F1A61E95AB1800536DCC /* Bot.swift in Sources */,
+				2684F1A41E95AB1800536DCC /* Attachment.swift in Sources */,
+				2684F1AE1E95AB1800536DCC /* Extensions.swift in Sources */,
+				2684F1B31E95AB1800536DCC /* OAuthConfig.swift in Sources */,
+				2684F1BA1E95AB1800536DCC /* Topic.swift in Sources */,
+				2684F1B41E95AB1800536DCC /* Reaction.swift in Sources */,
+				2684F1AC1E95AB1800536DCC /* Edited.swift in Sources */,
+				2684F1B51E95AB1800536DCC /* RTMOptions.swift in Sources */,
+				2684F1B11E95AB1800536DCC /* Item.swift in Sources */,
+				2684F1AB1E95AB1800536DCC /* DoNotDisturbStatus.swift in Sources */,
+				2684F1AF1E95AB1800536DCC /* File.swift in Sources */,
+				2684F1B21E95AB1800536DCC /* Message.swift in Sources */,
+				2684F1B91E95AB1800536DCC /* TeamIcon.swift in Sources */,
+				2684F1A91E95AB1800536DCC /* CustomProfile.swift in Sources */,
+				2684F1BC1E95AB1800536DCC /* UserGroup.swift in Sources */,
+				2684F1A31E95AB1800536DCC /* Action.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F1C31E95ABD400536DCC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2684F1C41E95ABD400536DCC /* AttachmentField.swift in Sources */,
+				2684F1C51E95ABD400536DCC /* Event.swift in Sources */,
+				2684F1C61E95ABD400536DCC /* History.swift in Sources */,
+				2684F1C71E95ABD400536DCC /* User.swift in Sources */,
+				2684F1C81E95ABD400536DCC /* Comment.swift in Sources */,
+				2684F1C91E95ABD400536DCC /* Scope.swift in Sources */,
+				2684F1CA1E95ABD400536DCC /* Channel.swift in Sources */,
+				2684F1CB1E95ABD400536DCC /* CustomProfileField.swift in Sources */,
+				2684F1CC1E95ABD400536DCC /* SlackError.swift in Sources */,
+				820E53AD1F0738D100C103BB /* Reply.swift in Sources */,
+				2684F1CD1E95ABD400536DCC /* Team.swift in Sources */,
+				2684F1CE1E95ABD400536DCC /* Bot.swift in Sources */,
+				2684F1CF1E95ABD400536DCC /* Attachment.swift in Sources */,
+				2684F1D01E95ABD400536DCC /* Extensions.swift in Sources */,
+				2684F1D11E95ABD400536DCC /* OAuthConfig.swift in Sources */,
+				2684F1D21E95ABD400536DCC /* Topic.swift in Sources */,
+				2684F1D31E95ABD400536DCC /* Reaction.swift in Sources */,
+				2684F1D41E95ABD400536DCC /* Edited.swift in Sources */,
+				2684F1D51E95ABD400536DCC /* RTMOptions.swift in Sources */,
+				2684F1D61E95ABD400536DCC /* Item.swift in Sources */,
+				2684F1D71E95ABD400536DCC /* DoNotDisturbStatus.swift in Sources */,
+				2684F1D81E95ABD400536DCC /* File.swift in Sources */,
+				2684F1D91E95ABD400536DCC /* Message.swift in Sources */,
+				2684F1DA1E95ABD400536DCC /* TeamIcon.swift in Sources */,
+				2684F1DB1E95ABD400536DCC /* CustomProfile.swift in Sources */,
+				2684F1DC1E95ABD400536DCC /* UserGroup.swift in Sources */,
+				2684F1DD1E95ABD400536DCC /* Action.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2684F1E71E95ABD600536DCC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2684F1E81E95ABD600536DCC /* AttachmentField.swift in Sources */,
+				2684F1E91E95ABD600536DCC /* Event.swift in Sources */,
+				2684F1EA1E95ABD600536DCC /* History.swift in Sources */,
+				2684F1EB1E95ABD600536DCC /* User.swift in Sources */,
+				2684F1EC1E95ABD600536DCC /* Comment.swift in Sources */,
+				2684F1ED1E95ABD600536DCC /* Scope.swift in Sources */,
+				2684F1EE1E95ABD600536DCC /* Channel.swift in Sources */,
+				2684F1EF1E95ABD600536DCC /* CustomProfileField.swift in Sources */,
+				2684F1F01E95ABD600536DCC /* SlackError.swift in Sources */,
+				820E53AE1F0738D100C103BB /* Reply.swift in Sources */,
+				2684F1F11E95ABD600536DCC /* Team.swift in Sources */,
+				2684F1F21E95ABD600536DCC /* Bot.swift in Sources */,
+				2684F1F31E95ABD600536DCC /* Attachment.swift in Sources */,
+				2684F1F41E95ABD600536DCC /* Extensions.swift in Sources */,
+				2684F1F51E95ABD600536DCC /* OAuthConfig.swift in Sources */,
+				2684F1F61E95ABD600536DCC /* Topic.swift in Sources */,
+				2684F1F71E95ABD600536DCC /* Reaction.swift in Sources */,
+				2684F1F81E95ABD600536DCC /* Edited.swift in Sources */,
+				2684F1F91E95ABD600536DCC /* RTMOptions.swift in Sources */,
+				2684F1FA1E95ABD600536DCC /* Item.swift in Sources */,
+				2684F1FB1E95ABD600536DCC /* DoNotDisturbStatus.swift in Sources */,
+				2684F1FC1E95ABD600536DCC /* File.swift in Sources */,
+				2684F1FD1E95ABD600536DCC /* Message.swift in Sources */,
+				2684F1FE1E95ABD600536DCC /* TeamIcon.swift in Sources */,
+				2684F1FF1E95ABD600536DCC /* CustomProfile.swift in Sources */,
+				2684F2001E95ABD600536DCC /* UserGroup.swift in Sources */,
+				2684F2011E95ABD600536DCC /* Action.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2684F1831E95AA6900536DCC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		2684F1841E95AA6900536DCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		2684F1861E95AA6900536DCC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.launchsoft.SKCore;
+				PRODUCT_NAME = SKCore;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		2684F1871E95AA6900536DCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.launchsoft.SKCore;
+				PRODUCT_NAME = SKCore;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
+		2684F1E21E95ABD400536DCC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = U63DWZL52M;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.launchsoft.SKCore;
+				PRODUCT_NAME = SKCore;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		2684F1E31E95ABD400536DCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = U63DWZL52M;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.launchsoft.SKCore;
+				PRODUCT_NAME = SKCore;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
+		2684F2061E95ABD600536DCC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = U63DWZL52M;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.launchsoft.SKCore;
+				PRODUCT_NAME = SKCore;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+		2684F2071E95ABD600536DCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = U63DWZL52M;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = "$(SRCROOT)/Supporting Files/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.launchsoft.SKCore;
+				PRODUCT_NAME = SKCore;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2684F1771E95AA6900536DCC /* Build configuration list for PBXProject "SKCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2684F1831E95AA6900536DCC /* Debug */,
+				2684F1841E95AA6900536DCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2684F1851E95AA6900536DCC /* Build configuration list for PBXNativeTarget "SKCore macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2684F1861E95AA6900536DCC /* Debug */,
+				2684F1871E95AA6900536DCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2684F1E11E95ABD400536DCC /* Build configuration list for PBXNativeTarget "SKCore iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2684F1E21E95ABD400536DCC /* Debug */,
+				2684F1E31E95ABD400536DCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2684F2051E95ABD600536DCC /* Build configuration list for PBXNativeTarget "SKCore tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2684F2061E95ABD600536DCC /* Debug */,
+				2684F2071E95ABD600536DCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2684F1741E95AA6900536DCC /* Project object */;
+}

@@ -1,0 +1,11 @@
+framework module Laba {
+  umbrella header "Laba.h"
+
+  export *
+  module * { export * }
+}
+
+module Laba.Swift {
+    header "Laba-Swift.h"
+    requires objc
+}

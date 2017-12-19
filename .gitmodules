@@ -10,3 +10,12 @@
 [submodule "CoreMLHelpers"]
 	path = CoreMLHelpers
 	url = https://github.com/hollance/CoreMLHelpers.git
+[submodule "Slack/SKCore"]
+	path = Slack/SKCore
+	url = https://github.com/SlackKit/SKCore.git
+[submodule "Slack/SKWebAPI"]
+	path = Slack/SKWebAPI
+	url = https://github.com/SlackKit/SKWebAPI.git
+[submodule "Slack/SlackKit"]
+	path = Slack/SlackKit
+	url = https://github.com/SlackKit/SlackKit.git

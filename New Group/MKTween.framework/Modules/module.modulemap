@@ -1,0 +1,11 @@
+framework module MKTween {
+  umbrella header "MKTween.h"
+
+  export *
+  module * { export * }
+}
+
+module MKTween.Swift {
+    header "MKTween-Swift.h"
+    requires objc
+}

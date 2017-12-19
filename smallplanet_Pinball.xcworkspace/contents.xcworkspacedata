@@ -2,6 +2,15 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:smallplanet_Pinball.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Slack/SlackKit/SlackKit.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Slack/SKWebAPI/SKWebAPI.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:BlueSocket/BlueSocket.xcodeproj">
    </FileRef>
    <FileRef
@@ -12,8 +21,5 @@
    </FileRef>
    <FileRef
       location = "group:PlanetSwift/PlanetSwift.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:smallplanet_Pinball.xcodeproj">
    </FileRef>
 </Workspace>

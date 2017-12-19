@@ -14,6 +14,7 @@ import CoreML
 import AVFoundation
 import CoreMedia
 import Vision
+import SKWebAPI
 
 @available(iOS 11.0, *)
 class ActorController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
@@ -155,8 +156,11 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 episode = createEpisode()
             }
 
-            currentScore = score
-            
+            if currentScore != score {
+                sendSlack(message: "Episode \(episode?.id ?? "unknown") score: \(score)")
+                currentScore = score
+            }
+
             let gameOverSignal = parts[2] == "1"
             
             if gameStarting && !gameOverSignal {
@@ -170,6 +174,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 // start saving episode data
                 // callback will start next game after delay
                 episode?.save(callback: episodeFinishedSaving)
+                sendSlack(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
             }
             
         }
@@ -188,7 +193,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Play Mode"
-        
+
+        // sendSlack(message: "Acting!!!")
         // testPinballActions()
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
@@ -353,6 +359,15 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
     }
 
+    // MARK: - Slack
+    lazy var slackAPI = { WebAPI(token: SlackSecret.token) }
+    
+    func sendSlack(message: String) {
+        slackAPI().sendMessage(channel: "#qbots", text: message, success: nil) { (error) in
+            print(error)
+        }
+    }
+    
 }
 
 
