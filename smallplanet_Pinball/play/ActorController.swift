@@ -21,6 +21,15 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     static let port = 65535
 
+    enum State {
+        case idling
+        case acting
+        case gameOverSaving
+        case gameOverWaiting
+        case starting
+    }
+    var state = State.idling
+    
     let timeBetweenGames = 30.0 // seconds, following end of save game
     
     var actor = Actor()
@@ -28,8 +37,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     var episode: Episode?
     var currentScore = -1
-    var gameOver = false
-    var gameStarting = false
 
     var lastVisibleFrameNumber = 0
 
@@ -47,7 +54,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
 
-        if !(gameOver || gameStarting) {
+        if state == .acting {
             if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
                 let scale = originalImage.extent.height / CGFloat(3024)
                 let x1 = CGFloat(0) //Defaults[.calibrate_x1])
@@ -68,7 +75,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 return
             }
             
-//            let action = actor.chooseAction(state: image)
+//            let _ = actor.chooseAction(state: image)
             let action = actor.fakeAction()
             // TODO: perform action
             
@@ -117,13 +124,13 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     
     func startGame() {
-        gameOver = false
-        gameStarting = true
         
         episode = createEpisode()
         // send start signal to pinball machine
         pinball.start()
-        
+
+        state = .starting
+
         // any possible error checking?  If no score change in n seconds from episode.startDate try again
         // if fail 3x, send error message to slack with @user?
     }
@@ -136,7 +143,16 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     
     func episodeFinishedSaving() {
+        state = .gameOverWaiting
         PlanetUI.GCDDelay(timeBetweenGames) { self.startGame() }
+    }
+    
+    func endGame() {
+            // start saving episode data
+            // callback will start next game after delay
+            state = .gameOverSaving
+            episode?.save(callback: episodeFinishedSaving)
+            sendSlack(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
     }
     
     func receiveScore(data: Data) {
@@ -163,18 +179,13 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
             let gameOverSignal = parts[2] == "1"
             
-            if gameStarting && !gameOverSignal {
+            if state == .starting && !gameOverSignal {
                 // game has started!
-                gameStarting = false
+                state = .acting
             }
             
-            if !gameStarting && (gameOverSignal && !gameOver) {
-                gameOver = true
-                
-                // start saving episode data
-                // callback will start next game after delay
-                episode?.save(callback: episodeFinishedSaving)
-                sendSlack(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
+            if state == .acting && gameOverSignal {
+                endGame()
             }
             
         }
@@ -245,6 +256,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             self.deadmanSwitch.switch_.thumbTintColor = connected ? UIColor(gaxbString: "#06c2fcff") : UIColor(gaxbString: "#fb16bbff")
         })
 
+        startEpisodeButton.button.add(for: .touchUpInside, startGame)
+        gameOverButton.button.add(for: .touchUpInside, endGame)
         
     }
 
@@ -296,6 +309,12 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     fileprivate var deadmanSwitch: Switch {
         return mainXmlView!.elementForId("deadman")!.asSwitch!
+    }
+    fileprivate var startEpisodeButton: Button {
+        return mainXmlView!.elementForId("startEpisode")!.asButton!
+    }
+    fileprivate var gameOverButton: Button {
+        return mainXmlView!.elementForId("gameOver")!.asButton!
     }
 
     internal var leftButton: Button? {
@@ -386,175 +405,4 @@ extension MutableCollection {
         }
     }
 }
-
-
-
-class ActorServer {
-    
-    static let quitCommand: String = "QUIT"
-    static let shutdownCommand: String = "SHUTDOWN"
-    static let bufferSize = 4096
-    
-    let port: Int
-    let handler: (Data)->()
-    var listenSocket: Socket? = nil
-    var continueRunning = true
-    var connectedSockets = [Int32: Socket]()
-    let socketLockQueue = DispatchQueue(label: "com.ibm.serverSwift.socketLockQueue")
-    
-    init(port: Int, handler: @escaping (Data)->()) {
-        self.port = port
-        self.handler = handler
-    }
-    
-    deinit {
-        // Close all open sockets...
-        for socket in connectedSockets.values {
-            socket.close()
-        }
-        self.listenSocket?.close()
-    }
-    
-    func run() {
-        let queue = DispatchQueue.global(qos: .userInteractive)
-        queue.async { [unowned self] in
-            
-            do {
-                // Create an IPV6 socket...
-                try self.listenSocket = Socket.create(family: .inet)
-                
-                guard let socket = self.listenSocket else {
-                    print("Unable to unwrap socket...")
-                    return
-                }
-                
-                try socket.listen(on: self.port)
-                
-                print("Listening on port: \(socket.listeningPort)")
-                
-                repeat {
-                    let newSocket = try socket.acceptClientConnection()
-                    
-                    print("Accepted connection from: \(newSocket.remoteHostname) on port \(newSocket.remotePort)")
-                    print("Socket Signature: \(newSocket.signature?.description ?? "")")
-                    
-                    self.addNewConnection(socket: newSocket)
-                    
-                } while self.continueRunning
-                
-            }
-            catch let error {
-                guard let socketError = error as? Socket.Error else {
-                    print("Unexpected error...")
-                    return
-                }
-                
-                if self.continueRunning {
-                    print("Error reported:\n \(socketError.description)")
-                }
-            }
-        }
-        while true {
-            sleep(1000)
-        }
-    }
-    
-    func addNewConnection(socket: Socket) {
-        // Add the new socket to the list of connected sockets...
-        socketLockQueue.sync { [unowned self, socket] in
-            self.connectedSockets[socket.socketfd] = socket
-        }
-        
-        // Get the global concurrent queue...
-        let queue = DispatchQueue.global(qos: .default)
-        
-        // Create the run loop work item and dispatch to the default priority global queue...
-        queue.async { [unowned self, socket] in
-            var shouldKeepRunning = true
-            var readData = Data(capacity: ActorServer.bufferSize)
-            
-            do {
-                // Write the welcome string...
-                try socket.write(from: "Ollo\n")
-                
-                repeat {
-                    let bytesRead = try socket.read(into: &readData)
-                    
-                    if bytesRead > 0 {
-                        self.handler(readData)
-                        
-                        guard let response = String(data: readData, encoding: .utf8) else {
-                            print("Error decoding response...")
-                            readData.count = 0
-                            break
-                        }
-                        if response.hasPrefix(ActorServer.shutdownCommand) {
-                            print("Shutdown requested by connection at \(socket.remoteHostname):\(socket.remotePort)")
-                            
-                            // Shut things down...
-                            self.shutdownServer()
-                            
-                            return
-                        }
-                        // print("Server received from connection at \(socket.remoteHostname):\(socket.remotePort): \(response) ")
-                        // let reply = "Server response: \n\(response)\n"
-                        // try socket.write(from: reply)
-                        
-                        if (response.uppercased().hasPrefix(ActorServer.quitCommand) || response.uppercased().hasPrefix(ActorServer.shutdownCommand)) &&
-                            (!response.hasPrefix(ActorServer.quitCommand) && !response.hasPrefix(ActorServer.shutdownCommand)) {
-                            
-                            try socket.write(from: "Enter QUIT or SHUTDOWN to exit\n")
-                        }
-                        
-                        if response.hasPrefix(ActorServer.quitCommand) || response.hasSuffix(ActorServer.quitCommand) {
-                            shouldKeepRunning = false
-                        }
-                    }
-                    
-                    if bytesRead == 0 {
-                        shouldKeepRunning = false
-                        break
-                    }
-                    
-                    readData.count = 0
-                    
-                } while shouldKeepRunning
-                
-                print("Socket: \(socket.remoteHostname):\(socket.remotePort) closed...")
-                socket.close()
-                
-                self.socketLockQueue.sync { [unowned self, socket] in
-                    self.connectedSockets[socket.socketfd] = nil
-                }
-                
-            }
-            catch let error {
-                guard let socketError = error as? Socket.Error else {
-                    print("Unexpected error by connection at \(socket.remoteHostname):\(socket.remotePort)...")
-                    return
-                }
-                if self.continueRunning {
-                    print("Error reported by connection at \(socket.remoteHostname):\(socket.remotePort):\n \(socketError.description)")
-                }
-            }
-        }
-    }
-    
-    func shutdownServer() {
-        print("\nShutdown in progress...")
-        continueRunning = false
-        
-        // Close all open sockets...
-        for socket in connectedSockets.values {
-            socket.close()
-        }
-        
-        listenSocket?.close()
-        
-        DispatchQueue.main.sync {
-            exit(0)
-        }
-    }
-}
-
 

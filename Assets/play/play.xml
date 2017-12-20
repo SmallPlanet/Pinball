@@ -20,15 +20,15 @@
     <Constraint firstItem="cameraLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
     <Constraint firstItem="cameraLabel" firstAttribute="bottom" secondItem="preview" secondAttribute="top" constant="3" />
 
-    <Button id="startEpisode" title="Start episode" styleId="ButtonBig" titleFontColor="white" backgroundColor="#06C2FC" />
+    <Button id="startEpisode" title="Start episode" styleId="ButtonBig" titleFontSize="30" titleFontColor="white" backgroundColor="#06C2FC" />
     <Constraint firstItem="startEpisode" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.95"/>
-    <Constraint firstItem="startEpisode" firstAttribute="height" constant="80"/>
+    <Constraint firstItem="startEpisode" firstAttribute="height" constant="100"/>
     <Constraint firstItem="startEpisode" firstAttribute="top" secondItem="preview" secondAttribute="bottom" constant="30" />
     <Constraint firstItem="startEpisode" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
 
-    <Button id="gameOver" title="End episode (game over)" styleId="ButtonBig" titleFontColor="white" backgroundColor="#FB16BB" />
+    <Button id="gameOver" title="End episode (game over)" styleId="ButtonBig" titleFontSize="30" titleFontColor="white" backgroundColor="#FB16BB" />
     <Constraint firstItem="gameOver" firstAttribute="width" secondItem="root" secondAttribute="width" multiplier="0.95"/>
-    <Constraint firstItem="gameOver" firstAttribute="height" constant="80"/>
+    <Constraint firstItem="gameOver" firstAttribute="height" constant="100"/>
     <Constraint firstItem="gameOver" firstAttribute="top" secondItem="startEpisode" secondAttribute="bottom" constant="30" />
     <Constraint firstItem="gameOver" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
 

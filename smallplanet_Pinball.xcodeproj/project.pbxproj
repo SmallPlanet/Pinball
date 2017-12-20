@@ -52,6 +52,7 @@
 		A949C4231FD4CEDB00F37C13 /* DotMatrixReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A949C4221FD4CEDB00F37C13 /* DotMatrixReader.swift */; };
 		A970C4AE1FCE0F5A0042D2FC /* dotmatrix.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */; };
 		A97DD35B1FE86AC700BC495A /* tng_boy_0000.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */; };
+		A97E14DD1FEAC773004D748F /* ActorServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97E14DC1FEAC773004D748F /* ActorServer.swift */; };
 		A98BD93B1FD1BD1F00C436E4 /* TNGDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9CBE1061FDB203C00719FE6 /* Actor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CBE1051FDB203C00719FE6 /* Actor.swift */; };
@@ -142,6 +143,7 @@
 		A949C4221FD4CEDB00F37C13 /* DotMatrixReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotMatrixReader.swift; sourceTree = "<group>"; };
 		A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = dotmatrix.mlmodel; sourceTree = "<group>"; };
 		A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_boy_0000.mlmodel; sourceTree = "<group>"; };
+		A97E14DC1FEAC773004D748F /* ActorServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorServer.swift; sourceTree = "<group>"; };
 		A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNGDisplay.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9CBE1051FDB203C00719FE6 /* Actor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actor.swift; sourceTree = "<group>"; };
@@ -331,6 +333,7 @@
 			isa = PBXGroup;
 			children = (
 				465F737E1F493AF2002CFF71 /* ActorController.swift */,
+				A97E14DC1FEAC773004D748F /* ActorServer.swift */,
 				A94608BC1FE8C1F100DE7C2A /* SecretSlackToken.swift */,
 				4664D7741F9259DE00B9FC47 /* CameraCaptureHelper.swift */,
 				A9CBE1051FDB203C00719FE6 /* Actor.swift */,
@@ -503,6 +506,7 @@
 				465426DA1F9DFDCC001B332F /* SwiftyUserDefaults.swift in Sources */,
 				46F0E9DF1F97A5A100288F48 /* pinballModel.mlmodel in Sources */,
 				A98BD93B1FD1BD1F00C436E4 /* TNGDisplay.swift in Sources */,
+				A97E14DD1FEAC773004D748F /* ActorServer.swift in Sources */,
 				A9EE6ADF1FD87423006A5883 /* Math.swift in Sources */,
 				A9EE6AE21FD87423006A5883 /* Predictions.swift in Sources */,
 				464FFE121F96117600790173 /* SwiftyZeroMQ.swift in Sources */,
