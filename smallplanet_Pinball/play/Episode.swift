@@ -20,10 +20,10 @@ struct SARS: Codable {
     let done: Bool
     let timestamp: TimeInterval
     
-    init(_ step: StepStorage, discountedReward: Double) {
+    init(_ step: StepStorage, reward: Double, discountedReward: Double) {
         state = step.state
         action = step.action
-        reward = step.score
+        self.reward = reward
         self.discountedReward = discountedReward
         nextState = step.nextState
         done = step.done
@@ -54,7 +54,7 @@ struct Episode {
     }
     
     mutating func append(state: CIImage, action: Actor.Action, score: Double, done: Bool) {
-        let name = filename(index: nextIndex)
+        let filePath = directoryPath + "/" + filename(index: nextIndex)
         
         // write image
         guard let png = state.pngData else {
@@ -62,9 +62,9 @@ struct Episode {
             return
         }
         do {
-            try png.write(to: URL(fileURLWithPath: directoryPath + "/" + name))
-            let nextState = done ? "" : filename(index: nextIndex + 1)
-            steps.append(StepStorage(state: name, action: action.rawValue, score: score, nextState: nextState, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
+            try png.write(to: URL(fileURLWithPath: filePath))
+            let nextState = done ? "" : directoryPath + "/" + filename(index: nextIndex + 1)
+            steps.append(StepStorage(state: filePath, action: action.rawValue, score: score, nextState: nextState, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
         } catch let error {
             print(error)
         }
@@ -96,7 +96,7 @@ struct Episode {
         
         // print(rewards.map{String($0)}.joined(separator: "\n"))
         
-        let sars = rewards.enumerated().map{ SARS(steps[$0.offset], discountedReward: $0.element) }
+        let sars = rewards.enumerated().map{ SARS(steps[$0.offset], reward: scoreChanges[$0.offset], discountedReward: $0.element) }
         
         do {
             let data = try JSONEncoder().encode(sars)
