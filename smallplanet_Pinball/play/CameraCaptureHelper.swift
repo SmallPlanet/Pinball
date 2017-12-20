@@ -233,7 +233,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
     
     var temporalFrames:[CIImage] = []
     
-    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .background)
+    let playQueue = DispatchQueue(label: "handle_play_frames_queue", qos: .userInitiated)
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
     {

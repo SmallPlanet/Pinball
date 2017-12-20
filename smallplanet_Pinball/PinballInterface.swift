@@ -213,6 +213,7 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             
         } catch (let error) {
             print("failure: \(error)")
+            Slacker.shared.send(message: "@quinn omega communication error: \(error)")
         }
     }
     

@@ -31,19 +31,24 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     var captureHelper = CameraCaptureHelper(cameraPosition: .back)
     var updateTimer: Timer?
 
-    //let bottomRight = (CGFloat(2778), CGFloat(1502))
-    //let bottomLeft = (CGFloat(2750), CGFloat(926))
-    //let topRight = (CGFloat(425), CGFloat(1506))
-    //let topLeft = (CGFloat(457), CGFloat(926))
+    let geneticPixelRange = 70
+    
+    let bottomRight = (CGFloat(2854), CGFloat(1585))
+    let bottomLeft = (CGFloat(2878), CGFloat(1002))
+    let topRight = (CGFloat(550), CGFloat(1603))
+    let topLeft = (CGFloat(524), CGFloat(1033))
 
-//    27.4801,35.9627   78.2261,15.3099   74.0887,43.3519   26.2497,18.2002
-    let bottomRight = (CGFloat(2778+26), CGFloat(1502+18))
-    let bottomLeft = (CGFloat(2750+74), CGFloat(926+43))
-    let topRight = (CGFloat(425+78), CGFloat(1506+15))
-    let topLeft = (CGFloat(457+27), CGFloat(926+35))
+    
     let originalImageHeight = 2448.0
     
     func ResetGame() { }
+    
+    func isValid(newScore: Int) -> Bool {
+        let diff = newScore - currentScore
+        if diff > 100000000000 { return false }
+        if diff < 200 { return false }
+        return true
+    }
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
 //        print(fps)
@@ -214,7 +219,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         let ocrResults = Display.findDigits(cols: bits)
         
         if let score = ocrResults.0, ocrResults.1 > 0.9 {
-            if score > currentScore {
+            if score > currentScore, isValid(newScore: score) {
                 currentScore = score
                 update(score: score)
                 publish()
@@ -308,9 +313,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         calibrationBlocker.imageView.contentMode = .scaleAspectFit
         
         DispatchQueue.global(qos: .userInteractive).async {
-            // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 70
-            let maxHeight:CGFloat = 70
+            // MARK:- use a genetic algorithm to calibrate the best offsets for each point...
+            let maxWidth = CGFloat(self.geneticPixelRange)
+            let maxHeight = CGFloat(self.geneticPixelRange)
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
             
@@ -541,6 +546,13 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             Defaults[.calibrate_cutoff] = finalResult.cutoff
             
             Defaults.synchronize()
+            
+            print("\n\n")
+            print("let bottomRight = (CGFloat(\(Int(self.bottomRight.0 + finalResult[6]))), CGFloat(\(Int(self.bottomRight.1 + finalResult[7]))))")
+            print("let bottomLeft = (CGFloat(\(Int(self.bottomLeft.0 + finalResult[4]))), CGFloat(\(Int(self.bottomLeft.1 + finalResult[5]))))")
+            print("let topRight = (CGFloat(\(Int(self.topRight.0 + finalResult[2]))), CGFloat(\(Int(self.topRight.1 + finalResult[3]))))")
+            print("let topLeft = (CGFloat(\(Int(self.topLeft.0 + finalResult[0]))), CGFloat(\(Int(self.topLeft.1 + finalResult[1]))))")
+            print("\n")
             
             print("** End PerformCalibration **")
             

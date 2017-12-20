@@ -14,7 +14,6 @@ import CoreML
 import AVFoundation
 import CoreMedia
 import Vision
-import SKWebAPI
 
 @available(iOS 11.0, *)
 class ActorController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
@@ -27,10 +26,13 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         case gameOverSaving
         case gameOverWaiting
         case starting
+        case watchdogging
     }
     var state = State.idling
     
     let timeBetweenGames = 30.0 // seconds, following end of save game
+    var lastScoreTimestamp = Date()
+    let scoreWatchdogDuration = 600 // seconds without a score change while .acting -> stop, state = .watchdogging
     
     var actor = Actor()
     var actorServer: ActorServer!
@@ -124,15 +126,11 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     
     func startGame() {
-        
         episode = createEpisode()
+
         // send start signal to pinball machine
         pinball.start()
-
         state = .starting
-
-        // any possible error checking?  If no score change in n seconds from episode.startDate try again
-        // if fail 3x, send error message to slack with @user?
     }
     
     func createEpisode() -> Episode {
@@ -152,7 +150,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             // callback will start next game after delay
             state = .gameOverSaving
             episode?.save(callback: episodeFinishedSaving)
-            sendSlack(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
+            Slacker.shared.send(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
     }
     
     func receiveScore(data: Data) {
@@ -160,20 +158,19 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             captureHelper.captureSession.startRunning()
         }
         
-        let dataAsString = String(data: data, encoding: String.Encoding.utf8) as String!
-        print("score string received: \(dataAsString!)")
+        guard let dataAsString = String(data: data, encoding: String.Encoding.utf8) else {
+            print("unable to parse received data into a string")
+            return
+        }
 
-        guard let parts = dataAsString?.components(separatedBy: ":"), parts.count > 1 else {
+        let parts = dataAsString.components(separatedBy: ":")
+        guard parts.count > 1 else {
             return
         }
 
         if parts[0] == "S", parts.count > 2, let score = Int(parts[1]) {
-            if episode == nil {
-                episode = createEpisode()
-            }
-
             if currentScore != score {
-                sendSlack(message: "Episode \(episode?.id ?? "unknown") score: \(score)")
+                Slacker.shared.send(message: "Episode \(episode?.id ?? "pending") score: \(score)")
                 currentScore = score
             }
 
@@ -379,18 +376,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         sleep(delay)
 
     }
-
-    // MARK: - Slack
-    lazy var slackAPI = { WebAPI(token: SlackSecret.token) }
-    
-    func sendSlack(message: String) {
-        slackAPI().sendMessage(channel: "#qbots", text: message, success: nil) { (error) in
-            print(error)
-        }
-    }
     
 }
-
 
 extension MutableCollection {
     /// Shuffle the elements of `self` in-place.

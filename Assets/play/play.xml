@@ -34,7 +34,7 @@
 
     <Switch id="deadman" on="false"/>
     <Constraint firstItem="deadman" firstAttribute="left" secondItem="root" secondAttribute="left" constant="10"/>
-    <Constraint firstItem="deadman" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="-8"/>
+    <Constraint firstItem="deadman" firstAttribute="bottom" secondItem="root" secondAttribute="bottom" constant="-18"/>
     <Label id="deadmanLabel" styleId="LabelBld" text="Enable pinball" textAlignment="left"/>
     <Constraint firstItem="deadmanLabel" firstAttribute="left" secondItem="deadman" secondAttribute="right" constant="8"/>
     <Constraint firstItem="deadmanLabel" firstAttribute="centerY" secondItem="deadman" secondAttribute="centerY"/>
@@ -43,7 +43,7 @@
     <Constraint firstItem="statusLabel" firstAttribute="width" constant="260"/>
     <Constraint firstItem="statusLabel" firstAttribute="height" constant="40"/>
     <Constraint firstItem="statusLabel" firstAttribute="centerX" secondItem="root" secondAttribute="centerX" />
-    <Constraint firstItem="statusLabel" firstAttribute="bottom" secondItem="deadman" secondAttribute="top" constant="10" />
+    <Constraint firstItem="statusLabel" firstAttribute="bottom" secondItem="deadman" secondAttribute="top" constant="-20" />
 
 
 </Scene>

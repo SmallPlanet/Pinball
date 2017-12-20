@@ -53,6 +53,7 @@
 		A970C4AE1FCE0F5A0042D2FC /* dotmatrix.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */; };
 		A97DD35B1FE86AC700BC495A /* tng_boy_0000.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */; };
 		A97E14DD1FEAC773004D748F /* ActorServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97E14DC1FEAC773004D748F /* ActorServer.swift */; };
+		A97E14DF1FEAEDAA004D748F /* Slacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97E14DE1FEAEDAA004D748F /* Slacker.swift */; };
 		A98BD93B1FD1BD1F00C436E4 /* TNGDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9CBE1061FDB203C00719FE6 /* Actor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CBE1051FDB203C00719FE6 /* Actor.swift */; };
@@ -144,6 +145,7 @@
 		A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = dotmatrix.mlmodel; sourceTree = "<group>"; };
 		A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_boy_0000.mlmodel; sourceTree = "<group>"; };
 		A97E14DC1FEAC773004D748F /* ActorServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorServer.swift; sourceTree = "<group>"; };
+		A97E14DE1FEAEDAA004D748F /* Slacker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slacker.swift; sourceTree = "<group>"; };
 		A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNGDisplay.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9CBE1051FDB203C00719FE6 /* Actor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actor.swift; sourceTree = "<group>"; };
@@ -227,6 +229,7 @@
 				461893371F3B58C300AA4599 /* main */,
 				4618932B1F3B577A00AA4599 /* Localizations.swift */,
 				A9C946411F3E0AB200CEA23C /* PinballInterface.swift */,
+				A97E14DE1FEAEDAA004D748F /* Slacker.swift */,
 				46C402841F3CB4DF00C46E3C /* UIControl+Closures.swift */,
 				4632CB101F3B53BE00359AA3 /* AppDelegate.swift */,
 				4632CB141F3B53BE00359AA3 /* Main.storyboard */,
@@ -489,6 +492,7 @@
 				464FFE0F1F96117600790173 /* Socket.swift in Sources */,
 				A949C4231FD4CEDB00F37C13 /* DotMatrixReader.swift in Sources */,
 				A9EE6AE31FD87423006A5883 /* MultiArray.swift in Sources */,
+				A97E14DF1FEAEDAA004D748F /* Slacker.swift in Sources */,
 				464FFE111F96117600790173 /* SocketType.swift in Sources */,
 				4666A62A1FC36B8E0047009A /* ComboSort.swift in Sources */,
 				A90620D91FDF806B005C0732 /* Episode.swift in Sources */,
