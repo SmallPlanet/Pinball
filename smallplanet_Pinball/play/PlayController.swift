@@ -118,21 +118,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             // there are four float packed in before the model data; we need to extract those first
             // and then write the actual model data to file
             
-            let leftMeanBytes:Array<UInt8> = [data[0], data[1], data[2], data[3]]
-            var leftMean:Float = 0.0
-            memcpy(&leftMean, leftMeanBytes, 4)
+            let modelRunNumberBytes:Array<UInt8> = [data[0], data[1], data[2], data[3]]
+            var modelRunNumber:Float = 0.0
+            memcpy(&modelRunNumber, modelRunNumberBytes, 4)
             
-            let leftMedianBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
-            var leftMedian:Float = 0.0
-            memcpy(&leftMedian, leftMedianBytes, 4)
+            let modelGlobalMeanBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
+            var modelGlobalMean:Float = 0.0
+            memcpy(&modelGlobalMean, modelGlobalMeanBytes, 4)
             
-            let rightMeanBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
-            var rightMean:Float = 0.0
-            memcpy(&rightMean, rightMeanBytes, 4)
+            let modelLocalMeanBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
+            var modelLocalMean:Float = 0.0
+            memcpy(&modelLocalMean, modelLocalMeanBytes, 4)
             
-            let rightMedianBytes:Array<UInt8> = [data[12], data[13], data[14], data[15]]
-            var rightMedian:Float = 0.0
-            memcpy(&rightMedian, rightMedianBytes, 4)
+            let unused4Bytes:Array<UInt8> = [data[12], data[13], data[14], data[15]]
+            var unused4:Float = 0.0
+            memcpy(&unused4, unused4Bytes, 4)
             
             try data.subdata(in: Range(16..<data.count)).write(to: fileURL)
             
@@ -141,8 +141,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 let model = try MLModel(contentsOf: compiledUrl)
                 self.model = try? VNCoreMLModel(for: model)
                 
-                print("calibratedLeftCutoff \(leftMean)")
-                print("calibratedRightCutoff \(rightMean)")
+                self.modelGlobalCutoff = modelGlobalMean
+                self.modelLocalCutoff = modelLocalMean
+                
             }
         } catch {
             print(error)
@@ -185,6 +186,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     var leftActivateTime:Date = Date()
     var rightActivateTime:Date = Date()
+    
+    let prng = PRNG()
+    
+    var modelLocalCutoff:Float = 0.5
+    var modelGlobalCutoff:Float = 0.5
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
@@ -233,6 +239,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             ]
         }
         
+        /*
         if shouldBeCalibrating {
             lastOriginalFrame = originalImage
             lastFrame = image
@@ -242,7 +249,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             usleep(72364)
             return
         }
-        
+        */
         
         if pinball.leftButtonPressed == true {
             leftFlipperCounter = numberOfFramesItTakesForFlipperToRetract
@@ -283,9 +290,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
-            // for the nonce we no longer need calibrated cut off values supplied by the model training.
-            var cutoffLeft:Float = 0.5
-            var cutoffRight:Float = 0.5
+            // We want a random number from the model mean (either local or global still testing) and 0.5
+            let cutoffRange:Float = 0.5 - self!.modelGlobalCutoff
+            var cutoffLeft:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRange
+            var cutoffRight:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRange
             
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
@@ -312,7 +320,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             }
             
             
-            if leftObservation!.confidence > cutoffLeft {
+            if cutoffLeft < leftObservation!.confidence {
                 if canPlay && self?.pinball.leftButtonPressed == false {
                     if self!.leftFlipperCounter == 0 {
                         self!.leftActivateTime = Date()
@@ -326,7 +334,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
             }
             
-            if rightObservation!.confidence > cutoffRight {
+            if cutoffRight < rightObservation!.confidence {
                 if canPlay && self?.pinball.rightButtonPressed == false {
                     if self!.leftFlipperCounter == 0 {
                         self!.rightActivateTime = Date()
@@ -355,7 +363,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 if self?.send_leftButton == 1 || self?.send_rightButton == 1 || self?.send_ballKickerButton == 1 {
                     
                     // only save memories of the flippers in their resting position
-                    if self?.leftFlipperCounter == 0 && self?.rightFlipperCounter == 0 {
+                    if (self!.send_leftButton == 1 && self?.leftFlipperCounter == 0) ||
+                        (self!.send_rightButton == 1 && self?.rightFlipperCounter == 0) {
                         self?.sendCameraFrame(image, self!.send_leftButton, self!.send_rightButton, 0, self!.send_ballKickerButton)
                     }
                     self?.send_leftButton = 0
@@ -438,7 +447,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsPerspectiveImages = true
-        captureHelper.delegateWantsPictureInPictureImages = true
+        captureHelper.delegateWantsPictureInPictureImages = false
         
         captureHelper.scaledImagesSize = CGSize(width: 48, height: 120)
         captureHelper.delegateWantsScaledImages = true
@@ -557,6 +566,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     }
     
     func CheckShouldBeCalibrating() {
+        
+        shouldBeCalibrating = true
+        
+        /*
         // While we are not playing a game, we should be calibrating.
         if currentPlayer == 1 && playerOneScore <= 20 {
             if shouldBeCalibrating == false {
@@ -565,10 +578,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         } else {
             shouldBeCalibrating = false
         }
-        
+        */
     }
     
-    func PerformCalibration( ) {
+    func PerformCalibration() {
 
         // Load our calibration image and convert to RGB bytes
         calibrationImage = CIImage(contentsOf: URL(fileURLWithPath: String(bundlePath: "bundle://Assets/play/calibrate.jpg")))
@@ -593,15 +606,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 50
-            let maxHeight:CGFloat = 50
+            let maxWidth:CGFloat = 30
+            let maxHeight:CGFloat = 30
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
-            
-            
-            var bestCalibrationAccuracy:Float = 0.0
-            
-            let timeout = 9000000
             
             let ga = GeneticAlgorithm<Organism>()
             
@@ -830,13 +838,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 return accuracy
             }
             
+            var bestCalibrationAccuracy:Float = 0.0
+
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
-                if self.shouldBeCalibrating == false || score > 0.999 {
+                if self.shouldBeCalibrating == false {
                     self.shouldBeCalibrating = false
                     return true
                 }
                 
-                if generation > 100 && score > bestCalibrationAccuracy {
+                // if we're "good enough" then go into low power mode
+                if generation > 3000 && score > 0.705 && generation % 60 == 0 {
+                    usleep(472364)
+                }
+                
+                // NOTE: This will only ever be called with the current BEST organism...
+                if sharedOrganismIdx == 0 && (generation % 250 == 0 || score > bestCalibrationAccuracy) {
                     bestCalibrationAccuracy = score
                     
                     let x1 = organism.play[0]
@@ -891,38 +907,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             print("** Begin PerformCalibration **")
             
-            let finalResult = ga.PerformGeneticsThreaded (UInt64(timeout))
-            
-            // force a score of the final result so we can fill the dotmatrix
-            let finalAccuracy = ga.scoreOrganism(finalResult, 1, PRNG())
-            
-            print("final accuracy: \(finalAccuracy)")
-           
-            Defaults[.play_calibrate_x1] = Double(finalResult.play[0])
-            Defaults[.play_calibrate_y1] = Double(finalResult.play[1])
-            
-            Defaults[.play_calibrate_x2] = Double(finalResult.play[2])
-            Defaults[.play_calibrate_y2] = Double(finalResult.play[3])
-            
-            Defaults[.play_calibrate_x3] = Double(finalResult.play[4])
-            Defaults[.play_calibrate_y3] = Double(finalResult.play[5])
-            
-            Defaults[.play_calibrate_x4] = Double(finalResult.play[6])
-            Defaults[.play_calibrate_y4] = Double(finalResult.play[7])
-            
-            Defaults[.pip_calibrate_x1] = Double(finalResult.pip[0])
-            Defaults[.pip_calibrate_y1] = Double(finalResult.pip[1])
-            
-            Defaults[.pip_calibrate_x2] = Double(finalResult.pip[2])
-            Defaults[.pip_calibrate_y2] = Double(finalResult.pip[3])
-            
-            Defaults[.pip_calibrate_x3] = Double(finalResult.pip[4])
-            Defaults[.pip_calibrate_y3] = Double(finalResult.pip[5])
-            
-            Defaults[.pip_calibrate_x4] = Double(finalResult.pip[6])
-            Defaults[.pip_calibrate_y4] = Double(finalResult.pip[7])
-            
-            Defaults.synchronize()
+            let finalResult = ga.PerformGeneticsThreaded (UInt64.max)
             
             print("** End PerformCalibration **")
             
@@ -936,6 +921,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
+        
+        DispatchQueue.main.async {
+            self.PerformCalibration();
+        }
     }
     
     // MARK: PlanetSwift Glue
