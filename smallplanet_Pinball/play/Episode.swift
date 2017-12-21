@@ -63,8 +63,9 @@ struct Episode {
         }
         do {
             try png.write(to: URL(fileURLWithPath: filePath))
-            let nextState = done ? "" : directoryPath + "/" + filename(index: nextIndex + 1)
-            steps.append(StepStorage(state: filePath, action: action.rawValue, score: score, nextState: nextState, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
+            let state = id + "/" + filename(index: nextIndex)
+            let nextState = done ? "" : id + "/" + filename(index: nextIndex + 1)
+            steps.append(StepStorage(state: state, action: action.rawValue, score: score, nextState: nextState, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
         } catch let error {
             print(error)
         }

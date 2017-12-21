@@ -126,7 +126,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsScaledImages = false
         captureHelper.delegateWantsPlayImages = true
         captureHelper.delegateWantsTemporalImages = false
-        captureHelper.delegateWantsLockedCamera = false
+        captureHelper.delegateWantsLockedCamera = true
         captureHelper.delegateWantsPerspectiveImages = true
         // captureHelper.delegateWantsSpecificFormat = false
         // captureHelper.cameraFormatSize = CGSize(width: 1920, height: 1080)

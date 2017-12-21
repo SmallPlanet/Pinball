@@ -200,8 +200,8 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         if delegateWantsLockedCamera {
             try! captureDevice.lockForConfiguration()
-            captureDevice.focusMode = .locked
-            //captureDevice.exposureMode = .locked
+            captureDevice.focusMode = .autoFocus
+            captureDevice.exposureMode = .autoExpose
             //captureDevice.whiteBalanceMode = .locked
             captureDevice.unlockForConfiguration()
         }
@@ -217,7 +217,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         if delegateWantsLockedCamera {
             try! captureDevice.lockForConfiguration()
             captureDevice.focusMode = .continuousAutoFocus
-            //captureDevice.exposureMode = .continuousAutoExposure
+            captureDevice.exposureMode = .autoExpose
             //captureDevice.whiteBalanceMode = .continuousAutoWhiteBalance
             captureDevice.unlockForConfiguration()
         }

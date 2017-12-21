@@ -170,10 +170,10 @@ class ActorServer {
         }
         
         listenSocket?.close()
-        
-        DispatchQueue.main.sync {
-            exit(0)
-        }
+//
+//        DispatchQueue.main.sync {
+//            exit(0)
+//        }
     }
 }
 

@@ -169,6 +169,8 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         sendPress(forButton: .startButton(on: false))
     }
     
+    var lastError: Date?
+    
     private func sendPress(forButton type: ButtonType) {
         let data: String
         switch type {
@@ -212,8 +214,11 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             }
             
         } catch (let error) {
-            print("failure: \(error)")
-            Slacker.shared.send(message: "@quinn omega communication error: \(error)")
+            if lastError == nil || lastError!.timeIntervalSinceNow < -300 {
+                lastError = Date()
+                print("failure: \(error)")
+                Slacker.shared.send(message: "@quinn omega communication error: \(error)")
+            }
         }
     }
     

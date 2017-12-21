@@ -30,7 +30,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     var state = State.idling
     
-    let timeBetweenGames = 30.0 // seconds, following end of save game
+    let timeBetweenGames = 5.0 // 30.0 // seconds, following end of save game
     var lastScoreTimestamp = Date()
     let scoreWatchdogDuration = 600 // seconds without a score change while .acting -> stop, state = .watchdogging
     
@@ -126,11 +126,20 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     
     func startGame() {
+//        captureHelper = createCaptureHelper()
+        
         episode = createEpisode()
 
         // send start signal to pinball machine
         pinball.start()
         state = .starting
+    }
+    
+    // starts a new episode from user input on screen assuming pinball game is physically started
+    func startEpisode() {
+//        captureHelper = createCaptureHelper()
+        episode = createEpisode()
+        state = .acting
     }
     
     func createEpisode() -> Episode {
@@ -198,16 +207,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         }
     }
     
-    // MARK:- View lifecycle
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Play Mode"
-
-        // sendSlack(message: "Acting!!!")
-        // testPinballActions()
-        mainBundlePath = "bundle://Assets/play/play.xml"
-        loadView()
+    func createCaptureHelper() -> CameraCaptureHelper {
+        let captureHelper = CameraCaptureHelper(cameraPosition: .back)
         
         captureHelper.delegate = self
         captureHelper.delegateWantsPlayImages = true
@@ -227,10 +228,27 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         
         captureHelper.constantFPS = 20
         captureHelper.delegateWantsConstantFPS = true
+
+        captureHelper.pinball = pinball
+
+        return captureHelper
+    }
+    
+    // MARK:- View lifecycle
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Play Mode"
+
+        // sendSlack(message: "Acting!!!")
+        // testPinballActions()
+        mainBundlePath = "bundle://Assets/play/play.xml"
+        loadView()
         
+        captureHelper = createCaptureHelper()
+
         UIApplication.shared.isIdleTimerDisabled = true
         
-        captureHelper.pinball = pinball
         
         do { try setupActorServer(receiveScore) }
         catch { print(error) }
@@ -253,7 +271,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             self.deadmanSwitch.switch_.thumbTintColor = connected ? UIColor(gaxbString: "#06c2fcff") : UIColor(gaxbString: "#fb16bbff")
         })
 
-        startEpisodeButton.button.add(for: .touchUpInside, startGame)
+        startEpisodeButton.button.add(for: .touchUpInside, startEpisode)
         gameOverButton.button.add(for: .touchUpInside, endGame)
         
     }
