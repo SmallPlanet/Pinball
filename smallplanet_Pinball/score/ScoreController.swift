@@ -128,6 +128,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsTemporalImages = false
         captureHelper.delegateWantsLockedCamera = true
         captureHelper.delegateWantsPerspectiveImages = true
+        captureHelper.delegateWantsConstantFPS = true
+        captureHelper.constantFPS = 10
         // captureHelper.delegateWantsSpecificFormat = false
         // captureHelper.cameraFormatSize = CGSize(width: 1920, height: 1080)
         
@@ -575,7 +577,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         try actor.connect(to: "Actor.local", port: Int32(ActorController.port))
         
         // publish the score and done state periodically
-        updateTimer = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)
+//        updateTimer = Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)
 
     }
     

@@ -56,7 +56,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
 
-        if state == .acting {
+        if state == .acting || state == .starting {
             if cameraCaptureHelper.perspectiveImagesCoords.count == 0 {
                 let scale = originalImage.extent.height / CGFloat(3024)
                 let x1 = CGFloat(0) //Defaults[.calibrate_x1])
@@ -126,7 +126,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     }
     
     func startGame() {
-//        captureHelper = createCaptureHelper()
+        captureHelper = createCaptureHelper()
         
         episode = createEpisode()
 
@@ -137,7 +137,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     // starts a new episode from user input on screen assuming pinball game is physically started
     func startEpisode() {
-//        captureHelper = createCaptureHelper()
+        captureHelper = createCaptureHelper()
         episode = createEpisode()
         state = .acting
     }
@@ -245,7 +245,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
         
-        captureHelper = createCaptureHelper()
+//        captureHelper = createCaptureHelper()
 
         UIApplication.shared.isIdleTimerDisabled = true
         

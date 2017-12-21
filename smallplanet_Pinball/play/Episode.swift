@@ -99,15 +99,15 @@ struct Episode {
         
         let sars = rewards.enumerated().map{ SARS(steps[$0.offset], reward: scoreChanges[$0.offset], discountedReward: $0.element) }
         
+        let encoder = JSONEncoder()
         do {
-            let data = try JSONEncoder().encode(sars)
-            let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-            let jsonString = String(describing: json)
+            let data = try encoder.encode(sars)
             let fileURL = URL(fileURLWithPath: "\(directoryPath)/\(id).json")
-            try jsonString.write(to: fileURL, atomically: false, encoding: .utf8)
+            FileManager.default.createFile(atPath: fileURL.path, contents: data, attributes: nil)
         } catch {
-            print(error)
+            fatalError(error.localizedDescription)
         }
+
         callback()
     }
     
