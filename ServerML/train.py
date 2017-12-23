@@ -34,7 +34,7 @@ class EvaluationMonitor(Callback):
     labels = []
     weights = []
     didSaveModel = False
-    minSaveAccuracy = 0.98
+    minSaveAccuracy = 0.96
     
     leftMeanSaved = 0
     leftMedianSaved = 0
@@ -92,7 +92,7 @@ class EvaluationMonitor(Callback):
             rightRange,rightSD,rightMean,rightMedian = histogram(right_predictions, right_weights, buckets=20)
             
             # in theory, a higher standard deviation means the network generalizes better
-            if (rightSD > 0.1 and leftSD > 0.1) or (self.minSaveAccuracy == 0.0):
+            if (rightSD > 0.08 and leftSD > 0.08) or (self.minSaveAccuracy == 0.0):
             #if rightSD < 0.02 and leftSD < 0.02 and rightSD > 0.01 and leftSD > 0.01:
                 self.minSaveAccuracy = acc
                 
@@ -169,28 +169,62 @@ def read_file(path):
     with open(path, 'rb') as f:
         return f.read()
 
-def GenerateSampleWeights(total_weights, boostWasted):
+def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
     normalized_weights = np.zeros(len(total_weights), dtype='float32')
     max_weight = max(total_weights)
     
     numWasted = 0
-    for i in range(0,len(total_weights)):
-        if total_weights[i] < 0:
-            numWasted = numWasted + 1
-
-    wastedMod = numWasted / len(total_weights)
+    numLeft = 0
+    numRight = 0
     
-    print("wastedMod", wastedMod, "boostWasted", boostWasted)
-        
-    for i in range(0,len(total_weights)):
-        if total_weights[i] < 0:
-            # Note: the lost balls weight is not really indicative of the value of losing a ball, hence we need to choose a 
-            # constant weight for lost balls which we find through experimentation
-            normalized_weights[i] = (1.0 - wastedMod) * boostWasted
-            #normalized_weights[i] = (1.0 * (1.0 - normalWeightedAdjustment)) + 0.5
+    totalLeftWeight = 0
+    totalRightWeight = 0
+    
+    for i in range(0,len(total_labels)):
+        if total_labels[i][0] == 1:
+            numLeft += 1
+            totalLeftWeight += total_weights[i]
+        elif total_labels[i][1] == 1:
+            numRight += 1
+            totalRightWeight += total_weights[i]
         else:
-            normalized_weights[i] = wastedMod
-            #normalized_weights[i] = ((total_weights[i] / max_weight) * normalWeightedAdjustment) + 0.5
+            numWasted += 1
+
+    leftMod = numLeft / (numLeft + numRight)
+    wastedMod = numWasted / (numLeft + numRight + numWasted)
+    
+    left = 0
+    right = 0
+    wasted = 0
+    
+    for i in range(0,len(total_weights)):
+        
+        # permanent memories are full weight always
+        if total_weights[i] == 999:
+            normalized_weights[i] = 1.0
+        
+        # wasted memories are balanced against "normal" left/right action memories
+        elif total_weights[i] < 0:
+            normalized_weights[i] = (1.0 - wastedMod)
+            wasted += normalized_weights[i]
+        else:
+            # left memories are balanced against right memories, and are weighted by their own scores
+            if total_labels[i][0] == 1:
+                normalized_weights[i] = (total_weights[i] / totalLeftWeight * numLeft) * wastedMod * (1.0 - leftMod) * 2
+                left += normalized_weights[i]
+            # right memories are balanced against left memories, and are weighted by their own scores
+            elif total_labels[i][1] == 1:
+                normalized_weights[i] = (total_weights[i] / totalRightWeight * numRight) * wastedMod * leftMod * 2
+                right += normalized_weights[i]
+            # erroneous memories (false positive right/left memories manually corrected) count as a wasted memory
+            else:
+                normalized_weights[i] = (1.0 - wastedMod)
+                wasted += normalized_weights[i]
+
+        normalized_weights[i] *= global_weight
+    
+    print("wasted",wasted,"left",left,"right",right)
+    
     return normalized_weights
                                 
 
@@ -272,11 +306,11 @@ def EvaluateImagesForModel(label_format,cnn_model,total_imgs,total_labels,total_
     
     for i in range(0,numTotal):
         if round(predictions[i][0]) == round(total_labels[i][0]) and round(predictions[i][1]) == round(total_labels[i][1]):
-            correct_predictions.append(predictions[i][0])
-            correct_predictions.append(predictions[i][1])
-            correct_weights.append(total_weights[i])
-            correct_weights.append(total_weights[i])
-            numCorrect = numCorrect + 1    
+            numCorrect = numCorrect + 1
+        correct_predictions.append(predictions[i][0])
+        correct_predictions.append(predictions[i][1])
+        correct_weights.append(total_weights[i])
+        correct_weights.append(total_weights[i])
             
     acc = numCorrect / numTotal
     
@@ -294,20 +328,19 @@ def EvaluateAllRuns():
     localMaxRuns = trainingRunNumber
     for i in range(0,localMaxRuns):
         EvaluateModelForRun(i,shouldPrint=True)
-    savedTrainingRunNumber = trainingRunNumber
+    trainingRunNumber = savedTrainingRunNumber
 
 def EvaluateModelForRun(runNumber,shouldPrint=True):
     global trainingRunNumber
     savedTrainingRunNumber = trainingRunNumber
     trainingRunNumber = runNumber
     
+    if runNumber < 0:
+        runNumber = 0
     
     # generate a model we can test against
-    print("Generating model")
+    print("Generating model for run"+str(runNumber))
     cnn_model = model.cnn_model()
-    cnn_model.compile(loss='binary_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['accuracy'])
     
     if os.path.isfile(ModelWeightsPath(runNumber+1)):
         print("Loading model weights from "+ModelWeightsPath(runNumber+1))
@@ -327,7 +360,7 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     memories_weights = []
     
     # 1) the accuracy of all wasted images
-    for i in range(0,trainingRunNumber+1):
+    for i in range(0,runNumber+1):
         
         prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, -1)
         if len(prev_labels) > 0:
@@ -344,7 +377,7 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     acc,mean = EvaluateImagesForModel("  Accuracy of memories is {} of {} total memories",cnn_model,memories_imgs,memories_labels,memories_weights,shouldPrint=shouldPrint)
     EvaluateImagesForModel("  Accuracy of wasted memories is {} of {} total memories",cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=shouldPrint)
     
-    savedTrainingRunNumber = trainingRunNumber
+    trainingRunNumber = savedTrainingRunNumber
     
     return acc,mean
 
@@ -380,12 +413,9 @@ def Learn(overrideRunNumber=None):
     # create the model
     print("Generating the CNN model...")
     cnn_model = model.cnn_model()
-
-    cnn_model.compile(loss='binary_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['accuracy'])
                   
     #print(cnn_model.summary())
+    
     
     total_imgs,total_labels,total_weights = GatherImagesFromTrainingRun(trainingRunNumber, 1.0, 0, 0, 0)
     
@@ -446,7 +476,7 @@ def Learn(overrideRunNumber=None):
             em.cnn_model = cnn_model
                                 
             # normalize the sample weights
-            normalized_weights = GenerateSampleWeights(total_weights, 1.0)
+            normalized_weights = GenerateSampleWeights(total_labels, total_weights)
                     
             # randomize the batch size            
             batch_size = int(random.random() * 32 + 6)
@@ -474,33 +504,43 @@ def Learn(overrideRunNumber=None):
     
     else:
         
+        gc.collect()
+        
         # we include memories from past runs, but ideally we want the influence of runs in the far past to not influence our
         # current decisions as much.  This is representing with the normalized value supplied to the GatherImagesFromTrainingRun()
         # method, which will multpliy all loaded weights by it.
         
-        minTrainingRun = trainingRunNumber - 3
-        if minTrainingRun < 0:
-            minTrainingRun = 0
-                    
+        minTrainingRun = trainingRunNumber-12
+        
+        total_imgs = []
+        total_labels = []
+        total_weights = []
+        
         # Gather all normal memories from previous runs
-        for i in range(minTrainingRun,trainingRunNumber):
-            # we always want to gather all of the wasted memories, because we never want to forget how we lose a
-            # ball (since those memories do not get reinforced through positive reinforcement).
-            f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
-            prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, int(200.0*f), -1, -1)
+        for i in range(minTrainingRun,trainingRunNumber+1):
+            if i >= 0:
+                f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
             
-            if len(prev_labels) > 0:
-                print("Gathering "+str(len(prev_imgs))+" normal memories from run"+str(i)+" at "+str(f)+" adjustment")                  
-                total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
-                total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
-                total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights       
+                # we always want to gather all of the wasted memories, because we never want to forget how we lose a
+                # ball (since those memories do not get reinforced through positive reinforcement).
+                
+                #int(300.0*f)
+                prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, -1)
+            
+                if len(prev_labels) > 0:
+                    print("Gathering "+str(len(prev_imgs))+" normal memories from run"+str(i)+" at "+str(f)+" adjustment")                  
+                    total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
+                    total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
+                    total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights       
         
         # Now gather all of the wasted memories            
         wasted_imgs = []
         wasted_labels = []
         wasted_weights = []
         
-        for i in range(0,trainingRunNumber):
+        for i in range(0,trainingRunNumber+1):
+            f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
+            
             prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, -1, -1, 0)
             
             if len(prev_labels) > 0:
@@ -512,41 +552,36 @@ def Learn(overrideRunNumber=None):
                 wasted_imgs = np.concatenate((wasted_imgs,prev_imgs), axis=0) if len(wasted_imgs) > 0 else prev_imgs
                 wasted_labels = np.concatenate((wasted_labels,prev_labels), axis=0) if len(wasted_labels) > 0 else prev_labels
                 wasted_weights = np.concatenate((wasted_weights,prev_weights), axis=0) if len(wasted_weights) > 0 else prev_weights
-        
+                
         
         wasted_acc,wasted_mean = EvaluateImagesForModel(None,cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=False)
-        
-        # Note: the more we boost wasted memories, the more memories which are not really wasted get moved
-        # into the activated category.  Jury is still out what's best here...
-        boostWasted = 1.0 / wasted_acc
-        #boostWasted = (boostWasted - 1.0) * 2.0 + 1.0
-        
-        normalized_weights = GenerateSampleWeights(total_weights, boostWasted)
+                
+        normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / 10.0)
         
         
         print("Training "+str(len(total_labels))+" images from run"+str(trainingRunNumber))
         done = False
         epochs = 1
         while not done:
-            batch_size = int(random.random() * 100 + 200)
+            batch_size = 96
             cnn_model.fit(total_imgs, total_labels,
                       batch_size=batch_size,
-                      epochs=epochs,
+                      epochs=10,
                       shuffle=True,
                       verbose=1,
                       sample_weight=normalized_weights,
                       )
             
-            epochs = epochs + 1
-            if epochs > 2:
-                done = True
+            #epochs = epochs + 1
+            #if epochs > 1:
+            #    done = True
             
             acc,mean = EvaluateImagesForModel(None,cnn_model,total_imgs,total_labels,total_weights,shouldPrint=False)
             
             msgFloat3 = mean
             
-            if acc > 0.88:
-                done = True
+            #if acc > 0.88:
+            done = True
         
         cnn_model.save("model.h5")
     
@@ -559,7 +594,13 @@ def Learn(overrideRunNumber=None):
 
     print("Conversion to coreml finished...")
     
-    
+    # move the model.h5 file into this run
+    if not os.path.exists(TrainingRunPath(trainingRunNumber+1)):
+        os.makedirs(TrainingRunPath(trainingRunNumber+1))
+        os.makedirs(TrainingMemoryPath(trainingRunNumber+1))
+        os.makedirs(WasteMemoryPath(trainingRunNumber+1))
+        os.makedirs(TempMemoryPath(trainingRunNumber+1))
+    os.rename("model.h5", ModelWeightsPath(trainingRunNumber+1))
     
     # When we pack our model into our .msg format we can include four float variables from training
     # 1) the training number run for this model
@@ -568,7 +609,7 @@ def Learn(overrideRunNumber=None):
     # 4) reserved for future use
     
     msgFloat1 = trainingRunNumber
-    acc,mean = EvaluateModelForRun(trainingRunNumber,shouldPrint=False)
+    acc,mean = EvaluateModelForRun(trainingRunNumber-1,shouldPrint=False)
     msgFloat2 = mean
     
     print("global accuracy", acc, "global mean", mean, "local mean", msgFloat3)
@@ -585,15 +626,8 @@ def Learn(overrideRunNumber=None):
     
     # once training is finished, we need to create a new run folder and move model.h5 to it.
     trainingRunNumber = trainingRunNumber + 1
-    if not os.path.exists(TrainingRunPath()):
-        os.makedirs(TrainingRunPath())
-        os.makedirs(TrainingMemoryPath())
-        os.makedirs(WasteMemoryPath())
-        os.makedirs(TempMemoryPath())
     
-    # move the model.h5 file into this run
-    os.rename("model.h5", ModelWeightsPath())
-        
+            
     print("Training finished...")
         
         
