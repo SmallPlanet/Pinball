@@ -88,7 +88,7 @@ def test_median():
 
 
 # returns (value_range,std_deviation,mean,median)
-def histogram(stream, weights, minimum=None, maximum=None, buckets=None, custbuckets=None, calc_msvd=True):
+def histogram(stream, weights, minimum=None, maximum=None, buckets=None, custbuckets=None, calc_msvd=True, shouldPrint=True):
     """
     Loop over the stream and add each entry to the dataset, printing out at the end
 
@@ -185,22 +185,23 @@ def histogram(stream, weights, minimum=None, maximum=None, buckets=None, custbuc
     if max(bucket_counts) > 75:
         bucket_scale = int(max(bucket_counts) / 75)
 
-    print "# NumSamples = %d; Min = %0.2f; Max = %0.2f" % (samples, min_v, max_v)
-    if skipped:
-        print "# %d value%s outside of min/max" % (skipped, skipped > 1 and 's' or '')
-    if calc_msvd:
-        print "# Mean = %f; Variance = %f; SD = %f; Median %f" % (mvsd.mean(), mvsd.var(), mvsd.sd(), median(accepted_data))
-    print "# each ∎ represents a count of %d" % bucket_scale
-    bucket_min = min_v
-    bucket_max = min_v
-    for bucket in range(buckets):
-        bucket_min = bucket_max
-        bucket_max = boundaries[bucket]
-        bucket_count = bucket_counts[bucket]
-        star_count = 0
-        if bucket_count:
-            star_count = bucket_count / bucket_scale
-        print '%10.4f - %10.4f [%6d]: %s %10.4f' % (bucket_min, bucket_max, bucket_count, '∎' * star_count, bucket_weights[bucket])
+    if shouldPrint:
+        print "# NumSamples = %d; Min = %0.2f; Max = %0.2f" % (samples, min_v, max_v)
+        if skipped:
+            print "# %d value%s outside of min/max" % (skipped, skipped > 1 and 's' or '')
+        if calc_msvd:
+            print "# Mean = %f; Variance = %f; SD = %f; Median %f" % (mvsd.mean(), mvsd.var(), mvsd.sd(), median(accepted_data))
+        print "# each ∎ represents a count of %d" % bucket_scale
+        bucket_min = min_v
+        bucket_max = min_v
+        for bucket in range(buckets):
+            bucket_min = bucket_max
+            bucket_max = boundaries[bucket]
+            bucket_count = bucket_counts[bucket]
+            star_count = 0
+            if bucket_count:
+                star_count = bucket_count / bucket_scale
+            print '%10.4f - %10.4f [%6d]: %s %10.4f' % (bucket_min, bucket_max, bucket_count, '∎' * star_count, bucket_weights[bucket])
     
     return (max_v-min_v,mvsd.sd(),mvsd.mean(),median(accepted_data))
 
