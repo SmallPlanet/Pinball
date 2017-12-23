@@ -175,7 +175,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var disableLeftFlipperUntilRelease = false
     var disableRightFlipperUntilRelease = false
     
-    let numberOfFramesItTakesForFlipperToRetract:Int = 22
+    let numberOfFramesItTakesForFlipperToRetract:Int = 11
     
     var lastOriginalFrame:CIImage? = nil
     var lastFrame:CIImage? = nil
@@ -291,10 +291,10 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
             // We want a random number from the model mean (either local or global still testing) and 0.5
-            let cutoffRange:Float = 0.5 - self!.modelGlobalCutoff
+            let cutoffRange:Float = (0.5 - self!.modelGlobalCutoff) * 0.5
             var cutoffLeft:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRange
             var cutoffRight:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRange
-            
+                        
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
             if self!.leftActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.leftButtonPressed == true {
