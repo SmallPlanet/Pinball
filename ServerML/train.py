@@ -293,6 +293,47 @@ def GatherImagesFromTrainingRun(runNumber,adjustWeights,maxImagesTrain,maxImages
     
     return (total_imgs,total_labels,total_weights)
 
+
+
+def EvaluateLeftAndRightMeansForModel(label_format,cnn_model,total_imgs,total_labels,total_weights,shouldPrint=True):
+    # now that we have all of the images we want, predict against them all
+    predictions = cnn_model.predict(total_imgs)
+    
+    # we only care about the good memories and the perm memories
+    left_predictions = []
+    left_weights = []
+    
+    right_predictions = []
+    right_weights = []
+    
+    numCorrect = 0
+    numTotal = len(total_labels)
+    
+    for i in range(0,numTotal):
+        if round(predictions[i][0]) == round(total_labels[i][0]) and round(predictions[i][1]) == round(total_labels[i][1]):
+            numCorrect = numCorrect + 1
+        if total_labels[i][0] == 1:
+            left_predictions.append(predictions[i][0])
+            left_weights.append(total_weights[i])
+        elif total_labels[i][1] == 1:
+            right_predictions.append(predictions[i][1])
+            right_weights.append(total_weights[i])
+        else:
+            left_predictions.append(predictions[i][0])
+            left_weights.append(total_weights[i])
+            right_predictions.append(predictions[i][1])
+            right_weights.append(total_weights[i])
+                        
+    acc = numCorrect / numTotal
+        
+    leftRange,leftSD,leftMean,leftMedian = histogram(left_predictions, left_weights, buckets=20, shouldPrint=shouldPrint)
+    rightRange,rightSD,rightMean,rightMedian = histogram(right_predictions, right_weights, buckets=20, shouldPrint=shouldPrint)
+    
+    if label_format is not None:
+        print(label_format.format(acc, numTotal, leftMean, rightMean))
+    
+    return (acc,float(leftMean),float(rightMean))
+
 def EvaluateImagesForModel(label_format,cnn_model,total_imgs,total_labels,total_weights,shouldPrint=True):
     # now that we have all of the images we want, predict against them all
     predictions = cnn_model.predict(total_imgs)
@@ -358,11 +399,11 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     memories_imgs = []
     memories_labels = []
     memories_weights = []
-    
+        
     # 1) the accuracy of all wasted images
     for i in range(0,runNumber+1):
         
-        prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, -1)
+        prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, 0)
         if len(prev_labels) > 0:
             memories_imgs = np.concatenate((memories_imgs,prev_imgs), axis=0) if len(memories_imgs) > 0 else prev_imgs
             memories_labels = np.concatenate((memories_labels,prev_labels), axis=0) if len(memories_labels) > 0 else prev_labels
@@ -374,12 +415,12 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
             wasted_labels = np.concatenate((wasted_labels,prev_labels), axis=0) if len(wasted_labels) > 0 else prev_labels
             wasted_weights = np.concatenate((wasted_weights,prev_weights), axis=0) if len(wasted_weights) > 0 else prev_weights
     
-    acc,mean = EvaluateImagesForModel("  Accuracy of memories is {} of {} total memories",cnn_model,memories_imgs,memories_labels,memories_weights,shouldPrint=shouldPrint)
-    EvaluateImagesForModel("  Accuracy of wasted memories is {} of {} total memories",cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=shouldPrint)
+    acc,leftMean,rightMean = EvaluateLeftAndRightMeansForModel("  Accuracy of left/right memories is {} of {} total memories: {} // {}",cnn_model,memories_imgs,memories_labels,memories_weights,shouldPrint=True)
+    EvaluateImagesForModel("  Accuracy of wasted memories is {} of {} total memories",cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=False)
     
     trainingRunNumber = savedTrainingRunNumber
     
-    return acc,mean
+    return acc,leftMean,rightMean
 
 def RelearnAllRunsFromScratch():
     # call Learn() for all runs in order
@@ -419,7 +460,7 @@ def Learn(overrideRunNumber=None):
     
     total_imgs,total_labels,total_weights = GatherImagesFromTrainingRun(trainingRunNumber, 1.0, 0, 0, 0)
     
-    if len(total_imgs) < 300:
+    if len(total_imgs) < 250:
         print("***** UNABLE TO TRAIN NOT ENOUGH MEMORIES, PLAY SOME MORE! *****")
         return
     
@@ -510,7 +551,7 @@ def Learn(overrideRunNumber=None):
         # current decisions as much.  This is representing with the normalized value supplied to the GatherImagesFromTrainingRun()
         # method, which will multpliy all loaded weights by it.
         
-        minTrainingRun = trainingRunNumber-12
+        minTrainingRun = trainingRunNumber-4
         
         total_imgs = []
         total_labels = []
@@ -604,15 +645,16 @@ def Learn(overrideRunNumber=None):
     
     # When we pack our model into our .msg format we can include four float variables from training
     # 1) the training number run for this model
-    # 2) the global mean of the histogram for normal memories (all normal memories in all runs)
-    # 3) the local mean of the histogram for normal memories (all normal memories in just this run)
+    # 2) the mean value of left flipper histogram
+    # 3) the mean value of right flipper histogram
     # 4) reserved for future use
     
     msgFloat1 = trainingRunNumber
-    acc,mean = EvaluateModelForRun(trainingRunNumber-1,shouldPrint=False)
-    msgFloat2 = mean
+    acc,leftMean,rightMean = EvaluateModelForRun(trainingRunNumber-1,shouldPrint=False)
+    msgFloat2 = leftMean
+    msgFloat3 = rightMean
     
-    print("global accuracy", acc, "global mean", mean, "local mean", msgFloat3)
+    print("global accuracy", acc, "left mean", msgFloat2, "right mean", msgFloat3)
     
     f = open(ModelMessagePath(),"wb")
     f.write(struct.pack("ffff", msgFloat1, msgFloat2, msgFloat3, msgFloat4))
