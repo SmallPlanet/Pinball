@@ -158,7 +158,7 @@ extension SwiftyZeroMQ {
             Receive a message part from the current socket
          */
         public func recv(
-            bufferLength : Int = 25 * 1024 * 1024,
+            bufferLength : Int = 40 * 1024 * 1024,
             options      : SocketSendRecvOption = .none
         ) throws -> Data {
             // Validate allowed options
