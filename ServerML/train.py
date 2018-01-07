@@ -1,7 +1,6 @@
 from __future__ import division
 
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, Callback
-from keras.preprocessing.image import ImageDataGenerator
 from keras.optimizers import SGD
 from keras import backend as K
 from clr_callback import CyclicLR
@@ -19,109 +18,12 @@ import os
 import glob
 import re
 import gc
+import scipy.misc
 
 import coremltools   
 import h5py
 import struct
 from text_histogram import histogram
-
-
-
-# used for realistic accuracy reporting during training...
-class EvaluationMonitor(Callback):  
-    cnn_model = None
-    imgs = []
-    labels = []
-    weights = []
-    didSaveModel = False
-    minSaveAccuracy = 0.96
-    
-    leftMeanSaved = 0
-    leftMedianSaved = 0
-    rightMeanSaved = 0
-    rightMedianSaved = 0
-    
-    def round2(self, x, y):
-        if x > y:
-            return 1.0
-        return 0.0
-
-    def calc_predict(self, predictions, value):
-        numCorrect = 0
-        numTotal = 0
-        
-        # let's store the average reward value per .5 
-        left_predictions = []
-        left_weights = []
-        right_predictions = []
-        right_weights = []
-        kicker_predictions = []
-        kicker_weights = []
-                
-        # we only care about the good memories and the perm memories
-        for i in range(0,len(self.labels)):            
-            # average and minimum positiive predictions by class
-            for j in range(0,3):
-                if round(self.labels[i][j]) == 1 and self.round2(predictions[i][j], value) == round(self.labels[i][j]):
-                    if j == 0:
-                        left_predictions.append(predictions[i][j])
-                        left_weights.append(self.weights[i])
-                    if j == 1:
-                        right_predictions.append(predictions[i][j])
-                        right_weights.append(self.weights[i])
-                    if j == 2:
-                        kicker_predictions.append(predictions[i][j])
-                        kicker_weights.append(self.weights[i])
-            
-            numCorrect += (self.round2(predictions[i][0], value) == round(self.labels[i][0]) and 
-                            self.round2(predictions[i][1], value) == round(self.labels[i][1]) and 
-                            self.round2(predictions[i][2], value) == round(self.labels[i][2]) )
-            numTotal += 1
-        
-        if numTotal == 0:
-            return 0
-                
-        acc = numCorrect / numTotal
-                
-        print("  - pred_acc {} of {}".format(acc, numTotal))
-        
-        # we want the minimum accuracy to be sufficient
-        # we want the SD to be sufficient large
-        if acc > self.minSaveAccuracy and len(left_predictions) > 1 and len(right_predictions) > 1:
-            leftRange,leftSD,leftMean,leftMedian = histogram(left_predictions, left_weights, buckets=20)
-            rightRange,rightSD,rightMean,rightMedian = histogram(right_predictions, right_weights, buckets=20)
-            
-            # in theory, a higher standard deviation means the network generalizes better
-            if (rightSD > 0.08 and leftSD > 0.08) or (self.minSaveAccuracy == 0.0):
-            #if rightSD < 0.02 and leftSD < 0.02 and rightSD > 0.01 and leftSD > 0.01:
-                self.minSaveAccuracy = acc
-                
-                print("\n ************************* saving model! with accuracy of {} (total {})".format(acc, len(self.labels)))
-                print("  - left_cutoff: {}  //  {}".format(leftMean, leftMedian))
-                print("  - right_cutoff {}  //  {}".format(rightMean, rightMedian))
-                
-                self.leftMeanSaved = leftMean
-                self.leftMedianSaved = leftMedian
-                self.rightMeanSaved = rightMean
-                self.rightMedianSaved = rightMedian
-                
-                return True
-            
-        return False
-    
-    def on_epoch_end(self, epoch, logs={}): 
-        predictions = self.cnn_model.predict(self.imgs)
-        if self.calc_predict(predictions, 0.5):
-            self.didSaveModel = True
-            self.cnn_model.save("model.h5")
-
-
-print("Allocating the image data generator...")
-datagen = ImageDataGenerator(featurewise_center=False,
-                             featurewise_std_normalization=False,
-                             width_shift_range=0.08,
-                             height_shift_range=0.08,
-                             )
 
 coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
 
@@ -144,11 +46,6 @@ def WasteMemoryPath(runNumber=None):
         runNumber = trainingRunNumber
     return "./run" + str(runNumber) + "/waste/"
 
-def TempMemoryPath(runNumber=None):
-    if runNumber == None:
-        runNumber = trainingRunNumber
-    return "./run" + str(runNumber) + "/tmemory/"
-
 def ModelWeightsPath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
@@ -169,16 +66,49 @@ def read_file(path):
     with open(path, 'rb') as f:
         return f.read()
 
+
+def GenerateSampleOrdering(total_labels, total_weights):
+    # start with the normalized weights; this will allow our wasted and normal samples to gradiate nicely
+    sampling_order = GenerateSampleWeights(total_labels, total_weights)
+    
+    # find all of the permanent memories and prioritize those!
+    # If the array will be reversed, then we need to set a low priority (so that it becomes high)
+    for i in range(0,len(total_labels)):
+        
+        
+        
+        
+        # all random
+        #sampling_order[i] = random.random()
+        
+        # perm > all, rest are randomized
+        #sampling_order[i] = random.random() * 0.9
+        #if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
+        #    sampling_order[i] = 1.0
+        
+        
+        # weighted order, with perms on top
+        if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
+            sampling_order[i] = 1.1
+        
+    return sampling_order
+
 def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
+    
+    # Arguably, we have a hierarchy of classes of samples
+    # - Permanent Memoriers vs (Wasted Memories vs (Right vs Left))
+    
     normalized_weights = np.zeros(len(total_weights), dtype='float32')
     max_weight = max(total_weights)
     
+    numPermanent = 0
     numWasted = 0
     numLeft = 0
     numRight = 0
     
     totalLeftWeight = 0
     totalRightWeight = 0
+    totalWastedWeight = 0
     
     for i in range(0,len(total_labels)):
         if total_labels[i][0] == 1:
@@ -188,42 +118,46 @@ def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
             numRight += 1
             totalRightWeight += total_weights[i]
         else:
-            numWasted += 1
-
+            if total_weights[i] < 0:
+                numWasted += 1
+                totalWastedWeight += total_weights[i]
+            else:
+                numPermanent += 1
+                
+    
     leftMod = numLeft / (numLeft + numRight)
     wastedMod = numWasted / (numLeft + numRight + numWasted)
+    permanentMod = numPermanent / (numLeft + numRight + numWasted + numPermanent)
     
     left = 0
     right = 0
     wasted = 0
+    permanent = 0
     
     for i in range(0,len(total_weights)):
-        
-        # permanent memories are full weight always
-        if total_weights[i] == 999:
-            normalized_weights[i] = 1.0
-        
+                
         # wasted memories are balanced against "normal" left/right action memories
-        elif total_weights[i] < 0:
-            normalized_weights[i] = (1.0 - wastedMod)
+        if total_weights[i] < 0:
+            #(total_weights[i] / totalWastedWeight * numWasted) * 
+            normalized_weights[i] = (total_weights[i] / totalWastedWeight * numWasted) * (1.0 - wastedMod) * permanentMod * 2
             wasted += normalized_weights[i]
         else:
             # left memories are balanced against right memories, and are weighted by their own scores
             if total_labels[i][0] == 1:
-                normalized_weights[i] = (total_weights[i] / totalLeftWeight * numLeft) * wastedMod * (1.0 - leftMod) * 2
+                normalized_weights[i] = (total_weights[i] / totalLeftWeight * numLeft) * permanentMod * wastedMod * (1.0 - leftMod) * 4
                 left += normalized_weights[i]
             # right memories are balanced against left memories, and are weighted by their own scores
             elif total_labels[i][1] == 1:
-                normalized_weights[i] = (total_weights[i] / totalRightWeight * numRight) * wastedMod * leftMod * 2
+                normalized_weights[i] = (total_weights[i] / totalRightWeight * numRight) * permanentMod * wastedMod * leftMod * 4
                 right += normalized_weights[i]
-            # erroneous memories (false positive right/left memories manually corrected) count as a wasted memory
+            # permanent and erroneous memories (false positive right/left memories manually corrected) count as a wasted memory
             else:
-                normalized_weights[i] = (1.0 - wastedMod)
-                wasted += normalized_weights[i]
+                normalized_weights[i] = 1.0 - permanentMod
+                permanent += normalized_weights[i]
 
         normalized_weights[i] *= global_weight
     
-    print("wasted",wasted,"left",left,"right",right)
+    print("permanent",permanent,"wasted",wasted,"left",left,"right",right)
     
     return normalized_weights
                                 
@@ -326,8 +260,8 @@ def EvaluateLeftAndRightMeansForModel(label_format,cnn_model,total_imgs,total_la
                         
     acc = numCorrect / numTotal
         
-    leftRange,leftSD,leftMean,leftMedian = histogram(left_predictions, left_weights, buckets=20, shouldPrint=shouldPrint)
-    rightRange,rightSD,rightMean,rightMedian = histogram(right_predictions, right_weights, buckets=20, shouldPrint=shouldPrint)
+    leftRange,leftSD,leftMean,leftMedian,leftMax = histogram(left_predictions, left_weights, buckets=20, shouldPrint=shouldPrint)
+    rightRange,rightSD,rightMean,rightMedian,rightMax = histogram(right_predictions, right_weights, buckets=20, shouldPrint=shouldPrint)
     
     if label_format is not None:
         print(label_format.format(acc, numTotal, leftMean, rightMean))
@@ -358,9 +292,29 @@ def EvaluateImagesForModel(label_format,cnn_model,total_imgs,total_labels,total_
     if label_format is not None:
         print(label_format.format(acc, numTotal))
         
-    modelRange,modelSD,modelMean,modelMedian = histogram(correct_predictions, correct_weights, buckets=20, shouldPrint=shouldPrint)
+    modelRange,modelSD,modelMean,modelMedian,modelMax = histogram(correct_predictions, correct_weights, buckets=20, shouldPrint=shouldPrint)
     
-    return (acc,float(modelMean))
+    return (acc,float(modelMean),modelMax)
+
+
+def ExportImageForModel(runNumber,inputImage,outputImage):
+    global trainingRunNumber
+    savedTrainingRunNumber = trainingRunNumber
+    trainingRunNumber = runNumber
+    
+    if runNumber < 0:
+        runNumber = 0
+    
+    cnn_model = model.cnn_model(True)
+        
+    img = images.load_single_image(inputImage)
+    predictions = cnn_model.predict(img)
+    
+    print(predictions[0].shape)
+    predictions[0].astype(np.uint8).flatten().tofile(outputImage)
+    #scipy.misc.imsave(outputImage, predictions[0].flatten().reshape(30,24,3))
+    
+    trainingRunNumber = savedTrainingRunNumber
     
 def EvaluateAllRuns():
     global trainingRunNumber
@@ -399,9 +353,32 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     memories_imgs = []
     memories_labels = []
     memories_weights = []
+    
+    flippy_imgs = []
+    flippy_labels = []
+    flippy_weights = []
         
     # 1) the accuracy of all wasted images
     for i in range(0,runNumber+1):
+        
+        prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, 0, -1)
+        if len(prev_labels) > 0:
+            flippy_imgs = np.concatenate((flippy_imgs,prev_imgs), axis=0) if len(flippy_imgs) > 0 else prev_imgs
+            flippy_labels = np.concatenate((flippy_labels,prev_labels), axis=0) if len(flippy_labels) > 0 else prev_labels
+            flippy_weights = np.concatenate((flippy_weights,prev_weights), axis=0) if len(flippy_weights) > 0 else prev_weights
+            
+            # we want to get the false positives as well...
+            mask = np.zeros(len(flippy_weights), dtype=bool)
+            for j in range(0,len(flippy_weights)):
+                if flippy_weights[j] > 0 and flippy_labels[j][0] == 0 and flippy_labels[j][1] == 0:
+                    mask[j] = True
+            
+            flippy_imgs = flippy_imgs[mask,...]
+            flippy_labels = flippy_labels[mask,...]
+            flippy_weights = flippy_weights[mask,...]
+            
+            
+            
         
         prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, 0)
         if len(prev_labels) > 0:
@@ -418,6 +395,17 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     acc,leftMean,rightMean = EvaluateLeftAndRightMeansForModel("  Accuracy of left/right memories is {} of {} total memories: {} // {}",cnn_model,memories_imgs,memories_labels,memories_weights,shouldPrint=True)
     EvaluateImagesForModel("  Accuracy of wasted memories is {} of {} total memories",cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=False)
     
+    # calculate a "flippyness" value, which is our way of detecting false positives where the AI will flip the flippers when there is no ball present
+    # We can do this by testing accuracy against permanent memories and all non-wasted _0_0_0_ memories
+    flippy_acc,flippy_mean,flippy_max = EvaluateImagesForModel("  Accuracy of permanent memories is {} of {} total memories",cnn_model,flippy_imgs,flippy_labels,flippy_weights,shouldPrint=False)
+    if flippy_max >= 0.5:
+        print("")
+        print("*************************************************")
+        print("******* WARNING: Flippy memories detected *******")
+        print("*************************************************")
+        print("")
+    
+    
     trainingRunNumber = savedTrainingRunNumber
     
     return acc,leftMean,rightMean
@@ -430,10 +418,17 @@ def RelearnAllRunsFromScratch():
     ConfirmTrainingNumber()
     
     # NOTE: we can set this to start at 1 in order to avoid retraining the base model
-    for x in range(1,trainingRunNumber):
+    for x in range(0,trainingRunNumber):
+        K.clear_session()
         gc.collect()
         Learn(x)
         
+def roundEdge(x, y):
+    if x > 1.0-y:
+        return 1.0
+    if x < y:
+        return 0.0
+    return 0.5
 
 def Learn(overrideRunNumber=None):
     global trainingRunNumber
@@ -460,172 +455,189 @@ def Learn(overrideRunNumber=None):
     
     total_imgs,total_labels,total_weights = GatherImagesFromTrainingRun(trainingRunNumber, 1.0, 0, 0, 0)
     
-    if len(total_imgs) < 250:
+    if len(total_imgs) < 100:
         print("***** UNABLE TO TRAIN NOT ENOUGH MEMORIES, PLAY SOME MORE! *****")
         return
-    
-    
-    em = EvaluationMonitor()
-    
+        
     didLoadWeights = False
     if os.path.isfile(ModelWeightsPath()):
         print("Loading model weights from "+ModelWeightsPath())
         cnn_model.load_weights(ModelWeightsPath())
         didLoadWeights = True
-    
-    
-    
-    # Training here takes one of two flavors:
-    # 1) this is run0 (or more appropriately, no model.h5 file exists in the current run). We should exahustively
-    #    train this model as best we know how in order to get the machine intelligental playing ASAP
-    #
-    # 2) pre-existing weights exist and were loaded, we should lightly train this new run of data (allowing
-    #    non ideal memories to be forgotten slowly over time). In theory, the number of epocs for this training
-    #    should be low.        
-    em.imgs = total_imgs
-    em.labels = total_labels
-    em.weights = total_weights
-    em.cnn_model = cnn_model
-    
+        
     msgFloat1 = 0.0
     msgFloat2 = 0.0
     msgFloat3 = 0.0
     msgFloat4 = 0.0
-                    
-    if didLoadWeights == False:        
-        epochs = 10
-                                    
-        # then let's train the network on the altered images
-        while em.didSaveModel == False:
-        
-            # free up whatever memory we can before training
-            gc.collect()
-        
-            # shuffle the arrays
-            t = int(time.time())
-            prng = RandomState(t)
-            prng.shuffle(total_imgs)
-            prng = RandomState(t)
-            prng.shuffle(total_labels)
-            prng = RandomState(t)
-            prng.shuffle(total_weights)
-        
-            # make the evaluator point to the updated arrays
-            em.imgs = total_imgs
-            em.labels = total_labels
-            em.weights = total_weights
-            em.cnn_model = cnn_model
-                                
-            # normalize the sample weights
-            normalized_weights = GenerateSampleWeights(total_labels, total_weights)
-                    
-            # randomize the batch size            
-            batch_size = int(random.random() * 32 + 6)
-        
-            if batch_size > len(total_imgs):
-                batch_size = len(total_imgs)
-        
-            # adjust the learning rate based on individual memory scores
-            wlr = WeightedLR(total_weights, inversed=True)
-
-            cnn_model.fit_generator(datagen.flow(total_imgs, total_labels, batch_size=batch_size),
-                    steps_per_epoch=len(total_imgs) // batch_size,
-                    epochs=epochs / 3,
-                    callbacks=[wlr,em])
-                
-            cnn_model.fit(total_imgs, total_labels,
-                      batch_size=batch_size,
-                      epochs=epochs,
-                      verbose=1,
-                      sample_weight=normalized_weights,
-                      callbacks=[em],
-                      )
-        
-            epochs += 1
     
-    else:
+    gc.collect()
+    
+    # we include memories from past runs, but ideally we want the influence of runs in the far past to not influence our
+    # current decisions as much.  This is representing with the normalized value supplied to the GatherImagesFromTrainingRun()
+    # method, which will multpliy all loaded weights by it.
+    
+    minTrainingRun = trainingRunNumber-100
+    
+    total_imgs = []
+    total_labels = []
+    total_weights = []
+    
+     # Gather all permanent memories
+    prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(0, 1.0, -1, 0, -1)
+
+    if len(prev_labels) > 0:
+        print("Gathering "+str(len(prev_imgs))+" permanent memories from run0")
+        total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
+        total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
+        total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights
         
-        gc.collect()
-        
-        # we include memories from past runs, but ideally we want the influence of runs in the far past to not influence our
-        # current decisions as much.  This is representing with the normalized value supplied to the GatherImagesFromTrainingRun()
-        # method, which will multpliy all loaded weights by it.
-        
-        minTrainingRun = trainingRunNumber-4
-        
-        total_imgs = []
-        total_labels = []
-        total_weights = []
-        
-        # Gather all normal memories from previous runs
-        for i in range(minTrainingRun,trainingRunNumber+1):
-            if i >= 0:
-                f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
-            
-                # we always want to gather all of the wasted memories, because we never want to forget how we lose a
-                # ball (since those memories do not get reinforced through positive reinforcement).
-                
-                #int(300.0*f)
-                prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, -1)
-            
-                if len(prev_labels) > 0:
-                    print("Gathering "+str(len(prev_imgs))+" normal memories from run"+str(i)+" at "+str(f)+" adjustment")                  
-                    total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
-                    total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
-                    total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights       
-        
-        # Now gather all of the wasted memories            
-        wasted_imgs = []
-        wasted_labels = []
-        wasted_weights = []
-        
-        for i in range(0,trainingRunNumber+1):
+    # Gather all normal memories from previous runs
+    for i in range(minTrainingRun,trainingRunNumber+1):
+        if i >= 0:
             f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
+        
+            # we always want to gather all of the wasted memories, because we never want to forget how we lose a
+            # ball (since those memories do not get reinforced through positive reinforcement).
             
-            prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, -1, -1, 0)
-            
+            #int(300.0*f)
+            prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, 0, -1)
+        
             if len(prev_labels) > 0:
-                print("Gathering "+str(len(prev_imgs))+" wasted memories from run"+str(i))
+                print("Gathering "+str(len(prev_imgs))+" normal memories from run"+str(i)+" at "+str(f)+" adjustment")                  
                 total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
                 total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
                 total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights
-                
-                wasted_imgs = np.concatenate((wasted_imgs,prev_imgs), axis=0) if len(wasted_imgs) > 0 else prev_imgs
-                wasted_labels = np.concatenate((wasted_labels,prev_labels), axis=0) if len(wasted_labels) > 0 else prev_labels
-                wasted_weights = np.concatenate((wasted_weights,prev_weights), axis=0) if len(wasted_weights) > 0 else prev_weights
-                
-        
-        wasted_acc,wasted_mean = EvaluateImagesForModel(None,cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=False)
-                
-        normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / 10.0)
-        
-        
-        print("Training "+str(len(total_labels))+" images from run"+str(trainingRunNumber))
-        done = False
-        epochs = 1
-        while not done:
-            batch_size = 96
-            cnn_model.fit(total_imgs, total_labels,
-                      batch_size=batch_size,
-                      epochs=10,
-                      shuffle=True,
-                      verbose=1,
-                      sample_weight=normalized_weights,
-                      )
-            
-            #epochs = epochs + 1
-            #if epochs > 1:
-            #    done = True
-            
-            acc,mean = EvaluateImagesForModel(None,cnn_model,total_imgs,total_labels,total_weights,shouldPrint=False)
-            
-            msgFloat3 = mean
-            
-            #if acc > 0.88:
-            done = True
-        
-        cnn_model.save("model.h5")
     
+    # Now gather all of the wasted memories            
+    wasted_imgs = []
+    wasted_labels = []
+    wasted_weights = []
+    
+    for i in range(0,trainingRunNumber+1):
+        f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
+        
+        prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, -1, -1, 0)
+        
+        if len(prev_labels) > 0:
+            print("Gathering "+str(len(prev_imgs))+" wasted memories from run"+str(i))
+            total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
+            total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
+            total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights
+            
+            wasted_imgs = np.concatenate((wasted_imgs,prev_imgs), axis=0) if len(wasted_imgs) > 0 else prev_imgs
+            wasted_labels = np.concatenate((wasted_labels,prev_labels), axis=0) if len(wasted_labels) > 0 else prev_labels
+            wasted_weights = np.concatenate((wasted_weights,prev_weights), axis=0) if len(wasted_weights) > 0 else prev_weights
+            
+    
+    wasted_acc,wasted_mean,wasted_max = EvaluateImagesForModel(None,cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=False)
+        
+    print("Training "+str(len(total_labels))+" images from run"+str(trainingRunNumber))
+    
+    # shuffle the arrays
+    # t = int(time.time())
+    # prng = RandomState(t)
+    # prng.shuffle(total_imgs)
+    # prng = RandomState(t)
+    # prng.shuffle(total_labels)
+    # prng = RandomState(t)
+    # prng.shuffle(total_weights)
+    
+    
+    numTrainingLoops = 60
+    
+    # compute the normalized weights
+    normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / numTrainingLoops * 2.0)
+    
+    
+    # note: the order of samples in the training array is completely relevant to how the AI reacts
+    # - if the scoring samples are last, the AI plays more aggressive
+    # - if the wasted samples are last, the AI plays more defensive
+    # - in theory, if the permanent samples are first, the AI will be more flippity
+    #
+    # So I am adding the GenerateSampleOrdering() method to allow more fine grained control over the
+    # sorted ordering of the arrays
+    sampling_order = GenerateSampleOrdering(total_labels, total_weights)
+    #print(sampling_order)
+        
+    # by reversing the sampling order we are saying the AI will favor being defensive
+    indices = sampling_order.argsort()
+    normalized_weights = normalized_weights[indices]
+    total_imgs = total_imgs[indices]
+    total_weights = total_weights[indices]
+    total_labels = total_labels[indices]
+    
+    #print(indices)
+            
+    bestNumCorrect = 0
+    for i in range(0,numTrainingLoops):
+        
+        
+        # Check to see how our model is doing, save the version with the best accuracy
+        predictions = cnn_model.predict(total_imgs)
+        numCorrect = 0
+        isFlippy = False
+        for j in range(0,len(total_weights)):
+            if round(predictions[j][0]) == total_labels[j][0] and round(predictions[j][1]) == total_labels[j][1]:
+                numCorrect += 1
+            elif total_weights[j] > 0 and total_labels[j][0] == 0 and total_labels[j][1] == 0:
+                    isFlippy = True
+        
+        if i > 3 and numCorrect >= bestNumCorrect and isFlippy == False:
+            bestNumCorrect = numCorrect
+            cnn_model.save("model.h5")
+            print(" {} of {} - acc: {} *saved*".format(i, numTrainingLoops, numCorrect/len(total_weights)))
+        else:
+            print(" {} of {} - acc: {}".format(i, numTrainingLoops, numCorrect/len(total_weights) ))
+        
+        # NOTE: To allow us to train any number of images without fear of overtraining the network,
+        # we first predict against our samples.  if the sample prediction is not within our expected
+        # range, then we train it.  Otherwise we skip it.  We do this after every batch as this will
+        # help against overtraining due to multiple similar samples in the dataset
+        batch_size = 32
+        for b in range(0,len(total_imgs)//batch_size):
+            
+            startIdx = b * batch_size
+            endIdx = startIdx + batch_size
+            if endIdx > len(total_imgs)-1:
+                endIdx = len(total_imgs)-1
+            
+            total_imgs_batch = total_imgs[startIdx:endIdx]
+            total_weights_batch = total_weights[startIdx:endIdx]
+            normalized_weights_batch = normalized_weights[startIdx:endIdx]
+            total_labels_batch = total_labels[startIdx:endIdx]
+            
+                        
+            # get the predicted results, and adjust the normalized weights by how far off the network is
+            predictions = cnn_model.predict(total_imgs_batch)
+        
+            # We only want to train on the images which no longer pass
+            mask = np.zeros(len(total_weights_batch), dtype=bool)
+            for j in range(0,len(total_weights_batch)):
+                if total_weights_batch[j] == 999:
+                    edge = 0.0
+                elif total_weights_batch[j] < 0:
+                    edge = 0.05
+                elif total_labels_batch[j][0] == 0 and total_labels_batch[j][1] == 0:
+                    edge = 0.0
+                else:
+                    edge = 0.05
+            
+                if roundEdge(predictions[j][0], edge) != total_labels_batch[j][0] or roundEdge(predictions[j][1], edge) != total_labels_batch[j][1]:
+                    mask[j] = True
+        
+            total_imgs_local = total_imgs_batch[mask,...]
+            normalized_weights_local = normalized_weights_batch[mask,...]
+            total_labels_local = total_labels_batch[mask,...]
+            
+            if len(total_imgs_local) > 0:
+                cnn_model.fit(total_imgs_local, total_labels_local,
+                    batch_size=batch_size,
+                    epochs=1,
+                    shuffle=False,
+                    verbose=0,
+                    sample_weight=normalized_weights_local,
+                    )
+        
     output_labels = ['left','right','ballkicker'] 
     coreml_model = coremltools.converters.keras.convert("model.h5",input_names='image',image_input_names = 'image',class_labels = output_labels)   
     coreml_model.author = 'Rocco Bowling'   
@@ -640,7 +652,6 @@ def Learn(overrideRunNumber=None):
         os.makedirs(TrainingRunPath(trainingRunNumber+1))
         os.makedirs(TrainingMemoryPath(trainingRunNumber+1))
         os.makedirs(WasteMemoryPath(trainingRunNumber+1))
-        os.makedirs(TempMemoryPath(trainingRunNumber+1))
     os.rename("model.h5", ModelWeightsPath(trainingRunNumber+1))
     
     # When we pack our model into our .msg format we can include four float variables from training
@@ -650,7 +661,7 @@ def Learn(overrideRunNumber=None):
     # 4) reserved for future use
     
     msgFloat1 = trainingRunNumber
-    acc,leftMean,rightMean = EvaluateModelForRun(trainingRunNumber-1,shouldPrint=False)
+    acc,leftMean,rightMean = EvaluateModelForRun(trainingRunNumber,shouldPrint=False)
     msgFloat2 = leftMean
     msgFloat3 = rightMean
     
