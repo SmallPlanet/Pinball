@@ -42,6 +42,12 @@ def load_image(imgs_idx, imgs, labels, weights, img_path):
     weights.append(get_score(img_path))
     return imgs_idx
 
+def load_single_image(img_path):
+    imgs = np.zeros((1, IMG_SIZE[1], IMG_SIZE[0], IMG_SIZE[2]), dtype='float32')
+    img = img_to_array(load_img(img_path, grayscale=(IMG_SIZE[2] == 1), target_size=[IMG_SIZE[1],IMG_SIZE[0]]))
+    np.copyto(imgs[0],img)
+    return imgs
+
 def load_images(imgs, labels, weights, dir_path, max_size):
     all_img_paths = glob.glob(os.path.join(dir_path, '*.jpg'))
     np.random.shuffle(all_img_paths)

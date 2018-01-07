@@ -16,7 +16,7 @@ import templateMatch
 
 # how far reaching into the past scores earned should affect the reward value associated with
 # actions.  1 means its stretches far, 0 means its very near sighted
-shortTermLearningRate = 0.96
+shortTermLearningRate = 0.95
 
 # the absolaute maximum number of seconds a memory can be affected by new scores; when a short
 # term memory exceeeds this threashold is it converted to a long term memory
@@ -31,7 +31,7 @@ longTermMemoryMaxSize = 50000
 longTermMemoryMinimumReward = 0
 
 # when a player loses a ball, that should negatively impact actions taken before the lost ball
-penaltyForLostBall = -4000000
+penaltyForLostBall = -16000000
 
 class ScoreEvent:
     def __init__(self, player, differentialScore):
@@ -141,7 +141,7 @@ class Memory:
                 # If the image captured was blurry, we should also put it into waste
                 print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
             
-                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.WasteMemoryPath() if hasBall == True else train.TempMemoryPath(), self.reward, 0, 0, 0, str(uuid.uuid4()))
+                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.WasteMemoryPath(), self.reward, 0, 0, 0, str(uuid.uuid4()))
                 print (self.filePath)
         
                 f = open(self.filePath, 'wb')

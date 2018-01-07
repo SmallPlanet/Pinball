@@ -119,7 +119,10 @@ def histogram(stream, weights, minimum=None, maximum=None, buckets=None, custbuc
         max_v = max(data)
 
     if not max_v > min_v:
-        raise ValueError('max must be > min. max:%s min:%s' % (max_v, min_v))
+        #raise ValueError('max must be > min. max:%s min:%s' % (max_v, min_v))
+        print("ValueError: max must be > min. max:1.0 min:1.0")
+        return (0,0,0,0)
+        
     diff = max_v - min_v
 
     boundaries = []
@@ -203,5 +206,5 @@ def histogram(stream, weights, minimum=None, maximum=None, buckets=None, custbuc
                 star_count = bucket_count / bucket_scale
             print '%10.4f - %10.4f [%6d]: %s %10.4f' % (bucket_min, bucket_max, bucket_count, '∎' * star_count, bucket_weights[bucket])
     
-    return (max_v-min_v,mvsd.sd(),mvsd.mean(),median(accepted_data))
+    return (max_v-min_v,mvsd.sd(),mvsd.mean(),median(accepted_data),max_v)
 
