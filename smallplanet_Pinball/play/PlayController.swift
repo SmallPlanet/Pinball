@@ -122,13 +122,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var modelRunNumber:Float = 0.0
             memcpy(&modelRunNumber, modelRunNumberBytes, 4)
             
-            let modelGlobalMeanBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
-            var modelGlobalMean:Float = 0.0
-            memcpy(&modelGlobalMean, modelGlobalMeanBytes, 4)
+            let modelLeftMeanBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
+            var modelLeftMean:Float = 0.0
+            memcpy(&modelLeftMean, modelLeftMeanBytes, 4)
             
-            let modelLocalMeanBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
-            var modelLocalMean:Float = 0.0
-            memcpy(&modelLocalMean, modelLocalMeanBytes, 4)
+            let modelRightMeanBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
+            var modelRightMean:Float = 0.0
+            memcpy(&modelRightMean, modelRightMeanBytes, 4)
             
             let unused4Bytes:Array<UInt8> = [data[12], data[13], data[14], data[15]]
             var unused4:Float = 0.0
@@ -141,8 +141,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 let model = try MLModel(contentsOf: compiledUrl)
                 self.model = try? VNCoreMLModel(for: model)
                 
-                self.modelGlobalCutoff = modelGlobalMean
-                self.modelLocalCutoff = modelLocalMean
+                self.modelLeftMean = modelLeftMean
+                self.modelRightMean = modelRightMean
                 
             }
         } catch {
@@ -189,8 +189,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     let prng = PRNG()
     
-    var modelLocalCutoff:Float = 0.5
-    var modelGlobalCutoff:Float = 0.5
+    var modelLeftMean:Float = 0.5
+    var modelRightMean:Float = 0.5
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
@@ -291,9 +291,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
             // We want a random number from the model mean (either local or global still testing) and 0.5
-            let cutoffRange:Float = (0.5 - self!.modelGlobalCutoff) * 0.5
-            var cutoffLeft:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRange
-            var cutoffRight:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRange
+            let cutoffLeftRange:Float = (0.5 - self!.modelLeftMean) * 0.5
+            let cutoffRightRange:Float = (0.5 - self!.modelRightMean) * 0.5
+            var cutoffLeft:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffLeftRange
+            var cutoffRight:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRightRange
+            
+            //cutoffLeft = 0.5
+            //cutoffRight = 0.5
                         
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
