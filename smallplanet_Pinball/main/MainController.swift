@@ -122,6 +122,14 @@ class MainController: PlanetViewController, NetServiceDelegate {
         
         try! publisher.send(string: heartbeatString)
 
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
+            if #available(iOS 11.0, *) {
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    self.navigationController?.pushViewController(PlayController(), animated: true)
+                }
+            }
+        })
     }
     
     fileprivate var previewModeButton: Button {
