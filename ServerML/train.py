@@ -25,6 +25,9 @@ import h5py
 import struct
 from text_histogram import histogram
 
+
+flippyThreshold = 0.05
+
 coreMLPublisher = comm.publisher(comm.endpoint_pub_CoreMLUpdates)
 
 
@@ -76,10 +79,13 @@ def GenerateSampleOrdering(total_labels, total_weights):
     for i in range(0,len(total_labels)):
         
         
+        #sampling_order[i] = 1.0 - sampling_order[i]
+        #if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
+        #    sampling_order[i] = 2.0
         
         
         # all random
-        #sampling_order[i] = random.random()
+        sampling_order[i] = random.random()
         
         # perm > all, rest are randomized
         #sampling_order[i] = random.random() * 0.9
@@ -88,8 +94,8 @@ def GenerateSampleOrdering(total_labels, total_weights):
         
         
         # weighted order, with perms on top
-        if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
-            sampling_order[i] = 1.1
+        #if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
+        #    sampling_order[i] = 1.1
         
     return sampling_order
 
@@ -129,6 +135,8 @@ def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
     wastedMod = numWasted / (numLeft + numRight + numWasted)
     permanentMod = numPermanent / (numLeft + numRight + numWasted + numPermanent)
     
+    print("permanentMod",permanentMod,"wastedMod",wastedMod,"leftMod",leftMod)
+    
     left = 0
     right = 0
     wasted = 0
@@ -139,7 +147,7 @@ def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
         # wasted memories are balanced against "normal" left/right action memories
         if total_weights[i] < 0:
             #(total_weights[i] / totalWastedWeight * numWasted) * 
-            normalized_weights[i] = (total_weights[i] / totalWastedWeight * numWasted) * (1.0 - wastedMod) * permanentMod * 2
+            normalized_weights[i] = (total_weights[i] / totalWastedWeight * numWasted) * (1.0 - wastedMod) * permanentMod * 1
             wasted += normalized_weights[i]
         else:
             # left memories are balanced against right memories, and are weighted by their own scores
@@ -361,7 +369,7 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     # 1) the accuracy of all wasted images
     for i in range(0,runNumber+1):
         
-        prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, 0, -1)
+        prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, 0, 0)
         if len(prev_labels) > 0:
             flippy_imgs = np.concatenate((flippy_imgs,prev_imgs), axis=0) if len(flippy_imgs) > 0 else prev_imgs
             flippy_labels = np.concatenate((flippy_labels,prev_labels), axis=0) if len(flippy_labels) > 0 else prev_labels
@@ -370,7 +378,7 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
             # we want to get the false positives as well...
             mask = np.zeros(len(flippy_weights), dtype=bool)
             for j in range(0,len(flippy_weights)):
-                if flippy_weights[j] > 0 and flippy_labels[j][0] == 0 and flippy_labels[j][1] == 0:
+                if flippy_labels[j][0] == 0 and flippy_labels[j][1] == 0:
                     mask[j] = True
             
             flippy_imgs = flippy_imgs[mask,...]
@@ -398,7 +406,7 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
     # calculate a "flippyness" value, which is our way of detecting false positives where the AI will flip the flippers when there is no ball present
     # We can do this by testing accuracy against permanent memories and all non-wasted _0_0_0_ memories
     flippy_acc,flippy_mean,flippy_max = EvaluateImagesForModel("  Accuracy of permanent memories is {} of {} total memories",cnn_model,flippy_imgs,flippy_labels,flippy_weights,shouldPrint=False)
-    if flippy_max >= 0.5:
+    if flippy_max >= flippyThreshold:
         print("")
         print("*************************************************")
         print("******* WARNING: Flippy memories detected *******")
@@ -543,11 +551,11 @@ def Learn(overrideRunNumber=None):
     # prng.shuffle(total_weights)
     
     
-    numTrainingLoops = 60
+    numTrainingLoops = 24
     
     # compute the normalized weights
-    normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / numTrainingLoops * 2.0)
-    
+    normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / numTrainingLoops)
+    normalized_weights_local = normalized_weights[:]
     
     # note: the order of samples in the training array is completely relevant to how the AI reacts
     # - if the scoring samples are last, the AI plays more aggressive
@@ -568,26 +576,83 @@ def Learn(overrideRunNumber=None):
     
     #print(indices)
             
-    bestNumCorrect = 0
-    for i in range(0,numTrainingLoops):
+    bestNumCorrect = len(total_weights) * 0.95
+    
+    numOfModelsToSave = 1
+    while True:
         
+        
+        batch_size = 32
+        cnn_model.fit(total_imgs, total_labels,
+            batch_size=batch_size,
+            epochs=1,
+            shuffle=True,
+            verbose=0,
+            sample_weight=normalized_weights_local,
+            )
+        
+        normalized_weights_local = normalized_weights[:]
         
         # Check to see how our model is doing, save the version with the best accuracy
         predictions = cnn_model.predict(total_imgs)
         numCorrect = 0
         isFlippy = False
         for j in range(0,len(total_weights)):
+            if total_labels[j][0] == 0 and total_labels[j][1] == 0 and (
+                predictions[j][0] >= flippyThreshold or predictions[j][1] >= flippyThreshold):
+                isFlippy = True
+            
+            
+            # in addition, don't overtrain the correct ones
             if round(predictions[j][0]) == total_labels[j][0] and round(predictions[j][1]) == total_labels[j][1]:
+                if total_weights[j] > 0 and total_labels[j][0] == 0 and total_labels[j][1] == 0:
+                    x = 1
+                else:
+                    if total_labels[j][0] or total_labels[j][1]:
+                        m = max(predictions[j][0],predictions[j][1])
+                        normalized_weights_local[j] *= (1.0 - m) * 0.75 + 0.25
+                    else:
+                        normalized_weights_local[j] * 0.5
                 numCorrect += 1
-            elif total_weights[j] > 0 and total_labels[j][0] == 0 and total_labels[j][1] == 0:
-                    isFlippy = True
+            else:
+                normalized_weights_local[j] *= 1.5
         
-        if i > 3 and numCorrect >= bestNumCorrect and isFlippy == False:
+        if numCorrect >= bestNumCorrect and isFlippy == False:
             bestNumCorrect = numCorrect
             cnn_model.save("model.h5")
-            print(" {} of {} - acc: {} *saved*".format(i, numTrainingLoops, numCorrect/len(total_weights)))
+            print(" - acc: {} *saved*".format(numCorrect/len(total_weights)))
+            
+            numOfModelsToSave -= 1
+            if numOfModelsToSave <= 0:
+                break
         else:
-            print(" {} of {} - acc: {}".format(i, numTrainingLoops, numCorrect/len(total_weights) ))
+            print(" - acc: {}".format(numCorrect/len(total_weights) ))
+        
+                
+    '''
+        # Check to see how our model is doing, save the version with the best accuracy
+        predictions = cnn_model.predict(total_imgs)
+        numCorrect = 0
+        isFlippy = False
+        for j in range(0,len(total_weights)):
+            if total_weights[j] > 0 and total_labels[j][0] == 0 and total_labels[j][1] == 0 and (
+                predictions[j][0] >= flippyThreshold or predictions[j][1] >= flippyThreshold):
+                isFlippy = True
+            
+            if round(predictions[j][0]) == total_labels[j][0] and round(predictions[j][1]) == total_labels[j][1]:
+                numCorrect += 1
+        
+        if numCorrect >= bestNumCorrect and isFlippy == False:
+            bestNumCorrect = numCorrect
+            cnn_model.save("model.h5")
+            print(" - acc: {} *saved*".format(numCorrect/len(total_weights)))
+            
+            numOfModelsToSave -= 1
+            if numOfModelsToSave <= 0:
+                break
+        else:
+            print(" - acc: {}".format(numCorrect/len(total_weights) ))
+            
         
         # NOTE: To allow us to train any number of images without fear of overtraining the network,
         # we first predict against our samples.  if the sample prediction is not within our expected
@@ -637,6 +702,7 @@ def Learn(overrideRunNumber=None):
                     verbose=0,
                     sample_weight=normalized_weights_local,
                     )
+        '''
         
     output_labels = ['left','right','ballkicker'] 
     coreml_model = coremltools.converters.keras.convert("model.h5",input_names='image',image_input_names = 'image',class_labels = output_labels)   
