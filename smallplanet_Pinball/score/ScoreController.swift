@@ -34,10 +34,10 @@ extension DefaultsKeys {
 
 class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let topLeft = (CGFloat(1207), CGFloat(711))
-    let topRight = (CGFloat(1202), CGFloat(463))
-    let bottomLeft = (CGFloat(140), CGFloat(731))
-    let bottomRight = (CGFloat(149), CGFloat(476))
+    let topLeft = (CGFloat(1218), CGFloat(701))
+    let topRight = (CGFloat(1213), CGFloat(460))
+    let bottomLeft = (CGFloat(156), CGFloat(687))
+    let bottomRight = (CGFloat(191), CGFloat(445))
     
     let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
@@ -104,8 +104,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         
         DispatchQueue.global(qos: .userInteractive).async {
             // use a genetic algorithm to calibrate the best offsets for each point...
-            let maxWidth:CGFloat = 50
-            let maxHeight:CGFloat = 50
+            let maxWidth:CGFloat = 60
+            let maxHeight:CGFloat = 60
             let halfWidth:CGFloat = maxWidth / 2
             let halfHeight:CGFloat = maxHeight / 2
 
@@ -154,8 +154,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             
             ga.breedOrganisms = { (organismA, organismB, child, prng) in
                 
-                let localMaxHeight = maxHeight * max(1.0 - organismA.lastScore, 0.6)
-                let localMaxWidth = maxHeight * max(1.0 - organismA.lastScore, 0.6)
+                let localMaxHeight = maxHeight
+                let localMaxWidth = maxHeight
                 let localHalfWidth:CGFloat = localMaxWidth / 2
                 let localHalfHeight:CGFloat = localMaxHeight / 2
                 

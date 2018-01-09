@@ -548,7 +548,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/smallplanet_Pinball/zmq/Libraries",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball10";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "smallplanet_Pinball/zmq/smallplanet_Pinball-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -569,7 +569,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/smallplanet_Pinball/zmq/Libraries",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball10";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "smallplanet_Pinball/zmq/smallplanet_Pinball-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;

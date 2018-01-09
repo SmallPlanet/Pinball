@@ -57,7 +57,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     
     let playMode:PlayMode = .Play
     
-    let shouldExperiment = true
+    var shouldExperiment = false
     
     var currentPlayer = 1
     var playerOneScore = 0
@@ -144,6 +144,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 self.modelLeftMean = modelLeftMean
                 self.modelRightMean = modelRightMean
                 
+                print("\(modelLeftMean) // \(modelRightMean)")
+                
             }
         } catch {
             print(error)
@@ -175,7 +177,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var disableLeftFlipperUntilRelease = false
     var disableRightFlipperUntilRelease = false
     
-    let numberOfFramesItTakesForFlipperToRetract:Int = 11
+    let numberOfFramesItTakesForFlipperToRetract:Int = 14
     
     var lastOriginalFrame:CIImage? = nil
     var lastFrame:CIImage? = nil
@@ -291,13 +293,15 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
             // We want a random number from the model mean (either local or global still testing) and 0.5
-            let cutoffLeftRange:Float = (0.5 - self!.modelLeftMean) * 0.5
-            let cutoffRightRange:Float = (0.5 - self!.modelRightMean) * 0.5
+            let cutoffLeftRange:Float = (0.5 - self!.modelLeftMean) * 0.25
+            let cutoffRightRange:Float = (0.5 - self!.modelRightMean) * 0.25
             var cutoffLeft:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffLeftRange
             var cutoffRight:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRightRange
             
-            //cutoffLeft = 0.5
-            //cutoffRight = 0.5
+            if self!.shouldExperiment == false {
+                cutoffLeft = self!.modelLeftMean
+                cutoffRight = self!.modelRightMean
+            }
                         
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
@@ -393,6 +397,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             print("\(fps) fps")
             
             DispatchQueue.main.async {
+                
+                self.statusLabel.label.text = "\(fps) fps   \(self.bestCalibrationAccuracy) calibrated"
+                
                 self.preview.imageView.image = UIImage(ciImage: image)
             }
         }
@@ -518,6 +525,16 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         try! LoadModelMessage(Data(contentsOf: URL(fileURLWithPath: String(bundlePath:"bundle://Assets/play/model.msg"))))
         
         captureHelper.pinball = pinball
+        
+        
+        experimentToggleButton.button.add(for: .touchUpInside) {
+            self.shouldExperiment = !self.shouldExperiment
+            if self.shouldExperiment {
+                self.experimentToggleButton.button.setTitle("Experiment is On", for:.normal)
+            } else {
+                self.experimentToggleButton.button.setTitle("Experiment is Off", for:.normal)
+            }
+        }
     }
 
         
@@ -525,6 +542,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         UIApplication.shared.isIdleTimerDisabled = false
         captureHelper.stop()
         pinball.disconnect()
+        
+        try! remoteControlSubscriber?.close()
+        try! scoreSubscriber?.close()
         
         shouldBeCalibrating = false
         
@@ -585,6 +605,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         */
     }
     
+    
+    var bestCalibrationAccuracy:Float = 0.0
+    
     func PerformCalibration() {
 
         // Load our calibration image and convert to RGB bytes
@@ -616,6 +639,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             let halfHeight:CGFloat = maxHeight / 2
             
             let ga = GeneticAlgorithm<Organism>()
+            
+            self.bestCalibrationAccuracy = 0
             
             ga.generateOrganism = { (idx, prng) in
                 let newChild = Organism ()
@@ -841,8 +866,6 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 
                 return accuracy
             }
-            
-            var bestCalibrationAccuracy:Float = 0.0
 
             ga.chosenOrganism = { (organism, score, generation, sharedOrganismIdx, prng) in
                 if self.shouldBeCalibrating == false {
@@ -851,13 +874,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
                 
                 // if we're "good enough" then go into low power mode
-                if generation > 3000 && score > 0.705 && generation % 60 == 0 {
+                if generation > 3000 && score > 0.703 && generation % 60 == 0 {
                     usleep(472364)
                 }
                 
                 // NOTE: This will only ever be called with the current BEST organism...
-                if sharedOrganismIdx == 0 && (generation % 250 == 0 || score > bestCalibrationAccuracy) {
-                    bestCalibrationAccuracy = score
+                if sharedOrganismIdx == 0 && (generation % 250 == 0 || score > self.bestCalibrationAccuracy) {
+                    self.bestCalibrationAccuracy = score
                     
                     let x1 = organism.play[0]
                     let y1 = organism.play[1]
@@ -945,9 +968,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     fileprivate var statusLabel: Label {
         return mainXmlView!.elementForId("statusLabel")!.asLabel!
     }
-    fileprivate var validateNascarButton: Button {
-        return mainXmlView!.elementForId("validateNascarButton")!.asButton!
+    fileprivate var experimentToggleButton: Button {
+        return mainXmlView!.elementForId("experimentToggleButton")!.asButton!
     }
+    
+    
     
     internal var leftButton: Button? {
         return nil
