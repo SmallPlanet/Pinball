@@ -29,6 +29,20 @@ struct SARS: Codable {
         done = step.done
         timestamp = step.timestamp
     }
+    
+    init(state: String, action: Actor.Action.RawValue, reward: Double, discountedReward: Double, nextState: String, done: Bool, timestamp: TimeInterval) {
+        self.state = state
+        self.action = action
+        self.reward = reward
+        self.discountedReward = discountedReward
+        self.nextState = nextState
+        self.done = done
+        self.timestamp = timestamp
+    }
+    
+    func copyWithDoneTrue() -> SARS {
+        return SARS(state: state, action: action, reward: reward, discountedReward: discountedReward, nextState: nextState, done: true, timestamp: timestamp)
+    }
 }
 
 typealias StepStorage = (state: String, action: Actor.Action.RawValue, score: Double, nextState: String, done: Bool, timestamp: TimeInterval)
@@ -50,22 +64,18 @@ struct Episode {
     }
     
     func filename(index: Int) -> String {
-        return String(format: "%@-%08d.png", id, index)
+        return String(format: "%@-%08d.jpg", id, index)
     }
     
-    mutating func append(state: CIImage, action: Actor.Action, score: Double, done: Bool) {
+    mutating func append(state: Data, action: Actor.Action, score: Double, done: Bool) {
         let filePath = directoryPath + "/" + filename(index: nextIndex)
         
         // write image
-        guard let png = state.pngData else {
-            print("Error: unable to get PNG data for image")
-            return
-        }
         do {
-            try png.write(to: URL(fileURLWithPath: filePath))
-            let state = id + "/" + filename(index: nextIndex)
-            let nextState = done ? "" : id + "/" + filename(index: nextIndex + 1)
-            steps.append(StepStorage(state: state, action: action.rawValue, score: score, nextState: nextState, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
+            try state.write(to: URL(fileURLWithPath: filePath))
+            let stateName = id + "/" + filename(index: nextIndex)
+            let nextStateName = done ? "" : id + "/" + filename(index: nextIndex + 1)
+            steps.append(StepStorage(state: stateName, action: action.rawValue, score: score, nextState: nextStateName, done: done, timestamp: Date().timeIntervalSinceReferenceDate))
         } catch let error {
             print(error)
         }
@@ -99,9 +109,13 @@ struct Episode {
         
         let sars = rewards.enumerated().map{ SARS(steps[$0.offset], reward: scoreChanges[$0.offset], discountedReward: $0.element) }
         
+        guard let last = sars.last else { print("no items in SARS array"); return }
+        let newLast = last.copyWithDoneTrue()
+        let finished = Array(sars.prefix(sars.count - 1)) + [newLast]
+        
         let encoder = JSONEncoder()
         do {
-            let data = try encoder.encode(sars)
+            let data = try encoder.encode(finished)
             let fileURL = URL(fileURLWithPath: "\(directoryPath)/\(id).json")
             FileManager.default.createFile(atPath: fileURL.path, contents: data, attributes: nil)
         } catch {

@@ -310,7 +310,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         if delegateWantsTemporalImages {
             let numberOfFrames = 4
 
-            temporalFrames.insert(cameraImage, at: 0)
+            temporalFrames.insert(cameraImage.copy() as! CIImage, at: 0)
             if temporalFrames.count > numberOfFrames {
                 temporalFrames.removeLast(temporalFrames.count - numberOfFrames)
             }

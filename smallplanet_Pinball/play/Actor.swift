@@ -13,7 +13,7 @@ import Vision
 
 struct Actor {
     
-    lazy var model = tng_boy_0000()
+    lazy var model = ModelWrapper()
     let size = CGSize(width: 128.0, height: 96.0)
     
     enum Action: Int {
@@ -24,11 +24,14 @@ struct Actor {
         case upperRight = 4
     }
     
-    mutating func chooseAction(state: CIImage) -> Action {
+    mutating func chooseAction(state: CIImage, epsilon: Double = 1.0) -> Action {
+        if Double(arc4random())/Double(UINT32_MAX) < epsilon {
+            return fakeAction()
+        }
         let buffer = pixelBuffer(ciImage: state)
-        let output = try! model.prediction(images: buffer).actions
+        let output = try! model.prediction(state: buffer).actions
         let array = (0..<output.count).map { Double(output[$0]) }
-//        print(array)
+        print(array)
 
         let actionRaw = choice(distribution: array)
         return Action(rawValue: actionRaw)!
@@ -72,3 +75,5 @@ struct Actor {
         return index
     }
 }
+
+class ModelWrapper: tng_charles { }

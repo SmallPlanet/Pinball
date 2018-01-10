@@ -77,9 +77,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 return
             }
             
-//            let _ = actor.chooseAction(state: image)
-            let action = actor.fakeAction()
-            // TODO: perform action
+            let action = actor.chooseAction(state: image, epsilon: 0.8)
+//            let action = actor.fakeAction()
             
             if pinballEnabled {
                 switch action {
@@ -99,8 +98,14 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                     break
                 }
             
-            // Save state/reward in episode
-            episode?.append(state: image, action: action, score: Double(currentScore), done: false)
+                // Save state/reward in episode
+                
+                guard let jpegData = ciContext.jpegRepresentation(of: image, colorSpace: CGColorSpaceCreateDeviceRGB(), options: [kCGImageDestinationLossyCompressionQuality:1.0]) else {
+                    print("Error creating jpeg data")
+                    return
+                }
+                
+                episode?.append(state: jpegData, action: action, score: Double(currentScore), done: false)
             } else {
                  print("Action computed but not sent: \(action)")
             }
