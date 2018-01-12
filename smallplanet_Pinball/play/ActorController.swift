@@ -29,8 +29,9 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         case watchdogging
     }
     var state = State.idling
+    var stateTimer = Date()
     
-    let timeBetweenGames = 5.0 // 30.0 // seconds, following end of save game
+    let timeBetweenGames = 90.0 // seconds, following end of save game, allows machine to rest
     var lastScoreTimestamp = Date()
     let scoreWatchdogDuration = 600 // seconds without a score change while .acting -> stop, state = .watchdogging
     
@@ -78,22 +79,17 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             }
             
             let action = actor.chooseAction(state: image, epsilon: 0.8)
-//            let action = actor.fakeAction()
             
             if pinballEnabled {
                 switch action {
                 case .left:
                     pinball.leftButtonStart()
-                    PlanetUI.GCDDelay(0.05) { self.pinball.leftButtonEnd() }
                 case .right:
                     pinball.rightButtonStart()
-                    PlanetUI.GCDDelay(0.05) { self.pinball.rightButtonEnd() }
                 case .upperRight:
                     pinball.rightUpperButtonStart()
-                    PlanetUI.GCDDelay(0.05) { self.pinball.rightUpperButtonEnd() }
                 case .plunger:
                     pinball.ballKickerStart()
-                    PlanetUI.GCDDelay(0.05) { self.pinball.leftButtonEnd() }
                 case .nop:
                     break
                 }
@@ -122,27 +118,20 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         }
     }
     
-    var pinballEnabled: Bool {
-        var enabled = false
-        DispatchQueue.main.sync {
-            enabled = deadmanSwitch.switch_.isOn
-        }
-        return enabled
-    }
+    var pinballEnabled = true
     
     func startGame() {
-        captureHelper = createCaptureHelper()
-        
         episode = createEpisode()
 
         // send start signal to pinball machine
         pinball.start()
         state = .starting
+        stateTimer = Date()
+        print("Started new game at \(stateTimer)")
     }
     
     // starts a new episode from user input on screen assuming pinball game is physically started
     func startEpisode() {
-        captureHelper = createCaptureHelper()
         episode = createEpisode()
         state = .acting
     }
@@ -156,15 +145,16 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     func episodeFinishedSaving() {
         state = .gameOverWaiting
+        print("Episode saved. Waiting \(timeBetweenGames)s before restarting")
         PlanetUI.GCDDelay(timeBetweenGames) { self.startGame() }
     }
     
     func endGame() {
-            // start saving episode data
-            // callback will start next game after delay
-            state = .gameOverSaving
-            episode?.save(callback: episodeFinishedSaving)
-            Slacker.shared.send(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
+        // start saving episode data
+        // callback will start next game after delay
+        state = .gameOverSaving
+        episode?.save(callback: episodeFinishedSaving)
+        Slacker.shared.send(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
     }
     
     func receiveScore(data: Data) {
@@ -176,6 +166,8 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             print("unable to parse received data into a string")
             return
         }
+        
+        print("Actor received string: \(dataAsString)")
 
         let parts = dataAsString.components(separatedBy: ":")
         guard parts.count > 1 else {
@@ -203,15 +195,18 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         
     }
     
-    let actorQueue = DispatchQueue(label: "actor_server_queue", qos: .background)
-
-    func setupActorServer(_ handler: (Data) -> ()) throws {
-        actorServer = ActorServer(port: ActorController.port, handler: receiveScore)
-        actorQueue.async {
-            self.actorServer.run()
+    @objc func watchdog() {
+        if state == .starting && stateTimer.timeIntervalSinceNow > 10 {
+            pinball.start()
+            stateTimer = Date()
+        }
+        if !captureHelper.captureSession.isRunning {
+            print("capture session not running")
         }
     }
     
+    var scoreSubscriber: SwiftyZeroMQ.Socket!
+
     func createCaptureHelper() -> CameraCaptureHelper {
         let captureHelper = CameraCaptureHelper(cameraPosition: .back)
         
@@ -241,22 +236,21 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     
     // MARK:- View lifecycle
     
+    var updateTimer: Timer!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Play Mode"
 
-        // sendSlack(message: "Acting!!!")
-        // testPinballActions()
         mainBundlePath = "bundle://Assets/play/play.xml"
         loadView()
-        
-//        captureHelper = createCaptureHelper()
+        updateTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(watchdog), userInfo: nil, repeats: true)
+
+        captureHelper = createCaptureHelper()
 
         UIApplication.shared.isIdleTimerDisabled = true
         
-        
-        do { try setupActorServer(receiveScore) }
-        catch { print(error) }
+        scoreSubscriber = Comm.shared.subscriber(Comm.endpoints.sub_GameInfo, receiveScore)
         
         observers.append(NotificationCenter.default.addObserver(forName: .AVCaptureSessionRuntimeError, object: captureHelper.captureSession, queue: nil) { notification in
                 print(notification)
@@ -278,12 +272,12 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
         startEpisodeButton.button.add(for: .touchUpInside, startEpisode)
         gameOverButton.button.add(for: .touchUpInside, endGame)
-        
     }
 
     
     override func viewDidDisappear(_ animated: Bool) {
         UIApplication.shared.isIdleTimerDisabled = false
+        updateTimer.invalidate()
         captureHelper.stop()
         pinball.disconnect()
     }
@@ -311,8 +305,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         pinball.connect()
-        
-//        testPinballActions()
     }
     
     fileprivate var preview: ImageView {

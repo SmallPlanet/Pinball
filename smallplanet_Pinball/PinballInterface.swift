@@ -203,22 +203,25 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             return
         }
         
-        print("Sending: \(data)")
+        // print("Sending: \(data)")
         do {
             try client.write(from: data)
 
-            var response = Data()
-            var bytesRead = 0
-            while bytesRead == 0 {
-                bytesRead = try client.read(into: &response)
-            }
+//            var response = Data()
+//            var bytesRead = 0
+//            let readDate = Date()
+//            while bytesRead == 0 && Date().timeIntervalSince(readDate) > -0.1 {
+//                bytesRead = try client.read(into: &response)
+//            }
             
         } catch (let error) {
-            if lastError == nil || lastError!.timeIntervalSinceNow < -300 {
+            if lastError == nil || lastError!.timeIntervalSinceNow < -3600 {
                 lastError = Date()
                 print("failure: \(error)")
                 Slacker.shared.send(message: "@quinn omega communication error: \(error)")
             }
+            self.client = nil
+            findFlipperServer()
         }
     }
     

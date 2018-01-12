@@ -8,8 +8,8 @@
 import Foundation
 
 struct Endpoints {
-    let pub_GameInfo = "tcp://Actor.local:60002"
-    let sub_GameInfo = "tcp://Scorekeeper.local:65535"
+    let pub_GameInfo = "tcp://\(Comm.brokerAddress):60002"
+    let sub_GameInfo = "tcp://\(Comm.brokerAddress):60001"
     
     let pub_ScorePixels = "tcp://\(Comm.brokerAddress):60022"
     let sub_ScorePixels = "tcp://\(Comm.brokerAddress):60021"
@@ -31,23 +31,20 @@ class Comm {
     static let shared = Comm()
     static let endpoints = Endpoints()
     
-    static let brokerAddress = "rlserver"
+    static let brokerAddress = "orbital.local"
     
     // the main 0MQ context, controls all sockets, etc
-    var context:SwiftyZeroMQ.Context
+    var context: SwiftyZeroMQ.Context
     
     // a poller is a unified interface for checking whether sockets have any information to read, etc
-    var poller:SwiftyZeroMQ.Poller
+    var poller: SwiftyZeroMQ.Poller
     
     private init() {
         context = try! SwiftyZeroMQ.Context()
         poller = SwiftyZeroMQ.Poller()
         
-        
         DispatchQueue.global(qos: .background).async {
-            
             while true {
-                
                 do {
                     // check all sockets to see if they have any data...
                     let socks = try self.poller.poll(timeout: 1000)
@@ -63,10 +60,9 @@ class Comm {
                         }
                     }
                 } catch {
-                    print("Comm error A: \(error)")
+                    
                 }
             }
-            
         }
     }
     
@@ -84,7 +80,7 @@ class Comm {
             
             return socket
         } catch {
-            print("Comm error B: \(error)")
+            print("Comm error: \(error)")
             return nil
         }
     }
@@ -106,7 +102,7 @@ class Comm {
             
             return socket
         } catch {
-            print("Comm error C: \(error)")
+            print("Comm error: \(error)")
             return nil
         }
     }

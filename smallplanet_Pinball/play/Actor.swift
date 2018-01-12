@@ -31,20 +31,29 @@ struct Actor {
         let buffer = pixelBuffer(ciImage: state)
         let output = try! model.prediction(state: buffer).actions
         let array = (0..<output.count).map { Double(output[$0]) }
-        print(array)
+//        print(array)
 
         let actionRaw = choice(distribution: array)
         return Action(rawValue: actionRaw)!
     }
     
     func fakeAction() -> Action {
-        switch arc4random() % 100 {
-        case 0..<75: return .nop
-        case 76..<78: return .plunger
-        case 79..<88: return .left
-        case 89..<98: return .right
-        default: return .upperRight
+        switch arc4random() % 10 {
+        case 1: return .plunger
+        case 2: return .left
+        case 3: return .right
+        case 4: return .upperRight
+        default: return .nop
         }
+        
+//        switch arc4random() % 100 {
+//        case 0..<75: return .nop
+//        case 76..<78: return .plunger
+//        case 79..<88: return .left
+//        case 89..<98: return .right
+//        default: return .upperRight
+//        }
+
     }
     
     mutating func modelName() -> String {

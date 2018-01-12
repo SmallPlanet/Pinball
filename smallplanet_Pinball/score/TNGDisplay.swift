@@ -133,7 +133,7 @@ struct Display {
         let results = [
             findDigits(cols: cols, pixelsDown: 0, font: digits4x7),
             findDigits(cols: cols, pixelsDown: 0, font: digits5x7Bold),
-            findDigits(cols: cols, pixelsDown: 0, font: digits6x7Bold),
+            // findDigits(cols: cols, pixelsDown: 0, font: digits6x7Bold),
             findDigits(cols: cols, pixelsDown: 3, font: digits9x20),
             findDigits(cols: Array(cols[30..<cols.count]), pixelsDown: 11, font: digits7x13), // simulation. left side can misread
             findDigits(cols: Array(cols[20..<111]), pixelsDown: 22, font: digits5x9), // shuttle simulation

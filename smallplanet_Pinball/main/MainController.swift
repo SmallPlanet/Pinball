@@ -37,9 +37,6 @@ class MainController: PlanetViewController, NetServiceDelegate {
         mainBundlePath = "bundle://Assets/main/main.xml"
         loadView()
         
-        RemoteControlServer.shared.begin()
-        RemoteControlServer.shared.ignoreRemoteControlEvents = false
-        
         if #available(iOS 11.0, *) {
             playModeButton.button.add(for: .touchUpInside) {
                 self.navigationController?.pushViewController(ActorController(), animated: true)

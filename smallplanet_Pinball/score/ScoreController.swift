@@ -40,6 +40,8 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
     
     let originalImageHeight = 2448.0
+
+    let scorePublisher:SwiftyZeroMQ.Socket? = Comm.shared.publisher(Comm.endpoints.pub_GameInfo)
     
     func ResetGame() { }
     
@@ -129,7 +131,7 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
         captureHelper.delegateWantsLockedCamera = true
         captureHelper.delegateWantsPerspectiveImages = true
         captureHelper.delegateWantsConstantFPS = true
-        captureHelper.constantFPS = 10
+        captureHelper.constantFPS = 9
         // captureHelper.delegateWantsSpecificFormat = false
         // captureHelper.cameraFormatSize = CGSize(width: 1920, height: 1080)
         
@@ -150,9 +152,6 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
 
         statusLabel.view.transform = CGAffineTransform(rotationAngle: -.pi/2)
         self.statusLabel.updateText("0")
-        
-        do { try setupScoreServer() }
-        catch { print(error) }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -566,26 +565,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
     
     // MARK: - Socket communications
     
-    var actor: Socket?
-    
-    func setupScoreServer() throws {
-        if actor == nil {
-            actor = try Socket.create(family: .inet)
-        }
-        guard let actor = actor else { print("Aarg"); return }
-
-        try actor.connect(to: "Actor.local", port: Int32(ActorController.port))
-        
-        // publish the score and done state periodically
-//        updateTimer = Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(publish), userInfo: nil, repeats: true)
-
-    }
-    
     @objc func publish() {
-        guard let actor = actor else { return }
         do {
-            let score = "S:\(currentScore):\(gameOver ? 1:0)"
-            try actor.write(from: score)
+            // sending score 0:1 (zero score, game over) is confusing, so don't do it
+            let gameOverString = (gameOver && currentScore > 0) ? "1" : "0"
+            let score = "S:\(currentScore):\(gameOverString)"
+            try scorePublisher?.send(string: score)
         } catch {
             print(error.localizedDescription)
         }

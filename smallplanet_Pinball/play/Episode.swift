@@ -95,8 +95,13 @@ struct Episode {
     // Convert episode data to h5py format and write to file
     // To be used at the after episode ends
     func save(callback: ()->()) {
+        guard steps.count > 500 else {
+            print("Not enough steps to save \(steps.count)")
+            callback()
+            return
+        }
+        
         // Create [Step] from [StepStorage] including reward and discounted reward computation
-
         let scoreChanges = steps.enumerated().map { $0.offset > 0 ? $0.element.score - steps[$0.offset-1].score : 0.0  }
         
         let discounts = scoreChanges.enumerated()
