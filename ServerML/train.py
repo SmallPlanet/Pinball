@@ -19,6 +19,7 @@ import glob
 import re
 import gc
 import scipy.misc
+import heatmap
 
 import coremltools   
 import h5py
@@ -63,6 +64,11 @@ def ModelMessagePath(runNumber=None):
     if runNumber == None:
         runNumber = trainingRunNumber
     return "./run" + str(runNumber) + "/model.msg"
+    
+def HeatmapPath(runNumber=None):
+    if runNumber == None:
+        runNumber = trainingRunNumber
+    return "./run" + str(runNumber) + "/heatmap.png"
 
 
 def read_file(path):
@@ -71,33 +77,81 @@ def read_file(path):
 
 
 def GenerateSampleOrdering(total_labels, total_weights):
-    # start with the normalized weights; this will allow our wasted and normal samples to gradiate nicely
+    
+    '''
     sampling_order = GenerateSampleWeights(total_labels, total_weights)
     
-    # find all of the permanent memories and prioritize those!
-    # If the array will be reversed, then we need to set a low priority (so that it becomes high)
+    # Our goal is to reduce the effect order has on training (for example, randomizing the sample can lead to the
+    # left side overtraing and the right side under training.
+    
+    # force our ordering to be left,right,waste,perm, repeating...
+    mask = np.zeros(len(total_weights), dtype=bool)
+    
+    typeL = 0
+    order = 0
     for i in range(0,len(total_labels)):
         
+        didFind = False
+        while not didFind:
+            # find the next kind of sample based on typeL
+            if typeL == 0:  # left sample
+                for j in range(0,len(total_labels)):
+                    if mask[j] == False and total_labels[j][0] == 1:
+                        mask[j] = True
+                        sampling_order[j] = order
+                        didFind = True
+                        break
+            elif typeL == 1:  # right sample
+                for j in range(0,len(total_labels)):
+                    if mask[j] == False and total_labels[j][1] == 1:
+                        mask[j] = True
+                        sampling_order[j] = order
+                        didFind = True
+                        break
+            elif typeL == 2:  # wasted sample
+                for j in range(0,len(total_labels)):
+                    if mask[j] == False and total_weights[j] < 0:
+                        mask[j] = True
+                        sampling_order[j] = order
+                        didFind = True
+                        break
+            elif typeL == 3:  # perm sample
+                for j in range(0,len(total_labels)):
+                    if mask[j] == False and total_weights[j] > 0 and total_labels[j][0] == 0 and total_labels[j][1] == 0:
+                        mask[j] = True
+                        sampling_order[j] = order
+                        didFind = True
+                        break
+            typeL = (typeL + 1) % 4
         
-        #sampling_order[i] = 1.0 - sampling_order[i]
-        #if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
-        #    sampling_order[i] = 2.0
+        order = order + 1
+    
+    # force all of the perm samples last
+    for i in range(0,len(total_labels)):
+        if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
+            sampling_order[i] = order + 1
+    
+    return (sampling_order,False)
+    '''
+    
+    
+    sampling_order = np.zeros(len(total_weights), dtype='float32')
+    
+    # Sort the arrays by sample order
+    for i in range(0,len(total_labels)):
+        sampling_order[i] = random.random() + 0.0
         
+        # all permanent and false positive memories are trained last to ensure they stick
+        if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
+            sampling_order[i] = random.random() * 0.5 + 1.0
         
-        # all random
-        sampling_order[i] = random.random()
+        #if total_labels[i][0] == 0 and total_labels[i][1] == 0:
+        #    sampling_order[i] = random.random() * 0.5 + 0.5
+        #    if total_weights[i] > 0:
+        #        sampling_order[i] = random.random() * 0.5 + 1.0
+    
         
-        # perm > all, rest are randomized
-        #sampling_order[i] = random.random() * 0.9
-        #if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
-        #    sampling_order[i] = 1.0
-        
-        
-        # weighted order, with perms on top
-        #if total_weights[i] > 0 and total_labels[i][0] == 0 and total_labels[i][1] == 0:
-        #    sampling_order[i] = 1.1
-        
-    return sampling_order
+    return (sampling_order,True)
 
 def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
     
@@ -134,9 +188,7 @@ def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
     leftMod = numLeft / (numLeft + numRight)
     wastedMod = numWasted / (numLeft + numRight + numWasted)
     permanentMod = numPermanent / (numLeft + numRight + numWasted + numPermanent)
-    
-    print("permanentMod",permanentMod,"wastedMod",wastedMod,"leftMod",leftMod)
-    
+        
     left = 0
     right = 0
     wasted = 0
@@ -152,11 +204,11 @@ def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
         else:
             # left memories are balanced against right memories, and are weighted by their own scores
             if total_labels[i][0] == 1:
-                normalized_weights[i] = (total_weights[i] / totalLeftWeight * numLeft) * permanentMod * wastedMod * (1.0 - leftMod) * 4
+                normalized_weights[i] = (total_weights[i] / totalLeftWeight * numLeft) * permanentMod * wastedMod * (1.0 - leftMod) * 2
                 left += normalized_weights[i]
             # right memories are balanced against left memories, and are weighted by their own scores
             elif total_labels[i][1] == 1:
-                normalized_weights[i] = (total_weights[i] / totalRightWeight * numRight) * permanentMod * wastedMod * leftMod * 4
+                normalized_weights[i] = (total_weights[i] / totalRightWeight * numRight) * permanentMod * wastedMod * leftMod * 2
                 right += normalized_weights[i]
             # permanent and erroneous memories (false positive right/left memories manually corrected) count as a wasted memory
             else:
@@ -165,7 +217,7 @@ def GenerateSampleWeights(total_labels, total_weights, global_weight=1.0):
 
         normalized_weights[i] *= global_weight
     
-    print("permanent",permanent,"wasted",wasted,"left",left,"right",right)
+    #print("permanent",permanent,"wasted",wasted,"left",left,"right",right)
     
     return normalized_weights
                                 
@@ -183,6 +235,8 @@ def ConfirmTrainingNumber():
             n = int(m.group())
             if n > trainingRunNumber:
                 trainingRunNumber = n
+    
+    return trainingRunNumber
 
 trainingRunNumber = 0
 ConfirmTrainingNumber()
@@ -378,7 +432,7 @@ def EvaluateModelForRun(runNumber,shouldPrint=True):
             # we want to get the false positives as well...
             mask = np.zeros(len(flippy_weights), dtype=bool)
             for j in range(0,len(flippy_weights)):
-                if flippy_labels[j][0] == 0 and flippy_labels[j][1] == 0:
+                if flippy_weights[j] > 0 and flippy_labels[j][0] == 0 and flippy_labels[j][1] == 0:
                     mask[j] = True
             
             flippy_imgs = flippy_imgs[mask,...]
@@ -463,9 +517,9 @@ def Learn(overrideRunNumber=None):
     
     total_imgs,total_labels,total_weights = GatherImagesFromTrainingRun(trainingRunNumber, 1.0, 0, 0, 0)
     
-    if len(total_imgs) < 100:
-        print("***** UNABLE TO TRAIN NOT ENOUGH MEMORIES, PLAY SOME MORE! *****")
-        return
+    #if len(total_imgs) < 100:
+    #    print("***** UNABLE TO TRAIN NOT ENOUGH MEMORIES, PLAY SOME MORE! *****")
+    #    return
         
     didLoadWeights = False
     if os.path.isfile(ModelWeightsPath()):
@@ -504,132 +558,94 @@ def Learn(overrideRunNumber=None):
         if i >= 0:
             f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
         
-            # we always want to gather all of the wasted memories, because we never want to forget how we lose a
-            # ball (since those memories do not get reinforced through positive reinforcement).
-            
-            #int(300.0*f)
-            prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, 0, -1)
+            prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, 0, -1, -1)
         
             if len(prev_labels) > 0:
+                # Note: we want to try and age off normal mnemories in a method better than just setting the minimum training run.
+                #for j in reversed(range(0,len(prev_labels))):
+                #    # age off each sample by 10,000 points per training run between then and now...
+                #    add_to_weight = (i-trainingRunNumber+1) * 100000
+                #    if abs(prev_weights[j]) + add_to_weight <= 0 and (prev_labels[j][0] == 1 or prev_labels[j][1] == 1):
+                #        prev_imgs = np.delete(prev_imgs, j, 0)
+                #        prev_labels = np.delete(prev_labels, j, 0)
+                #        prev_weights = np.delete(prev_weights, j, 0)
+                        
                 print("Gathering "+str(len(prev_imgs))+" normal memories from run"+str(i)+" at "+str(f)+" adjustment")                  
                 total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
                 total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
                 total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights
     
-    # Now gather all of the wasted memories            
-    wasted_imgs = []
-    wasted_labels = []
-    wasted_weights = []
-    
-    for i in range(0,trainingRunNumber+1):
+    # Now gather all of the wasted memories                
+    for i in range(minTrainingRun,trainingRunNumber+1):
         f = (i-minTrainingRun+1) / (trainingRunNumber - minTrainingRun)
         
         prev_imgs,prev_labels,prev_weights = GatherImagesFromTrainingRun(i, 1.0, -1, -1, 0)
         
         if len(prev_labels) > 0:
+            # Note: we want to try and age off wasted mnemories in a method better than just setting the minimum training run.
+            #for j in reversed(range(0,len(prev_labels))):
+            #    # age off each sample by 10,000 points per training run between then and now...
+            #    add_to_weight = (i-trainingRunNumber+1) * 10000
+            #    if abs(prev_weights[j]) + add_to_weight <= 0:
+            #        prev_imgs = np.delete(prev_imgs, j, 0)
+            #        prev_labels = np.delete(prev_labels, j, 0)
+            #        prev_weights = np.delete(prev_weights, j, 0)
+                                
             print("Gathering "+str(len(prev_imgs))+" wasted memories from run"+str(i))
             total_imgs = np.concatenate((total_imgs,prev_imgs), axis=0) if len(total_imgs) > 0 else prev_imgs
             total_labels = np.concatenate((total_labels,prev_labels), axis=0) if len(total_labels) > 0 else prev_labels
             total_weights = np.concatenate((total_weights,prev_weights), axis=0) if len(total_weights) > 0 else prev_weights
             
-            wasted_imgs = np.concatenate((wasted_imgs,prev_imgs), axis=0) if len(wasted_imgs) > 0 else prev_imgs
-            wasted_labels = np.concatenate((wasted_labels,prev_labels), axis=0) if len(wasted_labels) > 0 else prev_labels
-            wasted_weights = np.concatenate((wasted_weights,prev_weights), axis=0) if len(wasted_weights) > 0 else prev_weights
             
-    
-    wasted_acc,wasted_mean,wasted_max = EvaluateImagesForModel(None,cnn_model,wasted_imgs,wasted_labels,wasted_weights,shouldPrint=False)
-        
     print("Training "+str(len(total_labels))+" images from run"+str(trainingRunNumber))
-    
-    # shuffle the arrays
-    # t = int(time.time())
-    # prng = RandomState(t)
-    # prng.shuffle(total_imgs)
-    # prng = RandomState(t)
-    # prng.shuffle(total_labels)
-    # prng = RandomState(t)
-    # prng.shuffle(total_weights)
+
     
     
-    numTrainingLoops = 24
+    # number of models which have > accuracy than our target accuracy and pass the flippy test before we call it done
+    numOfModelsToSave = 2
     
-    # compute the normalized weights
-    normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / numTrainingLoops)
-    normalized_weights_local = normalized_weights[:]
+    # number of iterations through the training loop
+    iterations = 0
     
-    # note: the order of samples in the training array is completely relevant to how the AI reacts
-    # - if the scoring samples are last, the AI plays more aggressive
-    # - if the wasted samples are last, the AI plays more defensive
-    # - in theory, if the permanent samples are first, the AI will be more flippity
-    #
-    # So I am adding the GenerateSampleOrdering() method to allow more fine grained control over the
-    # sorted ordering of the arrays
-    sampling_order = GenerateSampleOrdering(total_labels, total_weights)
-    #print(sampling_order)
-        
-    # by reversing the sampling order we are saying the AI will favor being defensive
-    indices = sampling_order.argsort()
-    normalized_weights = normalized_weights[indices]
-    total_imgs = total_imgs[indices]
-    total_weights = total_weights[indices]
-    total_labels = total_labels[indices]
+    # global weight divider, increasing this number means we train more times but each time at a much lower strength;
+    # ideally a higher value will generate a better result at the expense of training time
+    divider = 12
     
-    #print(indices)
-            
-    bestNumCorrect = len(total_weights) * 0.95
+    # a hacky way to ensure some minimum accuracy
+    bestNumCorrect = len(total_weights) * 0.98
     
-    numOfModelsToSave = 1
+    normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / divider)
+    sampling_order,samplingOrderIsRandom = GenerateSampleOrdering(total_labels, total_weights)
+    
     while True:
+
+        if trainingRunNumber > 1:
+            bestNumCorrect = len(total_weights) * (1.0 - iterations // divider * 0.02)
         
         
-        batch_size = 32
+        # we only need to resample the samples if they need to be random every time...
+        if (samplingOrderIsRandom == False and iterations == 0) or samplingOrderIsRandom == True:
+            # compute the normalized weights
+            normalized_weights = GenerateSampleWeights(total_labels, total_weights, 1.0 / divider)
+            sampling_order,samplingOrderIsRandom = GenerateSampleOrdering(total_labels, total_weights)
+            #print(sampling_order)
+    
+            # by reversing the sampling order we are saying the AI will favor being defensive
+            indices = sampling_order.argsort()
+            normalized_weights = normalized_weights[indices]
+            total_imgs = total_imgs[indices]
+            total_weights = total_weights[indices]
+            total_labels = total_labels[indices]        
+        
+        batch_size = 96
         cnn_model.fit(total_imgs, total_labels,
             batch_size=batch_size,
             epochs=1,
-            shuffle=True,
+            shuffle=False,
             verbose=0,
-            sample_weight=normalized_weights_local,
+            sample_weight=normalized_weights,
             )
         
-        normalized_weights_local = normalized_weights[:]
-        
-        # Check to see how our model is doing, save the version with the best accuracy
-        predictions = cnn_model.predict(total_imgs)
-        numCorrect = 0
-        isFlippy = False
-        for j in range(0,len(total_weights)):
-            if total_labels[j][0] == 0 and total_labels[j][1] == 0 and (
-                predictions[j][0] >= flippyThreshold or predictions[j][1] >= flippyThreshold):
-                isFlippy = True
-            
-            
-            # in addition, don't overtrain the correct ones
-            if round(predictions[j][0]) == total_labels[j][0] and round(predictions[j][1]) == total_labels[j][1]:
-                if total_weights[j] > 0 and total_labels[j][0] == 0 and total_labels[j][1] == 0:
-                    x = 1
-                else:
-                    if total_labels[j][0] or total_labels[j][1]:
-                        m = max(predictions[j][0],predictions[j][1])
-                        normalized_weights_local[j] *= (1.0 - m) * 0.75 + 0.25
-                    else:
-                        normalized_weights_local[j] * 0.5
-                numCorrect += 1
-            else:
-                normalized_weights_local[j] *= 1.5
-        
-        if numCorrect >= bestNumCorrect and isFlippy == False:
-            bestNumCorrect = numCorrect
-            cnn_model.save("model.h5")
-            print(" - acc: {} *saved*".format(numCorrect/len(total_weights)))
-            
-            numOfModelsToSave -= 1
-            if numOfModelsToSave <= 0:
-                break
-        else:
-            print(" - acc: {}".format(numCorrect/len(total_weights) ))
-        
-                
-    '''
         # Check to see how our model is doing, save the version with the best accuracy
         predictions = cnn_model.predict(total_imgs)
         numCorrect = 0
@@ -639,11 +655,12 @@ def Learn(overrideRunNumber=None):
                 predictions[j][0] >= flippyThreshold or predictions[j][1] >= flippyThreshold):
                 isFlippy = True
             
+            # in addition, don't overtrain the correct ones
             if round(predictions[j][0]) == total_labels[j][0] and round(predictions[j][1]) == total_labels[j][1]:
                 numCorrect += 1
         
         if numCorrect >= bestNumCorrect and isFlippy == False:
-            bestNumCorrect = numCorrect
+            #bestNumCorrect = numCorrect
             cnn_model.save("model.h5")
             print(" - acc: {} *saved*".format(numCorrect/len(total_weights)))
             
@@ -651,58 +668,11 @@ def Learn(overrideRunNumber=None):
             if numOfModelsToSave <= 0:
                 break
         else:
-            print(" - acc: {}".format(numCorrect/len(total_weights) ))
-            
+            print(" - acc: {}".format(numCorrect/len(total_weights)))
         
-        # NOTE: To allow us to train any number of images without fear of overtraining the network,
-        # we first predict against our samples.  if the sample prediction is not within our expected
-        # range, then we train it.  Otherwise we skip it.  We do this after every batch as this will
-        # help against overtraining due to multiple similar samples in the dataset
-        batch_size = 32
-        for b in range(0,len(total_imgs)//batch_size):
-            
-            startIdx = b * batch_size
-            endIdx = startIdx + batch_size
-            if endIdx > len(total_imgs)-1:
-                endIdx = len(total_imgs)-1
-            
-            total_imgs_batch = total_imgs[startIdx:endIdx]
-            total_weights_batch = total_weights[startIdx:endIdx]
-            normalized_weights_batch = normalized_weights[startIdx:endIdx]
-            total_labels_batch = total_labels[startIdx:endIdx]
-            
-                        
-            # get the predicted results, and adjust the normalized weights by how far off the network is
-            predictions = cnn_model.predict(total_imgs_batch)
         
-            # We only want to train on the images which no longer pass
-            mask = np.zeros(len(total_weights_batch), dtype=bool)
-            for j in range(0,len(total_weights_batch)):
-                if total_weights_batch[j] == 999:
-                    edge = 0.0
-                elif total_weights_batch[j] < 0:
-                    edge = 0.05
-                elif total_labels_batch[j][0] == 0 and total_labels_batch[j][1] == 0:
-                    edge = 0.0
-                else:
-                    edge = 0.05
-            
-                if roundEdge(predictions[j][0], edge) != total_labels_batch[j][0] or roundEdge(predictions[j][1], edge) != total_labels_batch[j][1]:
-                    mask[j] = True
+        iterations += 1
         
-            total_imgs_local = total_imgs_batch[mask,...]
-            normalized_weights_local = normalized_weights_batch[mask,...]
-            total_labels_local = total_labels_batch[mask,...]
-            
-            if len(total_imgs_local) > 0:
-                cnn_model.fit(total_imgs_local, total_labels_local,
-                    batch_size=batch_size,
-                    epochs=1,
-                    shuffle=False,
-                    verbose=0,
-                    sample_weight=normalized_weights_local,
-                    )
-        '''
         
     output_labels = ['left','right','ballkicker'] 
     coreml_model = coremltools.converters.keras.convert("model.h5",input_names='image',image_input_names = 'image',class_labels = output_labels)   
@@ -742,6 +712,9 @@ def Learn(overrideRunNumber=None):
     coreMLPublisher.send(modelMessage)
     
     print("Published new coreml model")
+    
+    heatmap.ExportHeatmapForModel(trainingRunNumber, HeatmapPath())
+    heatmap.ExportAnimatedHeatmapForAllImages("TrainingHeatmap.gif")
     
     # once training is finished, we need to create a new run folder and move model.h5 to it.
     trainingRunNumber = trainingRunNumber + 1
