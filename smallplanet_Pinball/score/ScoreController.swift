@@ -206,9 +206,9 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     for i in 0..<child.contentLength {
                         let t = prng.getRandomNumberf()
 
-                        if (t < 0.45) {
+                        if (t < 0.3) {
                             child [i] = organismA [i];
-                        } else if (t < 0.9) {
+                        } else if (t < 0.6) {
                             child [i] = organismB [i];
                         } else {
                             if i & 1 == 1 {
@@ -812,6 +812,11 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
             }
         }
         
+        // hack: these are probably erroneous scores from the bonus screens
+        if score % 1000 == 0 {
+            return (0, false)
+        }
+        
         return (score,didMatchSomething)
     }
     
@@ -1030,6 +1035,12 @@ class ScoreController: PlanetViewController, CameraCaptureHelperDelegate, NetSer
                     break
                 }
             }
+        }
+        
+        
+        // hack: these are probably erroneous scores from the bonus screens
+        if score % 1000 == 0 {
+            return (0, false)
         }
         
         return (score,didMatchSomething)

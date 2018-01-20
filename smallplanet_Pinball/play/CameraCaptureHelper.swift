@@ -250,7 +250,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         }
         
         
-        playQueue.async {
+        //playQueue.sync {
             var bufferCopy : CMSampleBuffer?
             let err = CMSampleBufferCreateCopy(kCFAllocatorDefault, sampleBuffer, &bufferCopy)
             if err != noErr {
@@ -269,7 +269,7 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
             if self.delegateWantsPlayImages {
                 self.delegate?.playCameraImage(self, image: lastBlurFrame, originalImage: cameraImage, frameNumber:localPlayFrameNumber, fps:self.fpsDisplay, left:leftButton, right:rightButton, start:startButton, ballKicker:ballKicker)
             }
-        }
+        //}
  
         fpsCounter += 1
         
@@ -303,11 +303,11 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
         
         var lastBlurFrame = cameraImage
         if self.delegateWantsTemporalImages {
-            let numberOfFrames = 2 + 1
+            let numberOfFrames = 2
             
             if ignoreTemporalFrames {
-                for i in 2..<numberOfFrames {
-                    lastBlurFrame = lastBlurFrame.composited(over: lastBlurFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * lastBlurFrame.extent.width, y: 0)))
+                for i in 1..<numberOfFrames {
+                    lastBlurFrame = lastBlurFrame.composited(over: lastBlurFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i) * lastBlurFrame.extent.width, y: 0)))
                 }
             } else {
                 self.motionBlurFrames.append(cameraImage)
@@ -324,10 +324,10 @@ class CameraCaptureHelper: NSObject, AVCaptureVideoDataOutputSampleBufferDelegat
                 }
                 
                 // instead of blurring them, let's just stack them horizontally
-                lastBlurFrame = self.motionBlurFrames[1]
-                for i in 2..<self.motionBlurFrames.count {
+                lastBlurFrame = self.motionBlurFrames[0]
+                for i in 1..<self.motionBlurFrames.count {
                     let otherFrame = self.motionBlurFrames[i]
-                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i-1) * otherFrame.extent.width, y: 0)))
+                    lastBlurFrame = lastBlurFrame.composited(over: otherFrame.transformed(by: CGAffineTransform(translationX: CGFloat(i) * otherFrame.extent.width, y: 0)))
                 }
                 
                 if playFrameNumber % numberOfFrames == 0 {

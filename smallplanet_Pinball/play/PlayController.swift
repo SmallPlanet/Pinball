@@ -38,10 +38,10 @@ extension DefaultsKeys {
 @available(iOS 11.0, *)
 class PlayController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
-    let topLeft = (CGFloat(245), CGFloat(527))
-    let topRight = (CGFloat(404), CGFloat(527))
-    let bottomLeft = (CGFloat(245), CGFloat(120))
-    let bottomRight = (CGFloat(404), CGFloat(120))
+    let topLeft = (CGFloat(307), CGFloat(496))
+    let topRight = (CGFloat(447), CGFloat(496))
+    let bottomLeft = (CGFloat(307), CGFloat(147))
+    let bottomRight = (CGFloat(447), CGFloat(147))
     
     let pip_topLeft = (CGFloat(116), CGFloat(72))
     let pip_topRight = (CGFloat(196), CGFloat(72))
@@ -55,9 +55,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case PlayNoRecord    // AI will play but will not learn anything
     }
     
-    let playMode:PlayMode = .Play
+    let playMode:PlayMode = .PlayNoRecord
     
-    var shouldExperiment = false
+    var shouldExperiment = true
     
     var currentPlayer = 1
     var playerOneScore = 0
@@ -141,8 +141,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 let model = try MLModel(contentsOf: compiledUrl)
                 self.model = try? VNCoreMLModel(for: model)
                 
+                self.modelRunNumber = modelRunNumber
                 self.modelLeftMean = modelLeftMean
                 self.modelRightMean = modelRightMean
+                
+                self.minCutoffLeft = 0
+                self.minCutoffRight = 0
                 
                 print("\(modelLeftMean) // \(modelRightMean)")
                 
@@ -174,10 +178,18 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var leftFlipperCounter:Int = 0
     var rightFlipperCounter:Int = 0
     
+    
+    var leftFlipperFullyCommitToAHitCounter:Int = 0
+    var rightFlipperFullyCommitToAHitCounter:Int = 0
+    
     var disableLeftFlipperUntilRelease = false
     var disableRightFlipperUntilRelease = false
     
-    let numberOfFramesItTakesForFlipperToRetract:Int = 14
+    let numberOfFramesItTakesForLeftFlipperToRetract:Int = 47
+    let numberOfFramesItTakesForRightFlipperToRetract:Int = 44
+    
+    var numberOfFramesItTakesForLeftFlipperToHit:Int = 4
+    var numberOfFramesItTakesForRightFlipperToHit:Int = 4
     
     var lastOriginalFrame:CIImage? = nil
     var lastFrame:CIImage? = nil
@@ -186,13 +198,21 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     var send_startButton:Byte = 0
     var send_ballKickerButton:Byte = 0
     
+    var leftLastConfidence:Float = 0
+    var rightLastConfidence:Float = 0
+    
     var leftActivateTime:Date = Date()
     var rightActivateTime:Date = Date()
     
     let prng = PRNG()
     
+    var modelRunNumber:Float = 0.0
     var modelLeftMean:Float = 0.5
     var modelRightMean:Float = 0.5
+    
+    var shouldBeCalibratingMinCutoffs = false
+    var minCutoffLeft:Float = 0.0
+    var minCutoffRight:Float = 0.0
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte)
     {        
@@ -253,18 +273,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         }
         */
         
-        if pinball.leftButtonPressed == true {
-            leftFlipperCounter = numberOfFramesItTakesForFlipperToRetract
-        }
-        if pinball.rightButtonPressed == true {
-            rightFlipperCounter = numberOfFramesItTakesForFlipperToRetract
-        }
-        
-        if pinball.leftButtonPressed == false && leftFlipperCounter > 0 {
-            leftFlipperCounter -= 1
-        }
-        if pinball.rightButtonPressed == false && rightFlipperCounter > 0 {
-            rightFlipperCounter -= 1
+        if fps == 1 {
+            return
         }
         
         let request = VNCoreMLRequest(model: model) { [weak self] request, error in
@@ -290,45 +300,38 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
             }
             
-            let canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
+            var canPlay = self?.playMode == .PlayNoRecord || self?.playMode == .Play || (self?.playMode == .ObserveAndPlay && self?.currentPlayer == 2)
             
-            // We want a random number from the model mean (either local or global still testing) and 0.5
-            let cutoffLeftRange:Float = (0.5 - self!.modelLeftMean) * 0.25
-            let cutoffRightRange:Float = (0.5 - self!.modelRightMean) * 0.25
-            var cutoffLeft:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffLeftRange
-            var cutoffRight:Float = 0.5 - self!.prng.getRandomNumberf() * cutoffRightRange
-            
-            if self!.shouldExperiment == false {
-                cutoffLeft = self!.modelLeftMean
-                cutoffRight = self!.modelRightMean
-            }
-                        
-            // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
-            // artificially increase the cutoff value
-            if self!.leftActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.leftButtonPressed == true {
-                self!.disableLeftFlipperUntilRelease = true
+            /// We need to automatically find thew minimum cutoff value for this model.  To do this
+            // we slowly scale up the min cutoff while we are at the start of the game before we
+            // kickoff the first ball
+            if self!.currentPlayer == 1 && self!.playerOneScore <= 4000 {
+                self!.shouldBeCalibratingMinCutoffs = true
+                canPlay = false
+            } else {
+                self!.shouldBeCalibratingMinCutoffs = false
             }
             
-            if self!.rightActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.rightButtonPressed == true {
-                self!.disableRightFlipperUntilRelease = true
+            if leftObservation!.confidence > self!.minCutoffLeft {
+                print ("left \(leftObservation!.confidence)")
+            }
+            if rightObservation!.confidence > self!.minCutoffRight {
+                print ("right \(rightObservation!.confidence)")
             }
             
-            if self!.disableLeftFlipperUntilRelease {
-                if self!.leftFlipperCounter == 0 {
-                    self!.disableLeftFlipperUntilRelease = false
-                }
-                cutoffLeft = 1.1
-            }
-            
-            if self!.disableRightFlipperUntilRelease {
-                if self!.rightFlipperCounter == 0 {
-                    self!.disableRightFlipperUntilRelease = false
-                }
-                cutoffRight = 1.1
-            }
-            
-            
-            if cutoffLeft < leftObservation!.confidence {
+            if (self!.disableLeftFlipperUntilRelease == false &&
+                
+                // If we don't have the flipper engaged and we're decreasing in confidence we should flip it
+                (self?.pinball.leftButtonPressed == false &&
+                leftObservation!.confidence < self!.leftLastConfidence &&
+                (self!.leftLastConfidence > self!.minCutoffLeft || leftObservation!.confidence > self!.minCutoffLeft)) ||
+                
+                // If we do have the flipper engaged and we're increasing in confidence we should flip it
+                (self?.pinball.leftButtonPressed == true && leftObservation!.confidence > self!.leftLastConfidence)
+                ) {
+                
+                self!.leftFlipperFullyCommitToAHitCounter = 0
+                
                 if canPlay && self?.pinball.leftButtonPressed == false {
                     if self!.leftFlipperCounter == 0 {
                         self!.leftActivateTime = Date()
@@ -336,25 +339,55 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonDown.rawValue), object: nil, userInfo: nil)
                 }
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
+                let confidence = max(leftObservation!.confidence, self!.leftLastConfidence)
+                if self!.shouldBeCalibratingMinCutoffs && self!.minCutoffLeft < confidence && confidence < 0.075 {
+                    self!.minCutoffLeft = confidence + 0.005
+                    print("   raised left flipper min cutoff to \(self!.minCutoffLeft)")
+                }
             } else {
-                if canPlay && self?.pinball.leftButtonPressed == true {
-                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                if self!.leftFlipperFullyCommitToAHitCounter >= self!.numberOfFramesItTakesForLeftFlipperToHit {
+                    if canPlay && self?.pinball.leftButtonPressed == true {
+                        print("---------- FLIP LEFT FLIPPER \(leftObservation!.confidence) ----------")
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.LeftButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
                 }
             }
+            self!.leftLastConfidence = leftObservation!.confidence
             
-            if cutoffRight < rightObservation!.confidence {
+            
+            
+            if (self!.disableRightFlipperUntilRelease == false &&
+                
+                // If we don't have the flipper engaged and we're decreasing in confidence we should flip it
+                (self?.pinball.rightButtonPressed == false &&
+                    rightObservation!.confidence < self!.rightLastConfidence &&
+                    (self!.rightLastConfidence > self!.minCutoffRight || rightObservation!.confidence > self!.minCutoffRight)) ||
+                
+                // If we do have the flipper engaged and we're increasing in confidence we should flip it
+                (self?.pinball.rightButtonPressed == true && rightObservation!.confidence > self!.rightLastConfidence) ) {
+                
+                self!.rightFlipperFullyCommitToAHitCounter = 0
                 if canPlay && self?.pinball.rightButtonPressed == false {
-                    if self!.leftFlipperCounter == 0 {
+                    if self!.rightFlipperCounter == 0 {
                         self!.rightActivateTime = Date()
                     }
                     NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonDown.rawValue), object: nil, userInfo: nil)
                 }
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence)  *********")
+                let confidence = max(rightObservation!.confidence, self!.rightLastConfidence)
+                if self!.shouldBeCalibratingMinCutoffs && self!.minCutoffRight < confidence && confidence < 0.075 {
+                    self!.minCutoffRight = confidence + 0.005
+                    print("   raised right flipper min cutoff to \(self!.minCutoffRight)")
+                }
             }else{
-                if canPlay && self?.pinball.rightButtonPressed == true {
-                    NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                if self!.rightFlipperFullyCommitToAHitCounter >= self!.numberOfFramesItTakesForRightFlipperToHit {
+                    if canPlay && self?.pinball.rightButtonPressed == true {
+                        print("---------- FLIP RIGHT FLIPPER \(rightObservation!.confidence) ----------")
+                        NotificationCenter.default.post(name:Notification.Name(MainController.Notifications.RightButtonUp.rawValue), object: nil, userInfo: nil)
+                    }
                 }
             }
+            self!.rightLastConfidence = rightObservation!.confidence
             
             if ballKickerObservation!.confidence >= 0.99 {
                 //print("********* BALL KICKER FLIPPER \(ballKickerObservation!.confidence) *********")
@@ -381,6 +414,51 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
             }
             
+            
+            if self!.pinball.leftButtonPressed == true {
+                self!.leftFlipperCounter = self!.numberOfFramesItTakesForLeftFlipperToRetract
+                self!.leftFlipperFullyCommitToAHitCounter += 1
+            }
+            if self!.pinball.rightButtonPressed == true {
+                self!.rightFlipperCounter = self!.numberOfFramesItTakesForRightFlipperToRetract
+                self!.rightFlipperFullyCommitToAHitCounter += 1
+            }
+            
+            if self!.pinball.leftButtonPressed == false {
+                self!.leftFlipperFullyCommitToAHitCounter = 0
+                if self!.leftFlipperCounter > 0 {
+                    self!.leftFlipperCounter -= 1
+                }
+            }
+            if self!.pinball.rightButtonPressed == false {
+                self!.rightFlipperFullyCommitToAHitCounter = 0
+                if self!.rightFlipperCounter > 0 {
+                    self!.rightFlipperCounter -= 1
+                }
+            }
+            
+            if self!.disableLeftFlipperUntilRelease && self!.leftFlipperCounter == 0 {
+                self!.disableLeftFlipperUntilRelease = false
+            }
+            
+            if self!.disableRightFlipperUntilRelease && self!.rightFlipperCounter == 0 {
+                self!.disableRightFlipperUntilRelease = false
+            }
+            
+            // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
+            // artificially increase the cutoff value
+            if self!.leftActivateTime.timeIntervalSinceNow < -5.0 && self?.pinball.leftButtonPressed == true {
+                self!.disableLeftFlipperUntilRelease = true
+            }
+            
+            if self!.rightActivateTime.timeIntervalSinceNow < -5.0 && self?.pinball.rightButtonPressed == true {
+                self!.disableRightFlipperUntilRelease = true
+            }
+            
+            
+            
+            
+            
         }
         
         // Run the Core ML classifier on global dispatch queue
@@ -394,7 +472,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         if lastVisibleFrameNumber + 3 < frameNumber {
             lastVisibleFrameNumber = frameNumber
             
-            print("\(fps) fps")
+            print("\(fps) fps, model \(modelRunNumber)")
             
             DispatchQueue.main.async {
                 
@@ -469,7 +547,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         captureHelper.delegateWantsTemporalImages = true
         
-        captureHelper.constantFPS = 60
+        captureHelper.constantFPS = 120
         captureHelper.delegateWantsConstantFPS = true
         
         UIApplication.shared.isIdleTimerDisabled = true
@@ -543,8 +621,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         captureHelper.stop()
         pinball.disconnect()
         
-        try! remoteControlSubscriber?.close()
-        try! scoreSubscriber?.close()
+        //try! remoteControlSubscriber?.close()
+        //try! scoreSubscriber?.close()
         
         shouldBeCalibrating = false
         
@@ -874,7 +952,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
                 
                 // if we're "good enough" then go into low power mode
-                if generation > 3000 && score > 0.703 && generation % 60 == 0 {
+                if generation > 3000 && score > 0.8 && generation % 60 == 0 {
                     usleep(472364)
                 }
                 

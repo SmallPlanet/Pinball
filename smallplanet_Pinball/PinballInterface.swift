@@ -168,11 +168,11 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         do {
             try client.write(from: data)
 
-            var response = Data()
-            var bytesRead = 0
-            while bytesRead == 0 {
-                bytesRead = try client.read(into: &response)
-            }
+            //var response = Data()
+            //var bytesRead = 0
+            //while bytesRead == 0 {
+            //    bytesRead = try client.read(into: &response)
+            //}
             
         } catch (let error) {
             print("failure: \(error)")
