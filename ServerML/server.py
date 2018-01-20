@@ -12,7 +12,6 @@ import os
 import glob
 import numpy as np
 import blur
-import templateMatch
 
 # how far reaching into the past scores earned should affect the reward value associated with
 # actions.  1 means its stretches far, 0 means its very near sighted
@@ -118,10 +117,7 @@ class Memory:
         
         # blurry images we should send to waste
         isBlurry = blur.IsBlurryJPEG(jpegAsBinary, cutoff=3000)
-        
-        # images should always contain at least one ball (note: this is not the most accurate method for ball detection, but hopefully it is better than nothing)
-        hasBall = templateMatch.ContainsAtLeatOneBall(jpegAsBinary, 0.80)
-                
+                        
         if isBlurry == False:
             # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
             if self.reward > longTermMemoryMinimumReward:
@@ -130,7 +126,7 @@ class Memory:
                 longTermMemory.append(self)
                 longTermMemory.sort(reverse=False, key=GetMemoryKey)
             
-                self.filePath = '%s/%d_%d_%d_%d_%s_%s.jpg' % (train.TrainingMemoryPath(), self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()), "" if hasBall == True else "NOBALL")
+                self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.TrainingMemoryPath(), self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
                 print (self.filePath)
         
                 f = open(self.filePath, 'wb')
