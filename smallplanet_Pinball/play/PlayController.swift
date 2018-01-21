@@ -122,13 +122,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var modelRunNumber:Float = 0.0
             memcpy(&modelRunNumber, modelRunNumberBytes, 4)
             
-            let modelLeftMeanBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
-            var modelLeftMean:Float = 0.0
-            memcpy(&modelLeftMean, modelLeftMeanBytes, 4)
+            let modelFlippyMeanBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
+            var modelFlippyMean:Float = 0.0
+            memcpy(&modelFlippyMean, modelFlippyMeanBytes, 4)
             
-            let modelRightMeanBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
-            var modelRightMean:Float = 0.0
-            memcpy(&modelRightMean, modelRightMeanBytes, 4)
+            let modelFlippyMaxBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
+            var modelFlippyMax:Float = 0.0
+            memcpy(&modelFlippyMax, modelFlippyMaxBytes, 4)
             
             let unused4Bytes:Array<UInt8> = [data[12], data[13], data[14], data[15]]
             var unused4:Float = 0.0
@@ -142,13 +142,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 self.model = try? VNCoreMLModel(for: model)
                 
                 self.modelRunNumber = modelRunNumber
-                self.modelLeftMean = modelLeftMean
-                self.modelRightMean = modelRightMean
+                self.modelFlippyMean = modelFlippyMean
+                self.modelFlippyMax = modelFlippyMax
                 
                 self.minCutoffLeft = 0
                 self.minCutoffRight = 0
                 
-                print("\(modelLeftMean) // \(modelRightMean)")
+                print("\(modelFlippyMean) // \(modelFlippyMax)")
                 
             }
         } catch {
@@ -207,8 +207,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     let prng = PRNG()
     
     var modelRunNumber:Float = 0.0
-    var modelLeftMean:Float = 0.5
-    var modelRightMean:Float = 0.5
+    var modelFlippyMean:Float = 0.0
+    var modelFlippyMax:Float = 0.0
     
     var shouldBeCalibratingMinCutoffs = false
     var minCutoffLeft:Float = 0.0
@@ -311,6 +311,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             } else {
                 self!.shouldBeCalibratingMinCutoffs = false
             }
+            
+            
+            // hack in flippy max from models...
+            self!.shouldBeCalibratingMinCutoffs = false
+            self!.minCutoffLeft = self!.modelFlippyMax * 2.0
+            self!.minCutoffRight = self!.modelFlippyMax * 2.0
+            
             
             if leftObservation!.confidence > self!.minCutoffLeft {
                 print ("left \(leftObservation!.confidence)")
