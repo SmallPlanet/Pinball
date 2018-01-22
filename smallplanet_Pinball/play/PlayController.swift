@@ -331,6 +331,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     internal var rightButton: Button? {
         return nil
     }
+    internal var rightUpperButton: Button? {
+        return nil
+    }
     internal var ballKicker: Button? {
         return nil
     }

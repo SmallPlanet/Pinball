@@ -62,7 +62,7 @@
 		461893331F3B57C500AA4599 /* PlanetSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = PlanetSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		461893381F3B58C300AA4599 /* MainController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainController.swift; sourceTree = "<group>"; };
 		4618933A1F3B592800AA4599 /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Assets; sourceTree = "<group>"; };
-		4632CB0D1F3B53BE00359AA3 /* smallplanet_Pinball.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = smallplanet_Pinball.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4632CB0D1F3B53BE00359AA3 /* Supervised.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Supervised.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4632CB101F3B53BE00359AA3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4632CB151F3B53BE00359AA3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4632CB171F3B53BE00359AA3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -126,7 +126,7 @@
 		4632CB0E1F3B53BE00359AA3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4632CB0D1F3B53BE00359AA3 /* smallplanet_Pinball.app */,
+				4632CB0D1F3B53BE00359AA3 /* Supervised.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -219,7 +219,7 @@
 			);
 			name = smallplanet_Pinball;
 			productName = smallplanet_Pinball;
-			productReference = 4632CB0D1F3B53BE00359AA3 /* smallplanet_Pinball.app */;
+			productReference = 4632CB0D1F3B53BE00359AA3 /* Supervised.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -437,8 +437,8 @@
 				INFOPLIST_FILE = smallplanet_Pinball/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball-Supervised";
+				PRODUCT_NAME = Supervised;
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -451,8 +451,8 @@
 				INFOPLIST_FILE = smallplanet_Pinball/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.smallplanet.smallplanet-Pinball-Supervised";
+				PRODUCT_NAME = Supervised;
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;

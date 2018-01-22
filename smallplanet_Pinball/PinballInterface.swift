@@ -15,6 +15,7 @@ typealias Byte = UInt8
 protocol PinballPlayer {
     var leftButton: Button? { get }
     var rightButton: Button? { get }
+    var rightUpperButton: Button? { get }
     var startButton: Button? { get }
     var ballKicker: Button? { get }
     var pinball: PinballInterface { get }
@@ -41,6 +42,15 @@ extension PinballPlayer {
         }
         rightButton?.button.add(for: endEvents) {
             self.pinball.rightButtonEnd()
+            didChange?()
+        }
+        
+        rightUpperButton?.button.add(for: startEvents) {
+            self.pinball.rightUpperButtonStart()
+            didChange?()
+        }
+        rightUpperButton?.button.add(for: endEvents) {
+            self.pinball.rightUpperButtonEnd()
             didChange?()
         }
         
@@ -114,6 +124,11 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: PinballInterface.connectionNotification), object: nil, userInfo: ["connected":connected])
     }
     
+    // Press the start button (on and off)
+    func start() {
+        startButtonStart()
+    }
+    
     @objc func leftButtonStart() {
         sendPress(forButton: .left(on: true))
     }
@@ -154,18 +169,20 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         sendPress(forButton: .startButton(on: false))
     }
     
+    var lastError: Date?
+    
     private func sendPress(forButton type: ButtonType) {
         let data: String
         switch type {
         case .left(let on):
             data = "L" + (on ? "1" : "0")
             leftButtonPressed = on
-        case .rightUpper(let on):
-            data = "U" + (on ? "1" : "0")
-            rightUpperButtonPressed = on
         case .right(let on):
             data = "R" + (on ? "1" : "0")
             rightButtonPressed = on
+        case .rightUpper(let on):
+            data = "U" + (on ? "1" : "0")
+            rightUpperButtonPressed = on
         case .ballKicker(let on):
             ballKickerPressed = on
             if on {
@@ -186,18 +203,16 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             return
         }
         
-        print("Sending: \(data)")
         do {
             try client.write(from: data)
-
-            var response = Data()
-            var bytesRead = 0
-            while bytesRead == 0 {
-                bytesRead = try client.read(into: &response)
-            }
-            
         } catch (let error) {
-            print("failure: \(error)")
+            if lastError == nil || lastError!.timeIntervalSinceNow < -3600 {
+                lastError = Date()
+                print("failure: \(error)")
+//                Slacker.shared.send(message: "@quinn omega communication error: \(error)")
+            }
+            self.client = nil
+            findFlipperServer()
         }
     }
     
@@ -206,34 +221,17 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
         findFlipperServer()
     }
     
-    var bonjour = NetServiceBrowser()
-    var services = [NetService]()
-    
     func findFlipperServer() {
-        bonjour.delegate = self
-        bonjour.searchForServices(ofType: "_flipper._tcp.", inDomain: "local.")
+        if client == nil {
+            client = try? Socket.create(family: .inet)
+            hostname = "omega-0065.local"
+            hostname = "192.168.7.99"
+            
+            port = Int32(8000)
+            print("Set pinball service \(hostname):\(port)")
+        }
     }
     
-    func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
-        print("found service, resolving addresses")
-        service.delegate = self
-        service.resolve(withTimeout: 2)
-        services.append(service)
-    }
-    
-    func netServiceDidResolveAddress(_ service: NetService) {
-        services.remove(at: services.index(of: service)!)
-        client = try? Socket.create(family: .inet)
-        hostname = service.hostName!
-//        hostname = service.addressStrings.first ?? service.hostName!
-        port = Int32(service.port)
-        print("did resolve service \(hostname):\(port)")
-        connect()
-    }
-    
-    func netService(_ sender: NetService, didNotResolve errorDict: [String : NSNumber]) {
-        print("did not resolve service \(errorDict)")
-    }
     
 }
 
@@ -279,4 +277,3 @@ extension NSData {
         return mem.move()
     }
 }
-
