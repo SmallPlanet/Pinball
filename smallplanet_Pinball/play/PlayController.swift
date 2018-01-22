@@ -47,6 +47,8 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             return
         }
         
+        var nop = true
+        
         // find the results which match each flipper
         let left = results.filter{ $0.identifier == "left" }.first!
         let right = results.filter{ $0.identifier == "right" }.first!
@@ -71,29 +73,40 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         
         if sendToMachine && !pinball.leftButtonPressed && leftFlipperCounter > 0 {
             pinball.leftButtonStart()
+            nop = false
             handleShouldFrameCapture()
         }
         if pinball.leftButtonPressed && leftFlipperCounter < 0 {
             pinball.leftButtonEnd()
+            nop = false
             handleShouldFrameCapture()
         }
         
         if sendToMachine && !pinball.rightButtonPressed && rightFlipperCounter > 0 {
             pinball.rightButtonStart()
+            nop = false
             handleShouldFrameCapture()
         }
         if pinball.rightButtonPressed && rightFlipperCounter < 0 {
             pinball.rightButtonEnd()
+            nop = false
             handleShouldFrameCapture()
         }
         
         if sendToMachine && !pinball.rightUpperButtonPressed && rightUpperFlipperCounter > 0 {
             pinball.rightUpperButtonStart()
+            nop = false
             handleShouldFrameCapture()
         }
         if pinball.rightUpperButtonPressed && rightUpperFlipperCounter < 0 {
             pinball.rightUpperButtonEnd()
+            nop = false
             handleShouldFrameCapture()
+        }
+        
+        if nop && arc4random() % 100 < 2 {
+            // ocassionally kick the ball out, but only if nothing else was sent to omega this frame
+            pinball.ballKickerStart()
         }
         
         let labelValue = "\(fps) fps"
