@@ -44,22 +44,20 @@
 		46C4028B1F3CBB3000C46E3C /* ControlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C4028A1F3CBB2500C46E3C /* ControlController.swift */; };
 		46F0E9DF1F97A5A100288F48 /* pinballModel.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 46F0E9DE1F979C4600288F48 /* pinballModel.mlmodel */; };
 		A90620D91FDF806B005C0732 /* Episode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A90620D81FDF806B005C0732 /* Episode.swift */; };
+		A923B6D3201102DC00895AD3 /* tng_charles_0015.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A923B6D2201102DC00895AD3 /* tng_charles_0015.mlmodel */; };
 		A94608B21FE8BB3800DE7C2A /* SKCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A94608B11FE8BB3800DE7C2A /* SKCore.framework */; };
 		A94608B31FE8BB3800DE7C2A /* SKCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A94608B11FE8BB3800DE7C2A /* SKCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A94608B51FE8BB3800DE7C2A /* SKWebAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A94608B41FE8BB3800DE7C2A /* SKWebAPI.framework */; };
 		A94608B61FE8BB3800DE7C2A /* SKWebAPI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A94608B41FE8BB3800DE7C2A /* SKWebAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A94608BD1FE8C1F100DE7C2A /* SecretSlackToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94608BC1FE8C1F100DE7C2A /* SecretSlackToken.swift */; };
 		A949C4231FD4CEDB00F37C13 /* DotMatrixReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A949C4221FD4CEDB00F37C13 /* DotMatrixReader.swift */; };
+		A94C6DFB200EAB4F002BE764 /* tng_charles_0011.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A94C6DFA200EAB4F002BE764 /* tng_charles_0011.mlmodel */; };
 		A970C4AE1FCE0F5A0042D2FC /* dotmatrix.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */; };
-		A97DD35B1FE86AC700BC495A /* tng_boy_0000.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */; };
 		A97E14DD1FEAC773004D748F /* ActorServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97E14DC1FEAC773004D748F /* ActorServer.swift */; };
 		A97E14DF1FEAEDAA004D748F /* Slacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97E14DE1FEAEDAA004D748F /* Slacker.swift */; };
-		A9899DAA1FFC0CD400D7A595 /* kringle5k.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A9899DA91FFC0CD300D7A595 /* kringle5k.mlmodel */; };
-		A9899DAC1FFD44AB00D7A595 /* tng_charles.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A9899DAB1FFD44AB00D7A595 /* tng_charles.mlmodel */; };
 		A98BD93B1FD1BD1F00C436E4 /* TNGDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */; };
 		A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C946411F3E0AB200CEA23C /* PinballInterface.swift */; };
 		A9CBE1061FDB203C00719FE6 /* Actor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CBE1051FDB203C00719FE6 /* Actor.swift */; };
-		A9CBE1081FDB207B00719FE6 /* tng_adam_0000.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = A9CBE1071FDB207B00719FE6 /* tng_adam_0000.mlmodel */; };
 		A9EE3DBE1F4B78980086FDD3 /* Socket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; };
 		A9EE3DBF1F4B78980086FDD3 /* Socket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A9EE3DBD1F4B78980086FDD3 /* Socket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A9EE6ADF1FD87423006A5883 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EE6AD71FD87422006A5883 /* Math.swift */; };
@@ -135,6 +133,7 @@
 		46C4028A1F3CBB2500C46E3C /* ControlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlController.swift; sourceTree = "<group>"; };
 		46F0E9DE1F979C4600288F48 /* pinballModel.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = pinballModel.mlmodel; sourceTree = "<group>"; };
 		A90620D81FDF806B005C0732 /* Episode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Episode.swift; sourceTree = "<group>"; };
+		A923B6D2201102DC00895AD3 /* tng_charles_0015.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_charles_0015.mlmodel; sourceTree = "<group>"; };
 		A94608B11FE8BB3800DE7C2A /* SKCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SKCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A94608B41FE8BB3800DE7C2A /* SKWebAPI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SKWebAPI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A94608B81FE8BB8200DE7C2A /* Laba.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Laba.framework; sourceTree = "<group>"; };
@@ -144,16 +143,13 @@
 		A94608BC1FE8C1F100DE7C2A /* SecretSlackToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecretSlackToken.swift; sourceTree = "<group>"; };
 		A94608BE1FE95CB400DE7C2A /* SlackKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SlackKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A949C4221FD4CEDB00F37C13 /* DotMatrixReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotMatrixReader.swift; sourceTree = "<group>"; };
+		A94C6DFA200EAB4F002BE764 /* tng_charles_0011.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_charles_0011.mlmodel; sourceTree = "<group>"; };
 		A970C4AD1FCE0F5A0042D2FC /* dotmatrix.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = dotmatrix.mlmodel; sourceTree = "<group>"; };
-		A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_boy_0000.mlmodel; sourceTree = "<group>"; };
 		A97E14DC1FEAC773004D748F /* ActorServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorServer.swift; sourceTree = "<group>"; };
 		A97E14DE1FEAEDAA004D748F /* Slacker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slacker.swift; sourceTree = "<group>"; };
-		A9899DA91FFC0CD300D7A595 /* kringle5k.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = kringle5k.mlmodel; sourceTree = "<group>"; };
-		A9899DAB1FFD44AB00D7A595 /* tng_charles.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_charles.mlmodel; sourceTree = "<group>"; };
 		A98BD93A1FD1BD1F00C436E4 /* TNGDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNGDisplay.swift; sourceTree = "<group>"; };
 		A9C946411F3E0AB200CEA23C /* PinballInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinballInterface.swift; sourceTree = "<group>"; };
 		A9CBE1051FDB203C00719FE6 /* Actor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actor.swift; sourceTree = "<group>"; };
-		A9CBE1071FDB207B00719FE6 /* tng_adam_0000.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = tng_adam_0000.mlmodel; sourceTree = "<group>"; };
 		A9EE3DBD1F4B78980086FDD3 /* Socket.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Socket.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9EE6AD71FD87422006A5883 /* Math.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		A9EE6AD81FD87422006A5883 /* UIImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
@@ -345,10 +341,8 @@
 				4664D7741F9259DE00B9FC47 /* CameraCaptureHelper.swift */,
 				A9CBE1051FDB203C00719FE6 /* Actor.swift */,
 				A90620D81FDF806B005C0732 /* Episode.swift */,
-				A9899DA91FFC0CD300D7A595 /* kringle5k.mlmodel */,
-				A9899DAB1FFD44AB00D7A595 /* tng_charles.mlmodel */,
-				A9CBE1071FDB207B00719FE6 /* tng_adam_0000.mlmodel */,
-				A97DD35A1FE86AC700BC495A /* tng_boy_0000.mlmodel */,
+				A94C6DFA200EAB4F002BE764 /* tng_charles_0011.mlmodel */,
+				A923B6D2201102DC00895AD3 /* tng_charles_0015.mlmodel */,
 			);
 			path = play;
 			sourceTree = "<group>";
@@ -506,13 +500,9 @@
 				A9EE6AE61FD87423006A5883 /* MLMultiArray+Image.swift in Sources */,
 				A9EE6AE51FD87423006A5883 /* NonMaxSuppression.swift in Sources */,
 				A9EE6AE01FD87423006A5883 /* UIImage+CVPixelBuffer.swift in Sources */,
-				A9899DAC1FFD44AB00D7A595 /* tng_charles.mlmodel in Sources */,
 				464FFE0E1F96117600790173 /* Poller.swift in Sources */,
-				A97DD35B1FE86AC700BC495A /* tng_boy_0000.mlmodel in Sources */,
 				4637FD601F41E99800A2BC55 /* RemoteController.swift in Sources */,
 				A94608BD1FE8C1F100DE7C2A /* SecretSlackToken.swift in Sources */,
-				A9899DAA1FFC0CD400D7A595 /* kringle5k.mlmodel in Sources */,
-				A9CBE1081FDB207B00719FE6 /* tng_adam_0000.mlmodel in Sources */,
 				4666A6251FC366E90047009A /* GeneticAlgorithm.swift in Sources */,
 				46555A121F9A6AAC0092C20A /* Sound.swift in Sources */,
 				465426DA1F9DFDCC001B332F /* SwiftyUserDefaults.swift in Sources */,
@@ -534,10 +524,12 @@
 				464FFE101F96117600790173 /* SocketSendRecvOption.swift in Sources */,
 				A9C946421F3E0AB200CEA23C /* PinballInterface.swift in Sources */,
 				4638FD3F1F7D80D500A0261C /* PreviewController.swift in Sources */,
+				A94C6DFB200EAB4F002BE764 /* tng_charles_0011.mlmodel in Sources */,
 				464055291F82868A0055756C /* ScoreController.swift in Sources */,
 				4632CB111F3B53BE00359AA3 /* AppDelegate.swift in Sources */,
 				4618932C1F3B577A00AA4599 /* Localizations.swift in Sources */,
 				A9EE6AE11FD87423006A5883 /* Array.swift in Sources */,
+				A923B6D3201102DC00895AD3 /* tng_charles_0015.mlmodel in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

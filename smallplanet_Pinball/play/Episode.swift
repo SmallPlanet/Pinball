@@ -123,8 +123,12 @@ struct Episode {
             let data = try encoder.encode(finished)
             let fileURL = URL(fileURLWithPath: "\(directoryPath)/\(id).json")
             FileManager.default.createFile(atPath: fileURL.path, contents: data, attributes: nil)
+            
+            // move from pending/ directory to documents root
+            let validPath = String(bundlePath: "documents://\(id)")
+            try FileManager.default.moveItem(atPath: directoryPath, toPath: validPath)
         } catch {
-            fatalError(error.localizedDescription)
+            Slacker.shared.send(message: "Error moving episode \(id) to documents/: \(error.localizedDescription)")
         }
 
         callback()
@@ -141,9 +145,9 @@ struct Episode {
         id = String(Int(Date().timeIntervalSinceReferenceDate), radix: 36)
         
         // set and create directory
-        directoryPath = String(bundlePath: "documents://\(id)")
+        directoryPath = String(bundlePath: "documents://pending/\(id)")
         do {
-            try FileManager.default.createDirectory(atPath: directoryPath, withIntermediateDirectories: false, attributes: nil)
+            try FileManager.default.createDirectory(atPath: directoryPath, withIntermediateDirectories: true, attributes: nil)
         } catch let error as NSError {
             print(error.localizedDescription);
         }

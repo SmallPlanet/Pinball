@@ -203,17 +203,8 @@ class PinballInterface: NSObject, NetServiceBrowserDelegate, NetServiceDelegate 
             return
         }
         
-        // print("Sending: \(data)")
         do {
             try client.write(from: data)
-
-//            var response = Data()
-//            var bytesRead = 0
-//            let readDate = Date()
-//            while bytesRead == 0 && Date().timeIntervalSince(readDate) > -0.1 {
-//                bytesRead = try client.read(into: &response)
-//            }
-            
         } catch (let error) {
             if lastError == nil || lastError!.timeIntervalSinceNow < -3600 {
                 lastError = Date()

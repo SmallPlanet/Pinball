@@ -38,11 +38,11 @@ struct Actor {
     }
     
     func fakeAction() -> Action {
-        switch arc4random() % 10 {
-        case 1: return .plunger
-        case 2: return .left
-        case 3: return .right
-        case 4: return .upperRight
+        switch arc4random() % 24 {
+        case 0: return .plunger
+        case 1...5: return .left
+        case 6...10: return .right
+        case 11...15: return .upperRight
         default: return .nop
         }
         
@@ -85,4 +85,4 @@ struct Actor {
     }
 }
 
-class ModelWrapper: tng_charles { }
+class ModelWrapper: tng_charles_0015 { }

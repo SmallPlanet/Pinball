@@ -18,6 +18,9 @@ import Vision
 @available(iOS 11.0, *)
 class ActorController: PlanetViewController, CameraCaptureHelperDelegate, PinballPlayer, NetServiceBrowserDelegate, NetServiceDelegate {
     
+    let epsilon = 0.65
+    let timeBetweenGames = 180.0 // seconds, following end of save game, allows machine to rest
+
     static let port = 65535
 
     enum State {
@@ -31,7 +34,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
     var state = State.idling
     var stateTimer = Date()
     
-    let timeBetweenGames = 90.0 // seconds, following end of save game, allows machine to rest
     var lastScoreTimestamp = Date()
     let scoreWatchdogDuration = 600 // seconds without a score change while .acting -> stop, state = .watchdogging
     
@@ -43,7 +45,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
     var lastVisibleFrameNumber = 0
 
-    var captureHelper = CameraCaptureHelper(cameraPosition: .back)
+    var captureHelper: CameraCaptureHelper!
 
     let originalSize = CGSize(width: 3024, height: 4032)
     
@@ -54,6 +56,24 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
     let ciContext = CIContext(options: [:])
     var observers = [NSObjectProtocol]()
+    
+    @objc func watchdog() {
+        let dogInterval = -timeBetweenGames - 20.0
+        if state == .starting && stateTimer.timeIntervalSinceNow < dogInterval {
+            if pinball.lastError != nil {
+                pinball.connect()
+                pinball.lastError = nil
+                stateTimer = Date()
+                print("restarting pinball connection")
+            } else {
+                print("restarting")
+                startGame()
+            }
+        }
+        if !captureHelper.captureSession.isRunning {
+            print("capture session not running")
+        }
+    }
     
     func playCameraImage(_ cameraCaptureHelper: CameraCaptureHelper, image: CIImage, originalImage: CIImage, frameNumber:Int, fps:Int, left:Byte, right:Byte, start:Byte, ballKicker:Byte) {
 
@@ -78,7 +98,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
                 return
             }
             
-            let action = actor.chooseAction(state: image, epsilon: 0.8)
+            let action = actor.chooseAction(state: image, epsilon: epsilon)
             
             if pinballEnabled {
                 switch action {
@@ -154,8 +174,20 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
         // callback will start next game after delay
         state = .gameOverSaving
         episode?.save(callback: episodeFinishedSaving)
-        Slacker.shared.send(message: "Episode \(episode?.id ?? "unknown") ended: \(currentScore) final score")
+        Slacker.shared.send(message: "\(episode?.id ?? "unknown") final score: \(formatted(score: currentScore))")
     }
+    
+    func formatted(score: Int) -> String {
+        let num = NSNumber(value: score)
+        return scoreFormatter.string(from: num) ?? "nan"
+    }
+    
+    lazy var scoreFormatter: NumberFormatter = { formatter in
+        formatter.locale = NSLocale.current
+        formatter.usesGroupingSeparator = true
+        formatter.groupingSize = 3
+        return formatter
+    }(NumberFormatter())
     
     func receiveScore(data: Data) {
         if !captureHelper.captureSession.isRunning {
@@ -176,7 +208,7 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
 
         if parts[0] == "S", parts.count > 2, let score = Int(parts[1]) {
             if currentScore != score {
-                Slacker.shared.send(message: "Episode \(episode?.id ?? "pending") score: \(score)")
+                Slacker.shared.send(message: "\(episode?.id ?? "pending") score: \(formatted(score: score))")
                 currentScore = score
             }
 
@@ -193,16 +225,6 @@ class ActorController: PlanetViewController, CameraCaptureHelperDelegate, Pinbal
             
         }
         
-    }
-    
-    @objc func watchdog() {
-        if state == .starting && stateTimer.timeIntervalSinceNow > 10 {
-            pinball.start()
-            stateTimer = Date()
-        }
-        if !captureHelper.captureSession.isRunning {
-            print("capture session not running")
-        }
     }
     
     var scoreSubscriber: SwiftyZeroMQ.Socket!
