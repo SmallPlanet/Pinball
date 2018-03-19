@@ -44,7 +44,7 @@ Implement unsupervised learning/reinforcement learning/DeepQ learning such that 
 4. continue training and retraining to create a model which can reach superhuman capabilities (ie beat the best known human high score for the machine in question)
 
 
-# Progres & Achievements
+# Progress & Achievements
 
 ### Nascar Pinball
 
