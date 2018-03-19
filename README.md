@@ -44,6 +44,32 @@ Implement unsupervised learning/reinforcement learning/DeepQ learning such that 
 4. continue training and retraining to create a model which can reach superhuman capabilities (ie beat the best known human high score for the machine in question)
 
 
+# Progres & Achievements
+
+### Nascar Pinball
+
+
+| **Longest Single Turn**  |   |
+|---|---|
+| *Baseline, Superhuman* | unknown |
+| *Baseline, Avg Human* | 2 mins |
+|---|---|
+| 23 training runs | 5:26 |
+| 16 training runs | 5:01 |
+| 10 training runs | 3:22 |
+  
+  
+| **Highest Score**  |   |
+|---|---|
+| *Baseline, Superhuman* | 545,176,590 |
+| *Baseline, Avg Human* | 9,248,400 |
+|---|---|
+| 23 training runs | 33,958,324 (6.2%) |
+| 6 training runs | 24,359,050 (4.4%) |
+| 5 training runs | 18,175,800 (3.3%) |
+
+
+
 # Cool stuff
 
 *Omega2 board is connected to the flippers in the machine*  
