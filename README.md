@@ -46,7 +46,7 @@ Implement unsupervised learning/reinforcement learning/DeepQ learning such that 
 
 # Progress & Achievements
 
-### Nascar Pinball
+### Nascar Pinball - Phase 2
 
 
 | **Longest Single Turn**  |   |
