@@ -55,7 +55,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
         case PlayNoRecord    // AI will play but will not learn anything
     }
     
-    let playMode:PlayMode = .PlayNoRecord
+    let playMode:PlayMode = .Play
     
     var shouldExperiment = true
     
@@ -122,9 +122,9 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             var modelRunNumber:Float = 0.0
             memcpy(&modelRunNumber, modelRunNumberBytes, 4)
             
-            let modelFlippyMeanBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
-            var modelFlippyMean:Float = 0.0
-            memcpy(&modelFlippyMean, modelFlippyMeanBytes, 4)
+            let modelFlipMinBytes:Array<UInt8> = [data[4], data[5], data[6], data[7]]
+            var modelFlipMin:Float = 0.0
+            memcpy(&modelFlipMin, modelFlipMinBytes, 4)
             
             let modelFlippyMaxBytes:Array<UInt8> = [data[8], data[9], data[10], data[11]]
             var modelFlippyMax:Float = 0.0
@@ -142,13 +142,13 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 self.model = try? VNCoreMLModel(for: model)
                 
                 self.modelRunNumber = modelRunNumber
-                self.modelFlippyMean = modelFlippyMean
+                self.modelFlipMin = modelFlipMin
                 self.modelFlippyMax = modelFlippyMax
                 
                 self.minCutoffLeft = 0
                 self.minCutoffRight = 0
                 
-                print("\(modelFlippyMean) // \(modelFlippyMax)")
+                print("\(modelFlipMin) // \(modelFlippyMax)")
                 
             }
         } catch {
@@ -207,7 +207,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
     let prng = PRNG()
     
     var modelRunNumber:Float = 0.0
-    var modelFlippyMean:Float = 0.0
+    var modelFlipMin:Float = 0.0
     var modelFlippyMax:Float = 0.0
     
     var shouldBeCalibratingMinCutoffs = false
@@ -312,12 +312,12 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 self!.shouldBeCalibratingMinCutoffs = false
             }
             
-            
-            // hack in flippy max from models...
+            /*
             self!.shouldBeCalibratingMinCutoffs = false
-            self!.minCutoffLeft = self!.modelFlippyMax * 2.0
-            self!.minCutoffRight = self!.modelFlippyMax * 2.0
-            
+            canPlay = true
+            self!.minCutoffLeft = self!.modelFlippyMax + 0.025
+            self!.minCutoffRight = self!.modelFlippyMax + 0.025
+ */
             
             if leftObservation!.confidence > self!.minCutoffLeft {
                 print ("left \(leftObservation!.confidence)")
@@ -334,7 +334,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 (self!.leftLastConfidence > self!.minCutoffLeft || leftObservation!.confidence > self!.minCutoffLeft)) ||
                 
                 // If we do have the flipper engaged and we're increasing in confidence we should flip it
-                (self?.pinball.leftButtonPressed == true && leftObservation!.confidence > self!.leftLastConfidence)
+                (self?.pinball.leftButtonPressed == true && leftObservation!.confidence > self!.leftLastConfidence && leftObservation!.confidence > self!.minCutoffLeft)
                 ) {
                 
                 self!.leftFlipperFullyCommitToAHitCounter = 0
@@ -347,7 +347,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
                 print("********* FLIP LEFT FLIPPER \(leftObservation!.confidence) *********")
                 let confidence = max(leftObservation!.confidence, self!.leftLastConfidence)
-                if self!.shouldBeCalibratingMinCutoffs && self!.minCutoffLeft < confidence && confidence < 0.075 {
+                if self!.shouldBeCalibratingMinCutoffs && self!.minCutoffLeft < confidence && confidence < 0.15 {
                     self!.minCutoffLeft = confidence + 0.005
                     print("   raised left flipper min cutoff to \(self!.minCutoffLeft)")
                 }
@@ -371,7 +371,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                     (self!.rightLastConfidence > self!.minCutoffRight || rightObservation!.confidence > self!.minCutoffRight)) ||
                 
                 // If we do have the flipper engaged and we're increasing in confidence we should flip it
-                (self?.pinball.rightButtonPressed == true && rightObservation!.confidence > self!.rightLastConfidence) ) {
+                (self?.pinball.rightButtonPressed == true && rightObservation!.confidence > self!.rightLastConfidence) && rightObservation!.confidence > self!.minCutoffRight) {
                 
                 self!.rightFlipperFullyCommitToAHitCounter = 0
                 if canPlay && self?.pinball.rightButtonPressed == false {
@@ -382,7 +382,7 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
                 }
                 print("********* FLIP RIGHT FLIPPER \(rightObservation!.confidence)  *********")
                 let confidence = max(rightObservation!.confidence, self!.rightLastConfidence)
-                if self!.shouldBeCalibratingMinCutoffs && self!.minCutoffRight < confidence && confidence < 0.075 {
+                if self!.shouldBeCalibratingMinCutoffs && self!.minCutoffRight < confidence && confidence < 0.15 {
                     self!.minCutoffRight = confidence + 0.005
                     print("   raised right flipper min cutoff to \(self!.minCutoffRight)")
                 }
@@ -454,11 +454,11 @@ class PlayController: PlanetViewController, CameraCaptureHelperDelegate, Pinball
             
             // Note: We need to not allow the AI to hold onto the ball forever, so as its held onto the ball for more than 3 seconds we
             // artificially increase the cutoff value
-            if self!.leftActivateTime.timeIntervalSinceNow < -5.0 && self?.pinball.leftButtonPressed == true {
+            if self!.leftActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.leftButtonPressed == true {
                 self!.disableLeftFlipperUntilRelease = true
             }
             
-            if self!.rightActivateTime.timeIntervalSinceNow < -5.0 && self?.pinball.rightButtonPressed == true {
+            if self!.rightActivateTime.timeIntervalSinceNow < -4.0 && self?.pinball.rightButtonPressed == true {
                 self!.disableRightFlipperUntilRelease = true
             }
             
