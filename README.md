@@ -51,8 +51,8 @@ Implement unsupervised learning/reinforcement learning/DeepQ learning such that 
 
 | **Longest Single Turn**  |   |
 |---|---|
-| *Baseline, Superhuman* | unknown |
-| *Baseline, Avg Human* | 2 mins |
+| *Baseline, Superhuman** * | unknown |
+| *Baseline, Avg Human* * | 2 mins |
 |---|---|
 | 23 training runs | 5:26 |
 | 16 training runs | 5:01 |
@@ -61,12 +61,16 @@ Implement unsupervised learning/reinforcement learning/DeepQ learning such that 
   
 | **Highest Score**  |   |
 |---|---|
-| *Baseline, Superhuman* | 545,176,590 |
-| *Baseline, Avg Human* | 9,248,400 |
+| *Baseline, Superhuman** * | 545,176,590 |
+| *Baseline, Avg Human* * | 9,248,400 |
 |---|---|
 | 23 training runs | 33,958,324 (6.2%) |
 | 6 training runs | 24,359,050 (4.4%) |
 | 5 training runs | 18,175,800 (3.3%) |
+
+
+\* "average human" benchmark were informally gathered from ~6 average humans playing  
+** "superhuman" benchmarks are machine on[default settings and reported here](https://pinside.com/pinball/archive/nascar/scores)
 
 
 
