@@ -18,13 +18,13 @@ def get_score(img_path):
 def get_labels_and_score(img_path):
     filename = img_path.split('/')[-1]
     buttons = filename.split('_')
-    retVal = [int(buttons[0]),int(buttons[1]),int(buttons[2]),int(buttons[3])]
+    retVal = [float(buttons[0]),float(buttons[1]),float(buttons[2]),float(buttons[3])]
     return retVal
 
 def get_labels(img_path):
     filename = img_path.split('/')[-1]
     buttons = filename.split('_')
-    retVal = [int(buttons[1]),int(buttons[2]),int(buttons[3])]
+    retVal = [float(buttons[1]),float(buttons[2]),float(buttons[3])]
     return retVal
 
 def generate_image_array(dir_path, max_size):

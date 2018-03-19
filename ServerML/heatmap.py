@@ -61,24 +61,16 @@ def ExportHeatmapForModel(runNumber, outputPath):
         for y in range(0,img_h):
             scratchImg.paste(baseImg, (0,0))
             scratchImg.paste(ballImg, (x-ball_w//2,y-ball_h//2), ballImg)
-            scratchImg.paste(ballImg, (x-ball_w//2 + img_w//2 + 10,y-ball_h//2), ballImg)
+            scratchImg.paste(ballImg, (x-ball_w//2 + img_w//2 + 5,y-ball_h//2), ballImg)
             
             np.copyto(scratchNP[0],img_to_array(scratchImg))            
             predictions = cnn_model.predict(scratchNP)
             
-            pred_left = predictions[0][0]
-            if pred_left < 0.5:
-                pred_left = 0.0
-            else:
-                pred_left = ((pred_left - 0.5) * 2.0) * 0.6
-                            
+            pred_left = predictions[0][0]                            
             pred_right = predictions[0][1]
-            if pred_right < 0.5:
-                pred_right = 0.0
-            else:
-                pred_right = ((pred_right - 0.5) * 2.0) * 0.6
                         
-            heatmapPix[x,y] = (  int(basePix[x,y][0] * 0.4 + pred_left*255.0), int(basePix[x,y][1] * 0.4 + pred_right*255.0), 0)
+            #heatmapPix[x,y] = (  int(basePix[x,y][0] * 0.4 + pred_left*153.0), int(basePix[x,y][1] * 0.4 + pred_right*153.0), 0)
+            heatmapPix[x,y] = (int(pred_left*255.0), int(pred_right*255.0), 0)
     
     print('done')
     heatmapImg = heatmapImg.resize( (heatmapImg.size[0]*6,heatmapImg.size[1]*6), Image.ANTIALIAS)

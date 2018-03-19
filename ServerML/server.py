@@ -15,7 +15,7 @@ import blur
 
 # how far reaching into the past scores earned should affect the reward value associated with
 # actions.  1 means its stretches far, 0 means its very near sighted
-shortTermLearningRate = 0.95
+shortTermLearningRate = 0.92
 
 # the absolaute maximum number of seconds a memory can be affected by new scores; when a short
 # term memory exceeeds this threashold is it converted to a long term memory
@@ -116,19 +116,19 @@ class Memory:
         jpegAsBinary = np.frombuffer(self.jpeg, dtype='b')
         
         # blurry images we should send to waste
-        isBlurry = blur.IsBlurryJPEG(jpegAsBinary, cutoff=3000)
-                        
+        isBlurry = blur.IsBlurryJPEG(jpegAsBinary, cutoff=1500)
+                                
         if isBlurry == False:
             # Check to see if our differential score is better than the worst differential scored memory; if so, save it to disk
             if self.reward > longTermMemoryMinimumReward:
                 print("  -> long term memory:", self.reward, self.left, self.right, self.ballKicker)
-            
+        
                 longTermMemory.append(self)
                 longTermMemory.sort(reverse=False, key=GetMemoryKey)
-            
+        
                 self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.TrainingMemoryPath(), self.reward, self.left, self.right, self.ballKicker, str(uuid.uuid4()))
                 print (self.filePath)
-        
+    
                 f = open(self.filePath, 'wb')
                 f.write(self.jpeg)
                 f.close()
@@ -136,10 +136,10 @@ class Memory:
                 # If this shot somehow contributed to losing the ball, we want to put it into waste
                 # If the image captured was blurry, we should also put it into waste
                 print("  -> waste bin:", self.reward, self.left, self.right, self.ballKicker)
-            
+        
                 self.filePath = '%s/%d_%d_%d_%d_%s.jpg' % (train.WasteMemoryPath(), self.reward, 0, 0, 0, str(uuid.uuid4()))
                 print (self.filePath)
-        
+    
                 f = open(self.filePath, 'wb')
                 f.write(self.jpeg)
                 f.close()
